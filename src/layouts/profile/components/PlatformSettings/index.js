@@ -1,115 +1,71 @@
-/**
-=========================================================
-* Material Dashboard 2 React - v2.2.0
-=========================================================
-
-* Product Page: https://www.creative-tim.com/product/material-dashboard-react
-* Copyright 2023 Creative Tim (https://www.creative-tim.com)
-
-Coded by www.creative-tim.com
-
- =========================================================
-
-* The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-*/
-
-import { useState } from "react";
-
-// @mui material components
+import React from "react";
+import PropTypes from "prop-types";
 import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Grid from "@mui/material/Grid";
 import Switch from "@mui/material/Switch";
-
-// Material Dashboard 2 React components
-import MDBox from "components/MDBox";
+import FormControlLabel from "@mui/material/FormControlLabel";
 import MDTypography from "components/MDTypography";
 
-function PlatformSettings() {
-  const [followsMe, setFollowsMe] = useState(true);
-  const [answersPost, setAnswersPost] = useState(false);
-  const [mentionsMe, setMentionsMe] = useState(true);
-  const [newLaunches, setNewLaunches] = useState(false);
-  const [productUpdate, setProductUpdate] = useState(true);
-  const [newsletter, setNewsletter] = useState(false);
+function PlatformSettings({ profile, setProfile }) {
+  const role = profile?.role ?? "";
+
+  const handleToggle = (key) => (event) => {
+    setProfile((prev) => ({
+      ...prev,
+      [key]: event.target.checked,
+    }));
+  };
+
+  const universalSettings = [
+    { label: "Notify on login", key: "notify_on_login" },
+    { label: "Receive email reminders", key: "email_reminders" },
+  ];
+
+  const tenantSettings = [
+    { label: "Notify on due payments", key: "notify_due_payments" },
+    { label: "Enable SMS alerts", key: "enable_sms_alerts" },
+  ];
+
+  const collectorSettings = [
+    { label: "Notify on payment confirmation", key: "notify_payment_confirmation" },
+  ];
+
+  const adminSettings = [{ label: "Notify on new user signup", key: "notify_user_signup" }];
+
+  const renderToggles = (settings) =>
+    settings.map(({ label, key }) => (
+      <Grid item xs={12} md={6} key={key}>
+        <FormControlLabel
+          control={
+            <Switch checked={!!profile?.[key]} onChange={handleToggle(key)} color="primary" />
+          }
+          label={label}
+        />
+      </Grid>
+    ));
 
   return (
-    <Card sx={{ boxShadow: "none" }}>
-      <MDBox p={2}>
-        <MDTypography variant="h6" fontWeight="medium" textTransform="capitalize">
-          platform settings
+    <Card sx={{ mt: 2 }}>
+      <CardContent>
+        <MDTypography variant="h6" gutterBottom>
+          Platform Settings
         </MDTypography>
-      </MDBox>
-      <MDBox pt={1} pb={2} px={2} lineHeight={1.25}>
-        <MDTypography variant="caption" fontWeight="bold" color="text" textTransform="uppercase">
-          account
-        </MDTypography>
-        <MDBox display="flex" alignItems="center" mb={0.5} ml={-1.5}>
-          <MDBox mt={0.5}>
-            <Switch checked={followsMe} onChange={() => setFollowsMe(!followsMe)} />
-          </MDBox>
-          <MDBox width="80%" ml={0.5}>
-            <MDTypography variant="button" fontWeight="regular" color="text">
-              Email me when someone follows me
-            </MDTypography>
-          </MDBox>
-        </MDBox>
-        <MDBox display="flex" alignItems="center" mb={0.5} ml={-1.5}>
-          <MDBox mt={0.5}>
-            <Switch checked={answersPost} onChange={() => setAnswersPost(!answersPost)} />
-          </MDBox>
-          <MDBox width="80%" ml={0.5}>
-            <MDTypography variant="button" fontWeight="regular" color="text">
-              Email me when someone answers on my post
-            </MDTypography>
-          </MDBox>
-        </MDBox>
-        <MDBox display="flex" alignItems="center" mb={0.5} ml={-1.5}>
-          <MDBox mt={0.5}>
-            <Switch checked={mentionsMe} onChange={() => setMentionsMe(!mentionsMe)} />
-          </MDBox>
-          <MDBox width="80%" ml={0.5}>
-            <MDTypography variant="button" fontWeight="regular" color="text">
-              Email me when someone mentions me
-            </MDTypography>
-          </MDBox>
-        </MDBox>
-        <MDBox mt={3}>
-          <MDTypography variant="caption" fontWeight="bold" color="text" textTransform="uppercase">
-            application
-          </MDTypography>
-        </MDBox>
-        <MDBox display="flex" alignItems="center" mb={0.5} ml={-1.5}>
-          <MDBox mt={0.5}>
-            <Switch checked={newLaunches} onChange={() => setNewLaunches(!newLaunches)} />
-          </MDBox>
-          <MDBox width="80%" ml={0.5}>
-            <MDTypography variant="button" fontWeight="regular" color="text">
-              New launches and projects
-            </MDTypography>
-          </MDBox>
-        </MDBox>
-        <MDBox display="flex" alignItems="center" mb={0.5} ml={-1.5}>
-          <MDBox mt={0.5}>
-            <Switch checked={productUpdate} onChange={() => setProductUpdate(!productUpdate)} />
-          </MDBox>
-          <MDBox width="80%" ml={0.5}>
-            <MDTypography variant="button" fontWeight="regular" color="text">
-              Monthly product updates
-            </MDTypography>
-          </MDBox>
-        </MDBox>
-        <MDBox display="flex" alignItems="center" mb={0.5} ml={-1.5}>
-          <MDBox mt={0.5}>
-            <Switch checked={newsletter} onChange={() => setNewsletter(!newsletter)} />
-          </MDBox>
-          <MDBox width="80%" ml={0.5}>
-            <MDTypography variant="button" fontWeight="regular" color="text">
-              Subscribe to newsletter
-            </MDTypography>
-          </MDBox>
-        </MDBox>
-      </MDBox>
+
+        <Grid container spacing={2}>
+          {renderToggles(universalSettings)}
+          {role === "tenant" && renderToggles(tenantSettings)}
+          {role === "collector" && renderToggles(collectorSettings)}
+          {["admin", "market_manager"].includes(role) && renderToggles(adminSettings)}
+        </Grid>
+      </CardContent>
     </Card>
   );
 }
+
+PlatformSettings.propTypes = {
+  profile: PropTypes.object.isRequired,
+  setProfile: PropTypes.func.isRequired,
+};
 
 export default PlatformSettings;

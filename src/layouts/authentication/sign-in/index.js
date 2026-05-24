@@ -1,131 +1,183 @@
-/**
-=========================================================
-* Material Dashboard 2 React - v2.2.0
-=========================================================
+import React, { useState } from "react";
+import {
+  Card,
+  CardContent,
+  TextField,
+  Button,
+  Typography,
+  Box,
+  Alert,
+  Checkbox,
+  FormControlLabel,
+  InputAdornment,
+  IconButton,
+  CircularProgress,
+} from "@mui/material";
+import { Visibility, VisibilityOff } from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import { useAuth } from "context/AuthContext";
+import { debugLog } from "layouts/stalls/utils/debug";
 
-* Product Page: https://www.creative-tim.com/product/material-dashboard-react
-* Copyright 2023 Creative Tim (https://www.creative-tim.com)
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8000/api";
 
-Coded by www.creative-tim.com
+function SignIn() {
+  const [credentials, setCredentials] = useState({ username: "", password: "" });
+  const [rememberMe, setRememberMe] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const { setUserProfile } = useAuth();
 
- =========================================================
+  const handleChange = (e) => {
+    setCredentials((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
+  };
 
-* The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-*/
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setErrorMessage("");
+    setLoading(true);
 
-import { useState } from "react";
+    try {
+      debugLog("[SignIn] Authenticating...");
 
-// react-router-dom components
-import { Link } from "react-router-dom";
+      const authRes = await axios.post(`${API_URL}/auth/login/`, {
+        username: credentials.username,
+        password: credentials.password,
+      });
 
-// @mui material components
-import Card from "@mui/material/Card";
-import Switch from "@mui/material/Switch";
-import Grid from "@mui/material/Grid";
-import MuiLink from "@mui/material/Link";
+      const { access, refresh } = authRes.data;
 
-// @mui icons
-import FacebookIcon from "@mui/icons-material/Facebook";
-import GitHubIcon from "@mui/icons-material/GitHub";
-import GoogleIcon from "@mui/icons-material/Google";
+      const storage = rememberMe ? localStorage : sessionStorage;
+      storage.setItem("access_token", access);
+      storage.setItem("refresh_token", refresh);
 
-// Material Dashboard 2 React components
-import MDBox from "components/MDBox";
-import MDTypography from "components/MDTypography";
-import MDInput from "components/MDInput";
-import MDButton from "components/MDButton";
+      const profileRes = await axios.get(`${API_URL}/users/profile/`, {
+        headers: { Authorization: `Bearer ${access}` },
+      });
 
-// Authentication layout components
-import BasicLayout from "layouts/authentication/components/BasicLayout";
+      setUserProfile(profileRes.data);
+      debugLog("[SignIn] Profile loaded:", profileRes.data);
 
-// Images
-import bgImage from "assets/images/bg-sign-in-basic.jpeg";
-
-function Basic() {
-  const [rememberMe, setRememberMe] = useState(false);
-
-  const handleSetRememberMe = () => setRememberMe(!rememberMe);
+      navigate("/dashboard");
+    } catch (err) {
+      const detail = err.response?.data?.detail || "Login failed. Please try again.";
+      debugLog("[SignIn] Login failed:", err);
+      setErrorMessage(detail);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <BasicLayout image={bgImage}>
-      <Card>
-        <MDBox
-          variant="gradient"
-          bgColor="info"
-          borderRadius="lg"
-          coloredShadow="info"
-          mx={2}
-          mt={-3}
-          p={2}
-          mb={1}
-          textAlign="center"
-        >
-          <MDTypography variant="h4" fontWeight="medium" color="white" mt={1}>
-            Sign in
-          </MDTypography>
-          <Grid container spacing={3} justifyContent="center" sx={{ mt: 1, mb: 2 }}>
-            <Grid item xs={2}>
-              <MDTypography component={MuiLink} href="#" variant="body1" color="white">
-                <FacebookIcon color="inherit" />
-              </MDTypography>
-            </Grid>
-            <Grid item xs={2}>
-              <MDTypography component={MuiLink} href="#" variant="body1" color="white">
-                <GitHubIcon color="inherit" />
-              </MDTypography>
-            </Grid>
-            <Grid item xs={2}>
-              <MDTypography component={MuiLink} href="#" variant="body1" color="white">
-                <GoogleIcon color="inherit" />
-              </MDTypography>
-            </Grid>
-          </Grid>
-        </MDBox>
-        <MDBox pt={4} pb={3} px={3}>
-          <MDBox component="form" role="form">
-            <MDBox mb={2}>
-              <MDInput type="email" label="Email" fullWidth />
-            </MDBox>
-            <MDBox mb={2}>
-              <MDInput type="password" label="Password" fullWidth />
-            </MDBox>
-            <MDBox display="flex" alignItems="center" ml={-1}>
-              <Switch checked={rememberMe} onChange={handleSetRememberMe} />
-              <MDTypography
-                variant="button"
-                fontWeight="regular"
-                color="text"
-                onClick={handleSetRememberMe}
-                sx={{ cursor: "pointer", userSelect: "none", ml: -1 }}
+    <Box
+      display="flex"
+      justifyContent="center"
+      alignItems="center"
+      minHeight="100vh"
+      bgcolor="#f3f6fb"
+    >
+      <Card sx={{ minWidth: 350, p: 3 }}>
+        <CardContent>
+          <Typography variant="h5" gutterBottom>
+            PalengkeProPH Login
+          </Typography>
+          <form onSubmit={handleSubmit}>
+            <TextField
+              name="username"
+              label="Username, Email, or Mobile"
+              placeholder="e.g. juan123 or 0917..."
+              fullWidth
+              margin="normal"
+              value={credentials.username}
+              onChange={handleChange}
+              required
+              autoComplete="username"
+              helperText="Enter your username, email address, or mobile number"
+              disabled={loading}
+            />
+            <TextField
+              name="password"
+              label="Password"
+              type={showPassword ? "text" : "password"}
+              fullWidth
+              margin="normal"
+              value={credentials.password}
+              onChange={handleChange}
+              required
+              autoComplete="current-password"
+              disabled={loading}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      edge="end"
+                      disabled={loading}
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  disabled={loading}
+                />
+              }
+              label="Remember me"
+              sx={{ mt: 1, mb: 1 }}
+            />
+
+            {errorMessage && (
+              <Alert severity="error" sx={{ mt: 2 }}>
+                {errorMessage}
+              </Alert>
+            )}
+
+            <Button
+              type="submit"
+              variant="contained"
+              color="primary"
+              fullWidth
+              sx={{ mt: 2 }}
+              disabled={loading}
+              startIcon={loading && <CircularProgress size={18} />}
+            >
+              {loading ? "Logging in..." : "Login"}
+            </Button>
+
+            <Box display="flex" justifyContent="space-between" mt={2}>
+              <Button
+                variant="text"
+                size="small"
+                onClick={() => navigate("/authentication/forgot-password")}
+                disabled={loading}
               >
-                &nbsp;&nbsp;Remember me
-              </MDTypography>
-            </MDBox>
-            <MDBox mt={4} mb={1}>
-              <MDButton variant="gradient" color="info" fullWidth>
-                sign in
-              </MDButton>
-            </MDBox>
-            <MDBox mt={3} mb={1} textAlign="center">
-              <MDTypography variant="button" color="text">
-                Don&apos;t have an account?{" "}
-                <MDTypography
-                  component={Link}
-                  to="/authentication/sign-up"
-                  variant="button"
-                  color="info"
-                  fontWeight="medium"
-                  textGradient
-                >
-                  Sign up
-                </MDTypography>
-              </MDTypography>
-            </MDBox>
-          </MDBox>
-        </MDBox>
+                Forgot password?
+              </Button>
+              <Button
+                variant="text"
+                size="small"
+                onClick={() => navigate("/authentication/sign-up")}
+                disabled={loading}
+              >
+                Sign up
+              </Button>
+            </Box>
+          </form>
+        </CardContent>
       </Card>
-    </BasicLayout>
+    </Box>
   );
 }
 
-export default Basic;
+export default SignIn;

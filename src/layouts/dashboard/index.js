@@ -12,152 +12,236 @@ Coded by www.creative-tim.com
 
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 */
-
-// @mui material components
+import React, { useState, useEffect } from "react";
+import { Navigate, useNavigate } from "react-router-dom";
+import CircularProgress from "@mui/material/CircularProgress";
+import Alert from "@mui/material/Alert";
 import Grid from "@mui/material/Grid";
-
-// Material Dashboard 2 React components
-import MDBox from "components/MDBox";
-
-// Material Dashboard 2 React example components
+import Icon from "@mui/material/Icon";
+import Button from "@mui/material/Button";
+import ComplexStatisticsCard from "examples/Cards/StatisticsCards/ComplexStatisticsCard";
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
-import Footer from "examples/Footer";
-import ReportsBarChart from "examples/Charts/BarCharts/ReportsBarChart";
-import ReportsLineChart from "examples/Charts/LineCharts/ReportsLineChart";
-import ComplexStatisticsCard from "examples/Cards/StatisticsCards/ComplexStatisticsCard";
 
-// Data
-import reportsBarChartData from "layouts/dashboard/data/reportsBarChartData";
-import reportsLineChartData from "layouts/dashboard/data/reportsLineChartData";
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8000/api";
 
-// Dashboard components
-import Projects from "layouts/dashboard/components/Projects";
-import OrdersOverview from "layouts/dashboard/components/OrdersOverview";
+// JWT helper for role
+function getRoleFromToken() {
+  const token = localStorage.getItem("access_token") || sessionStorage.getItem("access_token");
+  if (!token) return "guest";
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    return payload.role || "guest";
+  } catch (e) {
+    return "guest";
+  }
+}
 
-function Dashboard() {
-  const { sales, tasks } = reportsLineChartData;
+export default function Dashboard() {
+  const navigate = useNavigate();
+  const [stats, setStats] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [refresh, setRefresh] = useState(false);
 
+  // 1. Auth check BEFORE anything else
+  const token = localStorage.getItem("access_token") || sessionStorage.getItem("access_token");
+  if (!token) {
+    return <Navigate to="/authentication/sign-in" replace />;
+  }
+  const role = getRoleFromToken();
+
+  // 2. Data fetch
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+
+    fetch(`${API_URL}/dashboard/summary/`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => {
+        if (res.status === 401 || res.status === 403) {
+          localStorage.removeItem("access_token");
+          sessionStorage.removeItem("access_token");
+          // On next render, token will be missing and <Navigate /> will trigger
+          window.location.reload();
+          return;
+        }
+        if (!res.ok) throw new Error("Could not load dashboard data.");
+        return res.json();
+      })
+      .then((data) => {
+        setStats(data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        setError(err.message || "Could not load dashboard data.");
+        setLoading(false);
+      });
+    // eslint-disable-next-line
+  }, [refresh]);
+
+  const handleRefresh = () => setRefresh((r) => !r);
+
+  // 3. Normal role-based dashboard UI
   return (
     <DashboardLayout>
       <DashboardNavbar />
-      <MDBox py={3}>
+      <Grid container justifyContent="flex-end" sx={{ mb: 2 }}>
+        <Grid item>
+          <Button onClick={handleRefresh} variant="outlined" startIcon={<Icon>refresh</Icon>}>
+            Refresh
+          </Button>
+        </Grid>
+      </Grid>
+      {loading ? (
+        <Grid container justifyContent="center" alignItems="center" style={{ minHeight: 200 }}>
+          <CircularProgress />
+        </Grid>
+      ) : error ? (
+        <Alert severity="error">{error}</Alert>
+      ) : (
         <Grid container spacing={3}>
-          <Grid item xs={12} md={6} lg={3}>
-            <MDBox mb={1.5}>
-              <ComplexStatisticsCard
-                color="dark"
-                icon="weekend"
-                title="Bookings"
-                count={281}
-                percentage={{
-                  color: "success",
-                  amount: "+55%",
-                  label: "than lask week",
-                }}
-              />
-            </MDBox>
-          </Grid>
-          <Grid item xs={12} md={6} lg={3}>
-            <MDBox mb={1.5}>
-              <ComplexStatisticsCard
-                icon="leaderboard"
-                title="Today's Users"
-                count="2,300"
-                percentage={{
-                  color: "success",
-                  amount: "+3%",
-                  label: "than last month",
-                }}
-              />
-            </MDBox>
-          </Grid>
-          <Grid item xs={12} md={6} lg={3}>
-            <MDBox mb={1.5}>
-              <ComplexStatisticsCard
-                color="success"
-                icon="store"
-                title="Revenue"
-                count="34k"
-                percentage={{
-                  color: "success",
-                  amount: "+1%",
-                  label: "than yesterday",
-                }}
-              />
-            </MDBox>
-          </Grid>
-          <Grid item xs={12} md={6} lg={3}>
-            <MDBox mb={1.5}>
+          {/* Admin/Market Manager */}
+          {(role === "admin" || role === "market_manager") && (
+            <>
+              <Grid item xs={12} sm={6} md={3}>
+                <ComplexStatisticsCard
+                  color="info"
+                  icon={<Icon fontSize="large">groups</Icon>}
+                  title="Total Tenants"
+                  count={stats.total_tenants ?? 0}
+                  percentage={{ color: "success", amount: "", label: "" }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <ComplexStatisticsCard
+                  color="success"
+                  icon={<Icon fontSize="large">storefront</Icon>}
+                  title="Total Stalls"
+                  count={stats.total_stalls ?? 0}
+                  percentage={{ color: "success", amount: "", label: "" }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <ComplexStatisticsCard
+                  color="warning"
+                  icon={<Icon fontSize="large">assignment</Icon>}
+                  title="Active Leases"
+                  count={stats.active_leases ?? 0}
+                  percentage={{ color: "success", amount: "", label: "" }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <ComplexStatisticsCard
+                  color="primary"
+                  icon={<Icon fontSize="large">payments</Icon>}
+                  title="Total Payments"
+                  count={`₱${stats.total_payments?.toLocaleString() ?? "0"}`}
+                  percentage={{ color: "success", amount: "", label: "" }}
+                />
+              </Grid>
+            </>
+          )}
+
+          {/* Collector */}
+          {role === "collector" && (
+            <Grid item xs={12} sm={6} md={4}>
               <ComplexStatisticsCard
                 color="primary"
-                icon="person_add"
-                title="Followers"
-                count="+91"
+                icon={<Icon fontSize="large">payments</Icon>}
+                title="Today's Collections"
+                count={`₱${stats.todays_collections?.toLocaleString() ?? "0"}`}
+                percentage={{ color: "success", amount: "", label: "" }}
+              />
+            </Grid>
+          )}
+
+          {/* Tenant */}
+          {role === "tenant" && (
+            <>
+              <Grid item xs={12} sm={6} md={4}>
+                <ComplexStatisticsCard
+                  color="info"
+                  icon={<Icon fontSize="large">storefront</Icon>}
+                  title="My Stalls"
+                  count={stats.my_stalls ?? 0}
+                  percentage={{ color: "success", amount: "", label: "" }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6} md={4}>
+                <ComplexStatisticsCard
+                  color="success"
+                  icon={<Icon fontSize="large">assignment</Icon>}
+                  title="My Leases"
+                  count={stats.my_leases ?? 0}
+                  percentage={{ color: "success", amount: "", label: "" }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6} md={4}>
+                <ComplexStatisticsCard
+                  color="primary"
+                  icon={<Icon fontSize="large">payments</Icon>}
+                  title="My Payments"
+                  count={`₱${stats.my_payments?.toLocaleString() ?? "0"}`}
+                  percentage={{ color: "success", amount: "", label: "" }}
+                />
+              </Grid>
+            </>
+          )}
+
+          {/* Guest */}
+          {role === "guest" && (
+            <Grid item xs={12} md={6}>
+              <ComplexStatisticsCard
+                color="info"
+                icon={<Icon fontSize="large">person</Icon>}
+                title="Welcome, Guest!"
+                count=""
                 percentage={{
-                  color: "success",
+                  color: "info",
                   amount: "",
-                  label: "Just updated",
+                  label: "Please sign up or log in to access your dashboard.",
                 }}
               />
-            </MDBox>
-          </Grid>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={() => navigate("/authentication/sign-up")}
+                sx={{ mt: 2 }}
+              >
+                Register Now
+              </Button>
+              <Button
+                variant="outlined"
+                color="primary"
+                onClick={() => navigate("/authentication/sign-in")}
+                sx={{ mt: 2, ml: 2 }}
+              >
+                Sign In
+              </Button>
+            </Grid>
+          )}
+
+          {/* Default for unknown roles */}
+          {!role ||
+            (!["admin", "market_manager", "collector", "tenant", "guest"].includes(role) && (
+              <Grid item xs={12}>
+                <ComplexStatisticsCard
+                  color="warning"
+                  icon={<Icon fontSize="large">error</Icon>}
+                  title="Unknown Role"
+                  count=""
+                  percentage={{
+                    color: "warning",
+                    amount: "",
+                    label: "Please contact admin for access.",
+                  }}
+                />
+              </Grid>
+            ))}
         </Grid>
-        <MDBox mt={4.5}>
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={6} lg={4}>
-              <MDBox mb={3}>
-                <ReportsBarChart
-                  color="info"
-                  title="website views"
-                  description="Last Campaign Performance"
-                  date="campaign sent 2 days ago"
-                  chart={reportsBarChartData}
-                />
-              </MDBox>
-            </Grid>
-            <Grid item xs={12} md={6} lg={4}>
-              <MDBox mb={3}>
-                <ReportsLineChart
-                  color="success"
-                  title="daily sales"
-                  description={
-                    <>
-                      (<strong>+15%</strong>) increase in today sales.
-                    </>
-                  }
-                  date="updated 4 min ago"
-                  chart={sales}
-                />
-              </MDBox>
-            </Grid>
-            <Grid item xs={12} md={6} lg={4}>
-              <MDBox mb={3}>
-                <ReportsLineChart
-                  color="dark"
-                  title="completed tasks"
-                  description="Last Campaign Performance"
-                  date="just updated"
-                  chart={tasks}
-                />
-              </MDBox>
-            </Grid>
-          </Grid>
-        </MDBox>
-        <MDBox>
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={6} lg={8}>
-              <Projects />
-            </Grid>
-            <Grid item xs={12} md={6} lg={4}>
-              <OrdersOverview />
-            </Grid>
-          </Grid>
-        </MDBox>
-      </MDBox>
-      <Footer />
+      )}
     </DashboardLayout>
   );
 }
-
-export default Dashboard;

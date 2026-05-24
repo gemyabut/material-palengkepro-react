@@ -181,15 +181,17 @@ function Sidenav({ color, brand, brandName, routes, ...rest }) {
       <List>{renderRoutes}</List>
       <MDBox p={2} mt="auto">
         <MDButton
-          component="a"
-          href="https://www.creative-tim.com/product/material-dashboard-pro-react"
-          target="_blank"
-          rel="noreferrer"
           variant="gradient"
-          color={sidenavColor}
+          color="warning"
           fullWidth
+          startIcon={<Icon>logout</Icon>}
+          onClick={() => {
+            localStorage.removeItem("access_token");
+            sessionStorage.removeItem("access_token");
+            window.location.href = "/authentication/sign-in";
+          }}
         >
-          upgrade to pro
+          Logout
         </MDButton>
       </MDBox>
     </SidenavRoot>

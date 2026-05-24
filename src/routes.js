@@ -37,6 +37,9 @@ Coded by www.creative-tim.com
 
 // Material Dashboard 2 React layouts
 import Dashboard from "layouts/dashboard";
+import Leases from "layouts/leases";
+import Stalls from "layouts/stalls";
+import Tenants from "layouts/tenants";
 import Tables from "layouts/tables";
 import Billing from "layouts/billing";
 import RTL from "layouts/rtl";
@@ -44,6 +47,8 @@ import Notifications from "layouts/notifications";
 import Profile from "layouts/profile";
 import SignIn from "layouts/authentication/sign-in";
 import SignUp from "layouts/authentication/sign-up";
+import ForgotPassword from "layouts/authentication/forgot-password";
+import PasswordResetConfirm from "layouts/authentication/password-reset-confirm";
 
 // @mui icons
 import Icon from "@mui/material/Icon";
@@ -56,6 +61,30 @@ const routes = [
     icon: <Icon fontSize="small">dashboard</Icon>,
     route: "/dashboard",
     component: <Dashboard />,
+  },
+  {
+    type: "collapse",
+    name: "Stalls",
+    key: "Stalls",
+    icon: <Icon fontSize="small">storefront</Icon>,
+    route: "/Stalls",
+    component: <Stalls />,
+  },
+  {
+    type: "collapse",
+    name: "Leases",
+    key: "Leases",
+    icon: <Icon fontSize="small">storefront</Icon>,
+    route: "/Leases",
+    component: <Leases />,
+  },
+  {
+    type: "collapse",
+    name: "Tenants",
+    key: "Tenants",
+    icon: <Icon fontSize="small">Person</Icon>,
+    route: "/tenants",
+    component: <Tenants />,
   },
   {
     type: "collapse",
@@ -112,6 +141,20 @@ const routes = [
     icon: <Icon fontSize="small">assignment</Icon>,
     route: "/authentication/sign-up",
     component: <SignUp />,
+  },
+  {
+    type: "route",
+    name: "Forgot Password",
+    key: "forgot-password",
+    route: "/authentication/forgot-password",
+    component: <ForgotPassword />,
+  },
+  {
+    type: "route",
+    name: "Password Reset Confirm",
+    key: "password-reset-confirm",
+    route: "/authentication/password-reset-confirm/:uidb64/:token",
+    component: <PasswordResetConfirm />,
   },
 ];
 

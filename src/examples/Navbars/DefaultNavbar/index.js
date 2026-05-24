@@ -1,44 +1,19 @@
-/**
-=========================================================
-* Material Dashboard 2 React - v2.2.0
-=========================================================
-
-* Product Page: https://www.creative-tim.com/product/material-dashboard-react
-* Copyright 2023 Creative Tim (https://www.creative-tim.com)
-
-Coded by www.creative-tim.com
-
- =========================================================
-
-* The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-*/
-
+// src/examples/Navbars/DefaultNavbar/DefaultNavbar.js
 import { useState, useEffect } from "react";
-
-// react-router components
 import { Link } from "react-router-dom";
-
-// prop-types is a library for typechecking of props.
 import PropTypes from "prop-types";
-
-// @mui material components
 import Container from "@mui/material/Container";
 import Icon from "@mui/material/Icon";
-
-// Material Dashboard 2 React components
+import Avatar from "@mui/material/Avatar";
+import Typography from "@mui/material/Typography";
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 import MDButton from "components/MDButton";
-
-// Material Dashboard 2 React example components
 import DefaultNavbarLink from "examples/Navbars/DefaultNavbar/DefaultNavbarLink";
 import DefaultNavbarMobile from "examples/Navbars/DefaultNavbar/DefaultNavbarMobile";
-
-// Material Dashboard 2 React base styles
 import breakpoints from "assets/theme/base/breakpoints";
-
-// Material Dashboard 2 React context
 import { useMaterialUIController } from "context";
+import { useAuth } from "context/AuthContext"; // <-- Add this
 
 function DefaultNavbar({ transparent, light, action }) {
   const [controller] = useMaterialUIController();
@@ -47,11 +22,13 @@ function DefaultNavbar({ transparent, light, action }) {
   const [mobileNavbar, setMobileNavbar] = useState(false);
   const [mobileView, setMobileView] = useState(false);
 
+  // Grab user profile from context
+  const { userProfile } = useAuth(); // <-- Add this
+
   const openMobileNavbar = ({ currentTarget }) => setMobileNavbar(currentTarget.parentNode);
   const closeMobileNavbar = () => setMobileNavbar(false);
 
   useEffect(() => {
-    // A function that sets the display state for the DefaultNavbarMobile.
     function displayMobileNavbar() {
       if (window.innerWidth < breakpoints.values.lg) {
         setMobileView(true);
@@ -61,17 +38,8 @@ function DefaultNavbar({ transparent, light, action }) {
         setMobileNavbar(false);
       }
     }
-
-    /** 
-     The event listener that's calling the displayMobileNavbar function when 
-     resizing the window.
-    */
     window.addEventListener("resize", displayMobileNavbar);
-
-    // Call the displayMobileNavbar function to set the state with the initial value.
     displayMobileNavbar();
-
-    // Remove event listener on cleanup
     return () => window.removeEventListener("resize", displayMobileNavbar);
   }, []);
 
@@ -110,10 +78,11 @@ function DefaultNavbar({ transparent, light, action }) {
           pl={{ xs: 0, lg: 1 }}
         >
           <MDTypography variant="button" fontWeight="bold" color={light ? "white" : "dark"}>
-            Material Dashboard 2
+            PalengkeProPH
           </MDTypography>
         </MDBox>
-        <MDBox color="inherit" display={{ xs: "none", lg: "flex" }} m={0} p={0}>
+
+        <MDBox color="inherit" display={{ xs: "none", lg: "flex" }} m={0} p={0} alignItems="center">
           <DefaultNavbarLink icon="donut_large" name="dashboard" route="/dashboard" light={light} />
           <DefaultNavbarLink icon="person" name="profile" route="/profile" light={light} />
           <DefaultNavbarLink
@@ -128,36 +97,45 @@ function DefaultNavbar({ transparent, light, action }) {
             route="/authentication/sign-in"
             light={light}
           />
-        </MDBox>
-        {action &&
-          (action.type === "internal" ? (
-            <MDBox display={{ xs: "none", lg: "inline-block" }}>
-              <MDButton
+
+          {/* --- USER PROFILE BLOCK (if logged in) --- */}
+          {userProfile && (
+            <MDBox display="flex" alignItems="center" gap={1.5} sx={{ ml: 3 }}>
+              <Avatar
+                src={userProfile.profile_photo || ""}
+                alt={userProfile.display_name || userProfile.username || "User"}
+                sx={{ width: 36, height: 36, bgcolor: "primary.main" }}
                 component={Link}
-                to={action.route}
-                variant="gradient"
-                color={action.color ? action.color : "info"}
-                size="small"
+                to="/profile"
               >
-                {action.label}
-              </MDButton>
+                {(userProfile.display_name || userProfile.username || "U")
+                  .split(" ")
+                  .map((w) => w[0])
+                  .join("")
+                  .slice(0, 2)
+                  .toUpperCase()}
+              </Avatar>
+              <MDBox>
+                <Typography
+                  variant="subtitle2"
+                  fontWeight="bold"
+                  color={light ? "white" : "dark"}
+                  sx={{ lineHeight: 1 }}
+                >
+                  {userProfile.display_name || userProfile.username || "User"}
+                </Typography>
+                <Typography
+                  variant="caption"
+                  color={light ? "white" : "text.secondary"}
+                  sx={{ lineHeight: 1 }}
+                >
+                  {userProfile.role?.replace(/_/g, " ") || ""}
+                </Typography>
+              </MDBox>
             </MDBox>
-          ) : (
-            <MDBox display={{ xs: "none", lg: "inline-block" }}>
-              <MDButton
-                component="a"
-                href={action.route}
-                target="_blank"
-                rel="noreferrer"
-                variant="gradient"
-                color={action.color ? action.color : "info"}
-                size="small"
-                sx={{ mt: -0.3 }}
-              >
-                {action.label}
-              </MDButton>
-            </MDBox>
-          ))}
+          )}
+          {/* --- END USER PROFILE BLOCK --- */}
+        </MDBox>
         <MDBox
           display={{ xs: "inline-block", lg: "none" }}
           lineHeight={0}
