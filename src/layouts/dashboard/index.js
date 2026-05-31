@@ -49,14 +49,15 @@ export default function Dashboard() {
   if (!token) {
     return <Navigate to="/authentication/sign-in" replace />;
   }
-  const role = getRoleFromToken();
+  const rawRole = getRoleFromToken();
+  const role = rawRole === "executive" ? "admin" : rawRole;
 
   // 2. Data fetch
   useEffect(() => {
     setLoading(true);
     setError(null);
 
-    fetch(`${API_URL}/dashboard/summary/`, {
+    fetch(`${API_URL}/dashboard/admin-market/`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => {
@@ -110,7 +111,7 @@ export default function Dashboard() {
                   color="info"
                   icon={<Icon fontSize="large">groups</Icon>}
                   title="Total Tenants"
-                  count={stats.total_tenants ?? 0}
+                  count={stats.kpis?.occupancy?.total_tenants ?? 0}
                   percentage={{ color: "success", amount: "", label: "" }}
                 />
               </Grid>
@@ -119,7 +120,7 @@ export default function Dashboard() {
                   color="success"
                   icon={<Icon fontSize="large">storefront</Icon>}
                   title="Total Stalls"
-                  count={stats.total_stalls ?? 0}
+                  count={stats.kpis?.occupancy?.total_stalls ?? 0}
                   percentage={{ color: "success", amount: "", label: "" }}
                 />
               </Grid>
@@ -128,7 +129,7 @@ export default function Dashboard() {
                   color="warning"
                   icon={<Icon fontSize="large">assignment</Icon>}
                   title="Active Leases"
-                  count={stats.active_leases ?? 0}
+                  count={stats.kpis?.occupancy?.active_leases ?? 0}
                   percentage={{ color: "success", amount: "", label: "" }}
                 />
               </Grid>
@@ -137,7 +138,7 @@ export default function Dashboard() {
                   color="primary"
                   icon={<Icon fontSize="large">payments</Icon>}
                   title="Total Payments"
-                  count={`₱${stats.total_payments?.toLocaleString() ?? "0"}`}
+                  count={`₱${Number(stats.kpis?.collections?.total_payments ?? 0).toLocaleString()}`}
                   percentage={{ color: "success", amount: "", label: "" }}
                 />
               </Grid>

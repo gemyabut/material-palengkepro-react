@@ -41,46 +41,54 @@ export function useLeases({ filter = {}, page = 1, limit = 10, autoLoad = true, 
       setError(undefined);
 
       try {
-        debugLog(
-          "[useLeases] Loading leases",
-          opt.filter || currentFilter,
-          "page",
-          opt.page || currentPage
-        );
-        let data = [];
-        // You can customize which API method to call based on filter/status
-        if (opt.filter?.status === "ACTIVE") data = await fetchActiveLeases();
-        else if (opt.filter?.status === "INACTIVE") data = await fetchInactiveLeases();
-        else if (opt.filter?.status === "EXPIRED") data = await fetchExpiredLeases();
-        else if (opt.filter?.tenant) data = await fetchLeasesByTenant(opt.filter.tenant);
-        else if (opt.filter?.stall) data = await fetchLeasesByStall(opt.filter.stall);
-        else data = await getLeases();
-
-        // Apply client-side filters (for extra search terms, etc.)
-        let filtered = data;
-        Object.entries(opt.filter || currentFilter || {}).forEach(([k, v]) => {
-          if (v && !["status", "tenant", "stall"].includes(k)) {
-            filtered = filtered.filter((l) =>
-              String(l[k] || "")
-                .toLowerCase()
-                .includes(String(v).toLowerCase())
-            );
-          }
-        });
-
-        setTotal(filtered.length);
-
-        // Pagination
         const pageNum = opt.page || currentPage || 1;
         const perPage = opt.limit || limit;
-        const start = (pageNum - 1) * perPage;
-        const paginated = filtered.slice(start, start + perPage);
+        const f = opt.filter || currentFilter || {};
 
-        setLeases(paginated);
-        setSummary(summarizeLeases(filtered));
+        // Build server params (DRF DjangoFilterBackend + SearchFilter)
+        const params = { page: pageNum, page_size: perPage };
+        if (f.status) params.status = f.status;
+        if (f.tenant) params.tenant = f.tenant;
+        if (f.stall) params.stall = f.stall;
+        if (f.lease_type) params.lease_type = f.lease_type;
+        if (f.payment_status) params.payment_status = f.payment_status;
+        // Map UI "full_name" search to DRF SearchFilter ?search=
+        if (f.full_name) params.search = f.full_name;
+        else if (f.search) params.search = f.search;
+
+        debugLog("[useLeases] Loading leases", params);
+        const response = await getLeases(params);
+
+        // DRF paginated { count, next, previous, results } or plain array
+        const results = Array.isArray(response)
+          ? response
+          : Array.isArray(response?.results) ? response.results : [];
+        const totalCount = Array.isArray(response)
+          ? response.length
+          : (response?.count ?? results.length);
+
+        setLeases(results);
+        setTotal(totalCount);
         setCurrentPage(pageNum);
 
-        if (onLoaded) onLoaded(paginated, filtered);
+        // Summary: server-side per-status counts (independent of current filter/search),
+        // so the dashboard widget shows true totals across all leases.
+        try {
+          const STATUSES = ["ACTIVE", "PENDING", "EXPIRED", "TERMINATED"];
+          const summaryResponses = await Promise.all(
+            STATUSES.map((s) => getLeases({ status: s, page: 1, page_size: 1 }))
+          );
+          const summaryObj = {};
+          STATUSES.forEach((s, i) => {
+            summaryObj[s.toLowerCase()] = summaryResponses[i]?.count ?? 0;
+          });
+          setSummary(summaryObj);
+        } catch (summaryErr) {
+          debugLog("[useLeases] Error loading summary counts", summaryErr);
+          setSummary({});
+        }
+
+        if (onLoaded) onLoaded(results, results);
       } catch (e) {
         debugLog("[useLeases] Error loading leases", e);
         setError(e);

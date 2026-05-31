@@ -10,11 +10,9 @@ export const LEASE_STATUS_CHOICES = [
 ];
 
 export const LEASE_TYPE_CHOICES = [
-  { value: "new", label: "New" },
-  { value: "renewal", label: "Renewal" },
-  { value: "extension", label: "Extension" },
-  { value: "short_term", label: "Short-Term" },
-  { value: "temporary", label: "Temporary" },
+  { value: "stall_lease", label: "Stall Lease" },
+  { value: "sunday_tiangge", label: "Sunday Tiangge" },
+  { value: "night_food_market", label: "Night Food Market" },
 ];
 
 export const PAYMENT_STATUS_CHOICES = [

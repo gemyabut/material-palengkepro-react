@@ -78,6 +78,14 @@ function LeasesPage() {
     limit: DEFAULT_LIMIT,
   });
 
+  // Lease summary widget logic (must run before any early return to satisfy rules-of-hooks)
+  const leaseSummaryData = useMemo(() => {
+    return LEASE_STATUS_CHOICES.map(({ value, label }) => ({
+      label,
+      value: summary[value?.toLowerCase()] || 0,
+    }));
+  }, [summary]);
+
   // Show spinner until profile is ready (from context)
   if (profileLoading || !userProfile || !userProfile.role) {
     debugLog("[LeasesPage] Waiting for userProfile...");
@@ -137,14 +145,6 @@ function LeasesPage() {
     onView: handleView,
     onDeactivate: handleDeactivate,
   };
-
-  // Lease summary widget logic (status counts etc)
-  const leaseSummaryData = useMemo(() => {
-    return LEASE_STATUS_CHOICES.map(({ value, label }) => ({
-      label,
-      value: summary[value?.toLowerCase()] || 0,
-    }));
-  }, [summary]);
 
   // Map leases to include label fields
   const leasesWithLabels = leases.map((lease) => ({

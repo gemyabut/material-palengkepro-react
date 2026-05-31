@@ -35,6 +35,7 @@ export default function Tenants() {
       case "admin_staff":
       case "market_manager":
       case "finance_head":
+      case "executive":
         return <MasterTenantList showSnackbar={showSnackbar} page={page} setPage={setPage} />;
       case "leasing_officer":
         return <OfficerTenantList showSnackbar={showSnackbar} page={page} setPage={setPage} />;

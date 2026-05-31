@@ -45,7 +45,7 @@ function SignIn() {
     try {
       debugLog("[SignIn] Authenticating...");
 
-      const authRes = await axios.post(`${API_URL}/auth/login/`, {
+      const authRes = await axios.post(`${API_URL}/auth/jwt/create/`, {
         username: credentials.username,
         password: credentials.password,
       });

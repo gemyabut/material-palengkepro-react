@@ -1,6 +1,6 @@
 import { debugLog } from "../../stalls/utils/debug";
 
-const ADMIN_ROLES = ["admin_staff", "market_manager", "leasing_officer", "finance_head"];
+const ADMIN_ROLES = ["admin_staff", "market_manager", "leasing_officer", "finance_head", "executive"];
 const COLLECTOR_ROLES = ["collector"];
 const TENANT_ROLES = ["tenant"];
 const GUEST_ROLES = ["guest"];

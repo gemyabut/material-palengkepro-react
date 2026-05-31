@@ -81,7 +81,7 @@ const LeaseTable = ({
   return (
     <TableContainer component={Paper} sx={{ minWidth: 900, my: 1 }}>
       <Table size="small">
-        <TableHead>
+        <TableHead sx={{ display: "table-header-group" }}>
           <TableRow>
             <TableCell>ID</TableCell>
             <TableCell>Tenant</TableCell>
