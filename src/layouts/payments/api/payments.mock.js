@@ -1,8 +1,8 @@
-import { samplePayments } from '../layouts/leases/data/samplePayments';
-import { sampleLeases } from '../layouts/leases/data/sampleLeases';
-import { sampleTenants } from '../layouts/leases/data/sampleTenants';
-import { sampleStalls } from '../layouts/leases/data/sampleStalls';
-import { sampleUsers } from '../layouts/leases/data/sampleUsers';
+import { samplePayments } from '../../leases/data/samplePayments';
+import { sampleLeases } from '../../leases/data/sampleLeases';
+import { sampleTenants } from '../../leases/data/sampleTenants';
+import { sampleStalls } from '../../leases/data/sampleStalls';
+import { sampleUsers } from '../../leases/data/sampleUsers';
 
 const clone = obj => JSON.parse(JSON.stringify(obj));
 let payments = clone(samplePayments);
