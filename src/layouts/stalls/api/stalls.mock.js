@@ -45,7 +45,7 @@ export const fetchStalls = (params = {}) =>
         filtered = filtered.filter(
           (s) =>
             (s.stall_number && s.stall_number.toLowerCase().includes(query)) ||
-            (s.location && s.location.toLowerCase().includes(query))
+            (s.zone && s.zone.toLowerCase().includes(query))
         );
         debugLog("[stalls.mock.js] filtering by search", params.search, filtered.length, "results");
       }
@@ -152,8 +152,8 @@ export const exportCsv = () =>
   new Promise((resolve) =>
     setTimeout(() => {
       const csv =
-        "id,stall_number,location,status\n" +
-        stalls.map((s) => `${s.id},"${s.stall_number}","${s.location}","${s.status}"`).join("\n");
+        "id,stall_number,zone,status\n" +
+        stalls.map((s) => `${s.id},"${s.stall_number}","${s.zone}","${s.status}"`).join("\n");
       resolve(csv);
     }, 400)
   );
