@@ -13,7 +13,7 @@ import {
 import {
   LEASE_STATUS_CHOICES,
   LEASE_TYPE_CHOICES,
-  PAYMENT_TERMS_CHOICES,
+  PAYMENT_SCHEDULE_CHOICES,
 } from "../../data/choices";
 import { debugLog } from "../../../stalls/utils/debug";
 import PropTypes from "prop-types";
@@ -96,13 +96,13 @@ function AdminEditLease({ open, lease, onClose, onSuccess }) {
           />
           <TextField
             select
-            name="payment_terms"
-            label="Payment Terms"
-            value={values.payment_terms || ""}
+            name="payment_schedule"
+            label="Payment Schedule"
+            value={values.payment_schedule || ""}
             onChange={handleChange}
             required
           >
-            {PAYMENT_TERMS_CHOICES.map((opt) => (
+            {PAYMENT_SCHEDULE_CHOICES.map((opt) => (
               <MenuItem key={opt.value} value={opt.value}>
                 {opt.label}
               </MenuItem>

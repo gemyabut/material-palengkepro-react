@@ -23,11 +23,13 @@ export const PAYMENT_STATUS_CHOICES = [
   { value: "none", label: "Unpaid" },
 ];
 
-export const PAYMENT_TERMS_CHOICES = [
-  { value: "monthly", label: "Monthly" },
-  { value: "quarterly", label: "Quarterly" },
-  { value: "annually", label: "Annually" },
-  { value: "one_time", label: "One-Time" },
+export const PAYMENT_SCHEDULE_CHOICES = [
+  { value: "DAILY", label: "Daily" },
+  { value: "WEEKLY", label: "Weekly" },
+  { value: "MONTHLY", label: "Monthly" },
+  { value: "QUARTERLY", label: "Quarterly" },
+  { value: "YEARLY", label: "Yearly" },
+  { value: "SPECIAL", label: "Special (Sunday/Night Market)" },
 ];
 
 export const SORT_CHOICES = [

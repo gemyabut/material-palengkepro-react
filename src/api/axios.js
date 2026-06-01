@@ -23,7 +23,7 @@ const getRefreshToken = () =>
 // Utility to decode and check expiration
 const isTokenExpired = (token) => {
   try {
-    const { exp } = jwt_decode(token);
+    const { exp } = jwtDecode(token);
     return Date.now() >= exp * 1000;
   } catch (e) {
     return true;

@@ -21,7 +21,7 @@ const getLabel = (choices, value) => choices.find((opt) => opt.value === value)?
 
 const initialForm = {
   stall_number: "",
-  location: "",
+  zone: "",
   size_sqm: "",
   current_rate: "",
   status: "AVAILABLE",
@@ -46,7 +46,7 @@ export default function AddStallForm({ open, onClose, onSuccess }) {
     setLoading(true);
     debugLog("[AddStallForm] Submitting:", form);
     try {
-      if (!form.stall_number || !form.location || !form.size_sqm || !form.current_rate) {
+      if (!form.stall_number || !form.zone || !form.size_sqm || !form.current_rate) {
         setSnackbar({ open: true, message: "Please fill all required fields.", severity: "error" });
         setLoading(false);
         return;
@@ -87,9 +87,9 @@ export default function AddStallForm({ open, onClose, onSuccess }) {
               </Grid>
               <Grid item xs={12} sm={6}>
                 <TextField
-                  label="Location"
-                  name="location"
-                  value={form.location}
+                  label="Zone / Aisle / Row"
+                  name="zone"
+                  value={form.zone}
                   onChange={handleChange}
                   required
                   fullWidth

@@ -20,7 +20,7 @@ export default function EditStallForm({ stall, onClose, onSuccess }) {
 
   const [form, setForm] = useState({
     stall_number: "",
-    location: "",
+    zone: "",
     size_sqm: "",
     current_rate: "",
     status: "AVAILABLE",
@@ -59,7 +59,7 @@ export default function EditStallForm({ stall, onClose, onSuccess }) {
     debugLog("[EditStallForm] Submitting update:", form);
     try {
       // Simple validation
-      if (!form.stall_number || !form.location || !form.size_sqm || !form.current_rate) {
+      if (!form.stall_number || !form.zone || !form.size_sqm || !form.current_rate) {
         setSnackbar({ open: true, message: "Please fill all required fields.", severity: "error" });
         setLoading(false);
         return;
@@ -96,9 +96,9 @@ export default function EditStallForm({ stall, onClose, onSuccess }) {
             </Grid>
             <Grid item xs={12} sm={6}>
               <TextField
-                label="Location"
-                name="location"
-                value={form.location || ""}
+                label="Zone / Aisle / Row"
+                name="zone"
+                value={form.zone || ""}
                 onChange={handleChange}
                 required
                 fullWidth

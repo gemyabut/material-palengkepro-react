@@ -10,9 +10,6 @@ import MDBox from "components/MDBox";
 
 import Header from "./components/Header";
 import EditableFields from "./components/EditableFields";
-import ContactInfo from "./components/ContactInfo";
-import AddressFields from "./components/AddressFields";
-import GovernmentIDUpload from "./components/GovernmentIDUpload";
 import SaveButton from "./components/SaveButton";
 import ChangePassword from "./components/ChangePassword";
 import PlatformSettings from "./components/PlatformSettings";
@@ -75,9 +72,6 @@ export default function Profile() {
 
           <Grid item xs={12} md={6}>
             <EditableFields profile={profile} setProfile={setUserProfile} />
-            <ContactInfo profile={profile} setProfile={setUserProfile} />
-            <AddressFields profile={profile} setProfile={setUserProfile} />
-            <GovernmentIDUpload profile={profile} setProfile={setUserProfile} />
 
             {/* Tenant-specific fields */}
             {isTenant && <TenantDetails profile={profile} setProfile={setUserProfile} />}

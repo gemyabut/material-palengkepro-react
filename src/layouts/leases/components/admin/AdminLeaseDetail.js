@@ -12,7 +12,7 @@ import {
 import {
   LEASE_TYPE_CHOICES,
   LEASE_STATUS_CHOICES,
-  PAYMENT_TERMS_CHOICES,
+  PAYMENT_SCHEDULE_CHOICES,
 } from "../../data/choices";
 import { debugLog } from "../../../stalls/utils/debug";
 import PropTypes from "prop-types";
@@ -60,8 +60,8 @@ function AdminLeaseDetail({ open, lease, onClose }) {
             <Typography>{lease.end_date}</Typography>
           </Grid>
           <Grid item xs={6}>
-            <Typography variant="subtitle2">Payment Terms</Typography>
-            <Typography>{getLabel(PAYMENT_TERMS_CHOICES, lease.payment_terms)}</Typography>
+            <Typography variant="subtitle2">Payment Schedule</Typography>
+            <Typography>{getLabel(PAYMENT_SCHEDULE_CHOICES, lease.payment_schedule)}</Typography>
           </Grid>
           <Grid item xs={6}>
             <Typography variant="subtitle2">Lease Amount</Typography>
@@ -95,7 +95,7 @@ AdminLeaseDetail.propTypes = {
     lease_type: PropTypes.string,
     start_date: PropTypes.string,
     end_date: PropTypes.string,
-    payment_terms: PropTypes.string,
+    payment_schedule: PropTypes.string,
     lease_amount: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     status: PropTypes.string,
   }),

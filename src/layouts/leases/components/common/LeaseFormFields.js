@@ -1,7 +1,7 @@
 // /src/layouts/leases/components/common/LeaseFormFields.js
 import React from 'react';
 import { Stack, TextField, MenuItem } from '@mui/material';
-import { LEASE_TYPE_CHOICES, LEASE_STATUS_CHOICES, PAYMENT_TERMS_CHOICES } from '../../data/choices';
+import { LEASE_TYPE_CHOICES, LEASE_STATUS_CHOICES, PAYMENT_SCHEDULE_CHOICES } from '../../data/choices';
 
 function LeaseFormFields({ values, onChange, disabled = false }) {
   return (
@@ -54,13 +54,13 @@ function LeaseFormFields({ values, onChange, disabled = false }) {
         disabled={disabled}
       />
       <TextField
-        select name="payment_terms" label="Payment Terms"
-        value={values.payment_terms || ''}
+        select name="payment_schedule" label="Payment Schedule"
+        value={values.payment_schedule || ''}
         onChange={onChange}
         required
         disabled={disabled}
       >
-        {PAYMENT_TERMS_CHOICES.map(opt => (
+        {PAYMENT_SCHEDULE_CHOICES.map(opt => (
           <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
         ))}
       </TextField>

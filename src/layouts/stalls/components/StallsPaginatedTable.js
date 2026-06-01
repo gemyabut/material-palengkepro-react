@@ -111,7 +111,7 @@ export default function StallsPaginatedTable({
             <TableRow>
               {[
                 { id: "stall_number", label: "Stall #" },
-                { id: "location", label: "Location" },
+                { id: "zone", label: "Zone" },
                 { id: "size_sqm", label: "Size (sqm)" },
                 { id: "current_rate", label: "Rate" },
                 { id: "status", label: "Status" },
@@ -157,7 +157,7 @@ export default function StallsPaginatedTable({
                     <MDTypography variant="body2">{stall.stall_number}</MDTypography>
                   </TableCell>
                   <TableCell>
-                    <MDTypography variant="body2">{stall.location}</MDTypography>
+                    <MDTypography variant="body2">{stall.zone}</MDTypography>
                   </TableCell>
                   <TableCell>
                     <MDTypography variant="body2">{stall.size_sqm}</MDTypography>

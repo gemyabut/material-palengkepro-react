@@ -15,8 +15,8 @@ export function validateStall(stall, existingStalls = []) {
   if (existingStalls.length > 0 && existingStalls.some(s => s.stall_number === stall.stall_number))
     errors.stall_number = "Stall number already exists.";
 
-  if (!stall.location || stall.location.trim() === "")
-    errors.location = "Location is required.";
+  if (!stall.zone || stall.zone.trim() === "")
+    errors.zone = "Zone is required.";
 
   if (!stall.size_sqm || isNaN(stall.size_sqm) || stall.size_sqm <= 0)
     errors.size_sqm = "Size (sqm) must be a positive number.";

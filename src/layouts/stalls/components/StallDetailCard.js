@@ -15,12 +15,12 @@ export default function StallDetailCard({ stall }) {
       <Divider />
       <CardContent>
         <Grid container spacing={2}>
-          {/* Location */}
+          {/* Zone */}
           <Grid item xs={6}>
             <MDTypography variant="button" color="text">
-              Location:
+              Zone:
             </MDTypography>
-            <MDTypography variant="body2">{stall.location || "—"}</MDTypography>
+            <MDTypography variant="body2">{stall.zone || "—"}</MDTypography>
           </Grid>
           {/* Type */}
           <Grid item xs={6}>

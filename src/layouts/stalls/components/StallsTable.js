@@ -77,7 +77,7 @@ export default function StallsTable({
           <TableRow>
             {[
               { id: "stall_number", label: "Stall #", width: 100 },
-              { id: "location", label: "Location", width: 120 },
+              { id: "zone", label: "Zone", width: 120 },
               { id: "size_sqm", label: "Size (sqm)" },
               { id: "current_rate", label: "Rate" },
               { id: "status", label: "Status" },
@@ -169,7 +169,7 @@ export default function StallsTable({
                       display: "block",
                     }}
                   >
-                    {stall.location}
+                    {stall.zone}
                   </MDTypography>
                 </TableCell>
                 <TableCell>
