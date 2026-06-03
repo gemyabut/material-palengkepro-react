@@ -40,10 +40,12 @@ import Dashboard from "layouts/dashboard";
 import Leases from "layouts/leases";
 import Stalls from "layouts/stalls";
 import Tenants from "layouts/tenants";
-import Tables from "layouts/tables";
-import Billing from "layouts/billing";
-import RTL from "layouts/rtl";
-import Notifications from "layouts/notifications";
+import BatchImport from "layouts/batch-import";
+import Reports from "layouts/reports";
+import TenantInquiry from "layouts/tenant-inquiry";
+import Subscription from "layouts/subscription";
+import Administration from "layouts/administration";
+import TenantPortal from "layouts/tenant-portal";
 import Profile from "layouts/profile";
 import SignIn from "layouts/authentication/sign-in";
 import SignUp from "layouts/authentication/sign-up";
@@ -88,35 +90,51 @@ const routes = [
   },
   {
     type: "collapse",
-    name: "Tables",
-    key: "tables",
-    icon: <Icon fontSize="small">table_view</Icon>,
-    route: "/tables",
-    component: <Tables />,
+    name: "Upload Center",
+    key: "upload",
+    icon: <Icon fontSize="small">upload_file</Icon>,
+    route: "/upload",
+    component: <BatchImport />,
   },
   {
     type: "collapse",
-    name: "Billing",
-    key: "billing",
-    icon: <Icon fontSize="small">receipt_long</Icon>,
-    route: "/billing",
-    component: <Billing />,
+    name: "Reports",
+    key: "reports",
+    icon: <Icon fontSize="small">assessment</Icon>,
+    route: "/reports",
+    component: <Reports />,
   },
   {
     type: "collapse",
-    name: "RTL",
-    key: "rtl",
-    icon: <Icon fontSize="small">format_textdirection_r_to_l</Icon>,
-    route: "/rtl",
-    component: <RTL />,
+    name: "Tenant Inquiry",
+    key: "tenant-inquiry",
+    icon: <Icon fontSize="small">manage_search</Icon>,
+    route: "/tenant-inquiry",
+    component: <TenantInquiry />,
   },
   {
     type: "collapse",
-    name: "Notifications",
-    key: "notifications",
-    icon: <Icon fontSize="small">notifications</Icon>,
-    route: "/notifications",
-    component: <Notifications />,
+    name: "Subscription",
+    key: "subscription",
+    icon: <Icon fontSize="small">workspace_premium</Icon>,
+    route: "/subscription",
+    component: <Subscription />,
+  },
+  {
+    type: "collapse",
+    name: "Administration",
+    key: "administration",
+    icon: <Icon fontSize="small">admin_panel_settings</Icon>,
+    route: "/administration",
+    component: <Administration />,
+  },
+  {
+    // Tenant-facing read-only portal — routable but NOT in the operator sidenav (type: route).
+    type: "route",
+    name: "Tenant Portal",
+    key: "tenant-portal",
+    route: "/tenant-portal",
+    component: <TenantPortal />,
   },
   {
     type: "collapse",

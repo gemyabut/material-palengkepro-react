@@ -49,8 +49,7 @@ function LeasesPage() {
     let filter = {};
     if (status) filter.status = status;
     if (search) filter.full_name = search;
-    if (isTenant(userRole) && userProfile?.tenant?.id)
-      filter.tenant = userProfile.tenant.id;
+    if (isTenant(userRole) && userProfile?.tenant?.id) filter.tenant = userProfile.tenant.id;
     if (isCollector(userRole) && userProfile?.id) filter.collector = userProfile.id;
     return filter;
   }, [status, search, userRole, userProfile]);

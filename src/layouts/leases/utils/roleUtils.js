@@ -1,6 +1,13 @@
 import { debugLog } from "../../stalls/utils/debug";
 
-const ADMIN_ROLES = ["admin_staff", "market_manager", "leasing_officer", "finance_head", "executive"];
+const ADMIN_ROLES = [
+  "market_administrator",
+  "admin_staff",
+  "market_manager",
+  "leasing_officer",
+  "finance_head",
+  "executive",
+];
 const COLLECTOR_ROLES = ["collector"];
 const TENANT_ROLES = ["tenant"];
 const GUEST_ROLES = ["guest"];
@@ -61,12 +68,12 @@ export const canExportLeases = (input) => {
 // Permissions requiring full user (but still supports string)
 export const canBulk = (input) => {
   const role = getRoleString(input);
-  return ["admin", "leasing_officer", "market_master"].includes(role);
+  return ["market_administrator", "admin_staff", "leasing_officer", "market_manager"].includes(role);
 };
 
 export const canEdit = (input) => {
   const role = getRoleString(input);
-  return ["admin", "leasing_officer", "market_master"].includes(role);
+  return ["market_administrator", "admin_staff", "leasing_officer", "market_manager"].includes(role);
 };
 
 export const isMarketMaster = (input) => {

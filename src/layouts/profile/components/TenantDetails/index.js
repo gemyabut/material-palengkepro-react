@@ -37,15 +37,7 @@ const TenantDetails = ({ profile, setProfile }) => {
               rows={2}
             />
           </Grid>
-          <Grid item xs={12}>
-            <TextField
-              fullWidth
-              label="Government ID"
-              name="government_id"
-              value={profile.government_id || ""}
-              onChange={handleChange}
-            />
-          </Grid>
+          {/* Government ID is a sensitive field — never surfaced at Tier 1 (doc 21 §6 / doc 02 §10). */}
           <Grid item xs={12}>
             <TextField
               fullWidth
@@ -65,7 +57,6 @@ TenantDetails.propTypes = {
   profile: PropTypes.shape({
     barangay_permit_num: PropTypes.string,
     emergency_contact_info: PropTypes.string,
-    government_id: PropTypes.string,
     social_media_account: PropTypes.string,
   }).isRequired,
   setProfile: PropTypes.func.isRequired,

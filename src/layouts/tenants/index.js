@@ -31,11 +31,13 @@ export default function Tenants() {
     const role = user.role.toLowerCase();
 
     switch (role) {
+      case "market_administrator":
       case "admin":
       case "admin_staff":
       case "market_manager":
       case "finance_head":
       case "executive":
+      case "accounts_receivable":
         return <MasterTenantList showSnackbar={showSnackbar} page={page} setPage={setPage} />;
       case "leasing_officer":
         return <OfficerTenantList showSnackbar={showSnackbar} page={page} setPage={setPage} />;

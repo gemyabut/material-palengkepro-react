@@ -56,7 +56,8 @@ function PlatformSettings({ profile, setProfile }) {
           {renderToggles(universalSettings)}
           {role === "tenant" && renderToggles(tenantSettings)}
           {role === "collector" && renderToggles(collectorSettings)}
-          {["admin", "market_manager"].includes(role) && renderToggles(adminSettings)}
+          {["market_administrator", "admin_staff", "market_manager"].includes(role) &&
+            renderToggles(adminSettings)}
         </Grid>
       </CardContent>
     </Card>

@@ -255,11 +255,13 @@ export default function MasterTenantList() {
         loading={loading}
       />
 
-      <TenantDetailDialog
-        open={!!detailTenant}
-        tenant={detailTenant}
-        onClose={() => setDetailTenant(null)}
-      />
+      {detailTenant && (
+        <TenantDetailDialog
+          open={!!detailTenant}
+          tenant={detailTenant}
+          onClose={() => setDetailTenant(null)}
+        />
+      )}
 
       <CommunicationDialog
         open={commOpen}

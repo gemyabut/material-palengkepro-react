@@ -62,10 +62,12 @@ export function useLeases({ filter = {}, page = 1, limit = 10, autoLoad = true, 
         // DRF paginated { count, next, previous, results } or plain array
         const results = Array.isArray(response)
           ? response
-          : Array.isArray(response?.results) ? response.results : [];
+          : Array.isArray(response?.results)
+          ? response.results
+          : [];
         const totalCount = Array.isArray(response)
           ? response.length
-          : (response?.count ?? results.length);
+          : response?.count ?? results.length;
 
         setLeases(results);
         setTotal(totalCount);

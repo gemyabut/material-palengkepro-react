@@ -13,6 +13,7 @@ import {
   Stack,
   Dialog,
 } from "@mui/material";
+import { canAddStall, canEditStall, canDeleteStall } from "utils/permissions";
 import StallsTable from "./components/StallsTable";
 import StallsSummaryWidget from "./components/StallsSummaryWidget";
 import AddStallForm from "./components/AddStallForm";
@@ -71,9 +72,9 @@ export default function StallsPage() {
   // --- Role Logic ---
   debugLog("[StallsPage] Current role:", role);
 
-  const canAdd = ["market_manager", "leasing_officer", "admin_staff"].includes(role);
-  const canEdit = role === "market_manager";
-  const canDelete = role === "market_manager";
+  const canAdd = canAddStall(role);
+  const canEdit = canEditStall(role); // Leasing Officer is the Stall steward (doc 22 WF-02)
+  const canDelete = canDeleteStall(role);
 
   debugLog("[StallsPage] Current role:", role);
   debugLog(
