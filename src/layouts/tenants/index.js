@@ -14,6 +14,7 @@ import OfficerTenantList from "./pages/OfficerTenantList";
 import CollectorTenantList from "./pages/CollectorTenantList";
 import CashierTenantList from "./pages/CashierTenantList";
 import TenantSelfPortal from "./pages/TenantSelfPortal";
+import TenantSummaryBand from "./components/TenantSummaryBand";
 
 export default function Tenants() {
   const { userProfile: user } = useAuth();
@@ -56,6 +57,7 @@ export default function Tenants() {
     <DashboardLayout>
       <DashboardNavbar />
       <MDBox py={3}>
+        {user?.role && user.role.toLowerCase() !== "tenant" && <TenantSummaryBand />}
         <Card>
           <MDBox p={2}>{renderTenantComponent()}</MDBox>
           {user?.role !== "tenant" && (
