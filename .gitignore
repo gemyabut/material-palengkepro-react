@@ -25,3 +25,8 @@ package-lock.json
 yarn.lock
 
 commit.sh
+
+# Environment files — never commit secrets
+.env
+.env.*
+!.env.example
