@@ -44,6 +44,7 @@ import Stalls from "layouts/stalls";
 import Tenants from "layouts/tenants";
 import BatchImport from "layouts/batch-import";
 import Reports from "layouts/reports";
+import SoaPage from "layouts/soa";
 import TenantInquiry from "layouts/tenant-inquiry";
 import Subscription from "layouts/subscription";
 import Administration from "layouts/administration";
@@ -121,6 +122,14 @@ const routes = [
     icon: <Icon fontSize="small">assessment</Icon>,
     route: "/reports",
     component: <Reports />,
+  },
+  {
+    type: "collapse",
+    name: "Statement of Account",
+    key: "soa",
+    icon: <Icon fontSize="small">request_quote</Icon>,
+    route: "/soa",
+    component: <SoaPage />,
   },
   {
     type: "collapse",
