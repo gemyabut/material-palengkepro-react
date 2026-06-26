@@ -1,0 +1,23 @@
+@media print {
+  /* Hide shell chrome */
+  .MuiDrawer-root,
+  .MuiAppBar-root {
+    display: none !important;
+  }
+  /* Remove drawer margin so content fills the page */
+  main {
+    margin-left: 0 !important;
+    padding: 0 !important;
+  }
+  body {
+    background: white !important;
+  }
+  /* Tag any element with .no-print to hide it on print */
+  .no-print {
+    display: none !important;
+  }
+  /* Page-break hint after the totals footer */
+  .soa-page-break {
+    page-break-after: always;
+  }
+}
