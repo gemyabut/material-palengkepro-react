@@ -82,6 +82,15 @@ export const canViewAging = (r) => canViewReports(r);
  */
 export const canViewCash = (r) => canViewReports(r) || has(r, ["cashier", "collector"]);
 
+/**
+ * Deposit Batch workflow (D5-A, Phase 4 Unit 6).
+ * canViewBatches / canEditBatches: finance roles + cashier.
+ * canConfirmBatches: finance roles only — cashier excluded (separation of duties).
+ */
+export const canViewBatches  = (r) => canViewReports(r) || has(r, ["cashier"]);
+export const canEditBatches  = (r) => canViewBatches(r);
+export const canConfirmBatches = (r) => canViewReports(r);
+
 // Subscription & Billing self-service — the company's Market Administrator (doc: SUB-3).
 export const canManageSubscription = (r) => has(r, [...MARKET_ADMIN, "finance_head"]);
 
