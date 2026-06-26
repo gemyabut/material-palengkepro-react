@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import {
   Card,
@@ -43,12 +44,22 @@ const peso = (v) => `₱${Number(v ?? 0).toLocaleString(undefined, { minimumFrac
 export default function TenantInquiry() {
   const role = getRole();
   const allowed = canUseInquiry(role);
+  const location = useLocation();
 
   const [q, setQ] = useState("");
   const [results, setResults] = useState([]);
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // Auto-open tenant if ?tenant_id= is present in URL (e.g. drill-down from Aging Dashboard).
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tid = params.get("tenant_id");
+    if (tid && /^\d+$/.test(tid)) {
+      openTenant(Number(tid));
+    }
+  }, [location.search]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const doSearch = async () => {
     setError(null);

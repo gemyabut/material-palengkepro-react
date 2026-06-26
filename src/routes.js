@@ -45,6 +45,7 @@ import Tenants from "layouts/tenants";
 import BatchImport from "layouts/batch-import";
 import Reports from "layouts/reports";
 import SoaPage from "layouts/soa";
+import AgingDashboard from "layouts/aging";
 import TenantInquiry from "layouts/tenant-inquiry";
 import Subscription from "layouts/subscription";
 import Administration from "layouts/administration";
@@ -130,6 +131,14 @@ const routes = [
     icon: <Icon fontSize="small">request_quote</Icon>,
     route: "/soa",
     component: <SoaPage />,
+  },
+  {
+    type: "collapse",
+    name: "Aging Dashboard",
+    key: "aging",
+    icon: <Icon fontSize="small">stacked_bar_chart</Icon>,
+    route: "/aging",
+    component: <AgingDashboard />,
   },
   {
     type: "collapse",

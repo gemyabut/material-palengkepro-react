@@ -71,6 +71,9 @@ export const canViewInvoices = (r) => canViewReports(r);
 // SOA Report page — same finance roles (Phase 4 Unit 3, D3-A).
 export const canViewSoa = (r) => canViewReports(r);
 
+// Aging Dashboard — same finance roles (Phase 4 Unit 4, D1-A).
+export const canViewAging = (r) => canViewReports(r);
+
 // Subscription & Billing self-service — the company's Market Administrator (doc: SUB-3).
 export const canManageSubscription = (r) => has(r, [...MARKET_ADMIN, "finance_head"]);
 
