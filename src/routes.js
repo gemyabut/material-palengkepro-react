@@ -37,6 +37,8 @@ Coded by www.creative-tim.com
 
 // Material Dashboard 2 React layouts
 import Dashboard from "layouts/dashboard";
+import Invoices from "layouts/invoices";
+import InvoiceDetail from "layouts/invoices/detail";
 import Leases from "layouts/leases";
 import Stalls from "layouts/stalls";
 import Tenants from "layouts/tenants";
@@ -79,6 +81,22 @@ const routes = [
     icon: <Icon fontSize="small">storefront</Icon>,
     route: "/Leases",
     component: <Leases />,
+  },
+  {
+    type: "collapse",
+    name: "Invoices",
+    key: "invoices",
+    icon: <Icon fontSize="small">receipt_long</Icon>,
+    route: "/invoices",
+    component: <Invoices />,
+  },
+  {
+    // Detail page — routable but NOT in the sidenav (type: route).
+    type: "route",
+    name: "Invoice Detail",
+    key: "invoice-detail",
+    route: "/invoices/:id",
+    component: <InvoiceDetail />,
   },
   {
     type: "collapse",
