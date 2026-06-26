@@ -74,6 +74,14 @@ export const canViewSoa = (r) => canViewReports(r);
 // Aging Dashboard — same finance roles (Phase 4 Unit 4, D1-A).
 export const canViewAging = (r) => canViewReports(r);
 
+/**
+ * Cash Position Dashboard — finance roles + cashier + collector (D5-A, Phase 4 Unit 5).
+ * Cashier needs operational visibility to verify their intake was credited.
+ * Collector is forward-prep for mobile API; web dashboard access is blocked by role
+ * gate checks (quirks #21/#24) — backend scopes COLLECTOR_POCKET to own account.
+ */
+export const canViewCash = (r) => canViewReports(r) || has(r, ["cashier", "collector"]);
+
 // Subscription & Billing self-service — the company's Market Administrator (doc: SUB-3).
 export const canManageSubscription = (r) => has(r, [...MARKET_ADMIN, "finance_head"]);
 

@@ -46,6 +46,7 @@ import BatchImport from "layouts/batch-import";
 import Reports from "layouts/reports";
 import SoaPage from "layouts/soa";
 import AgingDashboard from "layouts/aging";
+import CashPositionDashboard from "layouts/cash-position";
 import TenantInquiry from "layouts/tenant-inquiry";
 import Subscription from "layouts/subscription";
 import Administration from "layouts/administration";
@@ -139,6 +140,14 @@ const routes = [
     icon: <Icon fontSize="small">stacked_bar_chart</Icon>,
     route: "/aging",
     component: <AgingDashboard />,
+  },
+  {
+    type: "collapse",
+    name: "Cash Position",
+    key: "cash-position",
+    icon: <Icon fontSize="small">account_balance_wallet</Icon>,
+    route: "/cash-position",
+    component: <CashPositionDashboard />,
   },
   {
     type: "collapse",
