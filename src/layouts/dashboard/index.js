@@ -185,12 +185,16 @@ export default function Dashboard() {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => {
-        if (res.status === 401 || res.status === 403) {
+        if (res.status === 401) {
           localStorage.removeItem("access_token");
           sessionStorage.removeItem("access_token");
-          // On next render, token will be missing and <Navigate /> will trigger
           window.location.reload();
           return;
+        }
+        if (res.status === 403) {
+          // Authenticated but not authorized for admin-market view (e.g. collector role).
+          // Do NOT force logout — 403 means the token is valid, just insufficient permissions.
+          throw new Error("You do not have permission to view this dashboard.");
         }
         if (!res.ok) throw new Error("Could not load dashboard data.");
         return res.json();

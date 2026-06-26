@@ -65,6 +65,9 @@ export const canViewReports = (r) =>
 // Tenant Inquiry is broader: finance roles + leasing officer (latter sees tenant+lease only).
 export const canUseInquiry = (r) => canViewReports(r) || has(r, ["leasing_officer"]);
 
+// AR Invoices — same finance roles (doc 21 §11 + D3-A approved 2026-06-26).
+export const canViewInvoices = (r) => canViewReports(r);
+
 // Subscription & Billing self-service — the company's Market Administrator (doc: SUB-3).
 export const canManageSubscription = (r) => has(r, [...MARKET_ADMIN, "finance_head"]);
 
