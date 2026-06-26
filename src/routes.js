@@ -47,6 +47,9 @@ import Reports from "layouts/reports";
 import SoaPage from "layouts/soa";
 import AgingDashboard from "layouts/aging";
 import CashPositionDashboard from "layouts/cash-position";
+import DepositBatchListPage from "layouts/deposit-batches";
+import DepositBatchDetailPage from "layouts/deposit-batches/detail";
+import CreateDepositBatchPage from "layouts/deposit-batches/create";
 import TenantInquiry from "layouts/tenant-inquiry";
 import Subscription from "layouts/subscription";
 import Administration from "layouts/administration";
@@ -148,6 +151,28 @@ const routes = [
     icon: <Icon fontSize="small">account_balance_wallet</Icon>,
     route: "/cash-position",
     component: <CashPositionDashboard />,
+  },
+  {
+    type: "collapse",
+    name: "Deposit Batches",
+    key: "deposit-batches",
+    icon: <Icon fontSize="small">savings</Icon>,
+    route: "/deposit-batches",
+    component: <DepositBatchListPage />,
+  },
+  {
+    type: "route",
+    name: "Deposit Batch Detail",
+    key: "deposit-batch-detail",
+    route: "/deposit-batches/:id",
+    component: <DepositBatchDetailPage />,
+  },
+  {
+    type: "route",
+    name: "Create Deposit Batch",
+    key: "deposit-batch-create",
+    route: "/deposit-batches/new",
+    component: <CreateDepositBatchPage />,
   },
   {
     type: "collapse",
