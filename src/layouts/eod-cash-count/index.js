@@ -177,7 +177,8 @@ export default function EodCashCountPage() {
                           <MDBox display="flex" gap={1}>
                             <Button
                               size="small"
-                              variant="outlined"
+                              variant="contained"
+                              color="info"
                               onClick={() => navigate(`/eod-cash-count/${c.id}/submit`)}
                             >
                               Submit Count
@@ -185,7 +186,7 @@ export default function EodCashCountPage() {
                             {canApprove && (
                               <Button
                                 size="small"
-                                variant="outlined"
+                                variant="contained"
                                 color="success"
                                 onClick={() => setApproveTarget(c)}
                               >

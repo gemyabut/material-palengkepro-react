@@ -140,7 +140,7 @@ export default function Subscription() {
         {!allowed ? (
           <Alert severity="warning">You don&apos;t have access to subscription management.</Alert>
         ) : loading ? (
-          <LinearProgress />
+          <LinearProgress color="info" />
         ) : error ? (
           <Alert severity="error">{String(error)}</Alert>
         ) : !data?.company ? (

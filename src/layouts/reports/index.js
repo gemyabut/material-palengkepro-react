@@ -168,7 +168,7 @@ export default function Reports() {
                 )}
               </Stack>
 
-              {loading && <LinearProgress sx={{ mb: 2 }} />}
+              {loading && <LinearProgress color="info" sx={{ mb: 2 }} />}
               {error && (
                 <Alert severity="error" sx={{ mb: 2 }}>
                   {String(error)}

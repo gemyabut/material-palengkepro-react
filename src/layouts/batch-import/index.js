@@ -274,7 +274,7 @@ function UploadTile({ title, description, accept, fixedDomain, allowAttachment }
 
         {loading && (
           <MDBox mt={2}>
-            <LinearProgress />
+            <LinearProgress color="info" />
           </MDBox>
         )}
         {error && (
