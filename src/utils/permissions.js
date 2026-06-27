@@ -109,3 +109,11 @@ export const isCollector = (r) => normalizeRole(r) === "collector";
 // Sensitive: raw ₱ amounts (doc 21 §6) — Executive & Market Manager get aggregates only.
 export const canSeeRawAmounts = (r) =>
   has(r, [...MARKET_ADMIN, "accounts_receivable", "accounting_staff", "cashier"]);
+
+/**
+ * EOD Cash Count workflow (D5-A, Phase 4 Unit 7).
+ * canViewEodCounts: finance roles + cashier + collector (same as canViewCash).
+ * canApproveEodCounts: finance roles only — cashier/collector excluded (separation of duties).
+ */
+export const canViewEodCounts   = (r) => canViewReports(r) || has(r, ["cashier", "collector"]);
+export const canApproveEodCounts = (r) => canViewReports(r);
