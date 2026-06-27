@@ -117,3 +117,10 @@ export const canSeeRawAmounts = (r) =>
  */
 export const canViewEodCounts   = (r) => canViewReports(r) || has(r, ["cashier", "collector"]);
 export const canApproveEodCounts = (r) => canViewReports(r);
+
+/**
+ * Bank Reconciliation Report (D1-A, Phase 4 Unit 8).
+ * Finance roles only — mirrors IsFinanceViewer on the backend.
+ * Cashier/collector excluded (this is an AR/Finance tool, not an ops screen).
+ */
+export const canViewBankRec = (r) => canViewReports(r);
