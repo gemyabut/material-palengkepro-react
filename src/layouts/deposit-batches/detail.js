@@ -34,6 +34,8 @@ function getRole() {
 
 const peso = (v) => `₱${Number(v ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
 
+const MEDIA_BASE = process.env.REACT_APP_API_BASE_URL || "http://localhost:8000";
+
 function LV({ label, value }) {
   return (
     <MDBox mb={1}>
@@ -128,7 +130,7 @@ export default function DepositBatchDetailPage() {
           <Alert severity="error" sx={{ mb: 2 }}>
             {error}
           </Alert>
-          <Button variant="outlined" onClick={() => navigate("/deposit-batches")}>
+          <Button variant="outlined" color="dark" onClick={() => navigate("/deposit-batches")}>
             Back to Batches
           </Button>
         </MDBox>
@@ -299,7 +301,7 @@ export default function DepositBatchDetailPage() {
                     {d.deposit_date}
                   </MDTypography>
                   {d.file_url && (
-                    <Button size="small" href={d.file_url} target="_blank" rel="noreferrer">
+                    <Button size="small" href={`${MEDIA_BASE}${d.file_url}`} target="_blank" rel="noreferrer">
                       View Slip
                     </Button>
                   )}
@@ -312,7 +314,7 @@ export default function DepositBatchDetailPage() {
 
         {/* Action buttons */}
         <MDBox display="flex" gap={2} flexWrap="wrap">
-          <Button variant="outlined" onClick={() => navigate("/deposit-batches")}>
+          <Button variant="outlined" color="dark" onClick={() => navigate("/deposit-batches")}>
             Back to List
           </Button>
           {batch.status === "OPEN" && canEditBatches(role) && (

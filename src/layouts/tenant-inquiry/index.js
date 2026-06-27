@@ -115,7 +115,7 @@ export default function TenantInquiry() {
                       Search
                     </Button>
                   </Stack>
-                  {loading && <LinearProgress sx={{ mt: 2 }} />}
+                  {loading && <LinearProgress color="info" sx={{ mt: 2 }} />}
                   <List dense>
                     {results.map((r) => (
                       <ListItemButton key={r.tenant_id} onClick={() => openTenant(r.tenant_id)}>

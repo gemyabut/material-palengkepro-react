@@ -52,6 +52,7 @@ import DepositBatchDetailPage from "layouts/deposit-batches/detail";
 import CreateDepositBatchPage from "layouts/deposit-batches/create";
 import EodCashCountPage from "layouts/eod-cash-count";
 import SubmitEodCountPage from "layouts/eod-cash-count/submit";
+import BankReconciliationPage from "layouts/bank-reconciliation";
 import TenantInquiry from "layouts/tenant-inquiry";
 import Subscription from "layouts/subscription";
 import Administration from "layouts/administration";
@@ -190,6 +191,14 @@ const routes = [
     key: "eod-cash-count-submit",
     route: "/eod-cash-count/:id/submit",
     component: <SubmitEodCountPage />,
+  },
+  {
+    type: "collapse",
+    name: "Bank Reconciliation",
+    key: "bank-reconciliation",
+    icon: <Icon fontSize="small">account_balance</Icon>,
+    route: "/bank-reconciliation",
+    component: <BankReconciliationPage />,
   },
   {
     type: "collapse",
