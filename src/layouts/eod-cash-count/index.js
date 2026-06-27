@@ -60,7 +60,8 @@ export default function EodCashCountPage() {
     try {
       const params = {};
       if (statusFilter) params.status = statusFilter;
-      setCounts(await listEodCounts(params));
+      const resp = await listEodCounts(params);
+      setCounts(Array.isArray(resp) ? resp : (resp?.results ?? []));
     } catch {
       setError("Failed to load EOD cash counts.");
     } finally {
