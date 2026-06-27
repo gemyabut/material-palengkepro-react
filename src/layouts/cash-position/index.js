@@ -33,7 +33,7 @@ const peso = (v) =>
 
 export default function CashPositionDashboard() {
   const role = getRole();
-  if (!canViewCash(role)) return <Navigate to="/dashboard" replace />;
+  const allowed = canViewCash(role);
 
   const [data, setData]       = useState(null);
   const [loading, setLoading] = useState(false);
@@ -51,8 +51,10 @@ export default function CashPositionDashboard() {
     }
   }, []);
 
-  // Auto-load on first render
-  React.useEffect(() => { fetchData(); }, [fetchData]);
+  // Auto-load on first render (guard prevents API call when not authorized)
+  React.useEffect(() => { if (allowed) fetchData(); }, [fetchData, allowed]);
+
+  if (!allowed) return <Navigate to="/dashboard" replace />;
 
   const totalCount = data
     ? ACCOUNT_TYPES.reduce((n, t) => n + (data[t]?.length ?? 0), 0)

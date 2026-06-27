@@ -30,7 +30,7 @@ function todayISO() {
 
 export default function AgingDashboard() {
   const role = getRole();
-  if (!canViewAging(role)) return <Navigate to="/dashboard" replace />;
+  const allowed = canViewAging(role);
 
   const [asOf, setAsOf]           = useState(todayISO());
   const [data, setData]           = useState(null);
@@ -52,8 +52,10 @@ export default function AgingDashboard() {
   }, []);
 
   useEffect(() => {
-    fetchReport(asOf);
-  }, [asOf, fetchReport]);
+    if (allowed) fetchReport(asOf);
+  }, [asOf, fetchReport, allowed]);
+
+  if (!allowed) return <Navigate to="/dashboard" replace />;
 
   return (
     <DashboardLayout>
