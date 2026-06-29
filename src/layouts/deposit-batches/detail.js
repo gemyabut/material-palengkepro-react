@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate, Navigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
 import Alert from "@mui/material/Alert";
 import Snackbar from "@mui/material/Snackbar";
@@ -18,6 +19,7 @@ import MDTypography from "components/MDTypography";
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import { canViewBatches, canEditBatches, canConfirmBatches } from "utils/permissions";
+import { destinationLabel } from "utils/destinationLabels";
 import { getBatch, markDeposited, confirmBatch } from "api/remittanceBatches";
 import BatchStatusChip from "./components/BatchStatusChip";
 import MarkDepositedModal from "./components/MarkDepositedModal";
@@ -44,6 +46,18 @@ function LV({ label, value }) {
       </MDTypography>
       <MDTypography variant="body2">{value ?? "—"}</MDTypography>
     </MDBox>
+  );
+}
+
+function DestinationChip({ destinationType }) {
+  if (!destinationType) return null;
+  return (
+    <Chip
+      size="small"
+      label={destinationLabel(destinationType, "destinationName")}
+      color={destinationType === "LGU_TREASURY" ? "success" : "info"}
+      variant="outlined"
+    />
   );
 }
 
@@ -86,7 +100,8 @@ export default function DepositBatchDetailPage() {
       const updated = await markDeposited(id, formData);
       setBatch(updated);
       setDepositOpen(false);
-      toast("Batch marked as deposited. Cash moved: Safe → Bank Pending.");
+      const dest = batch?.destination_type ?? "BANK";
+      toast(`Batch marked as deposited. Cash moved: Safe → ${destinationLabel(dest, "pending")}.`);
     } catch (e) {
       const detail = e?.response?.data?.detail || e?.response?.data?.slip_file || "Action failed.";
       toast(detail, "error");
@@ -98,13 +113,18 @@ export default function DepositBatchDetailPage() {
   const handleConfirm = async (ref) => {
     setActioning(true);
     try {
-      const updated = await confirmBatch(id, ref);
+      const dest = batch?.destination_type ?? "BANK";
+      const refField = destinationLabel(dest, "refField");
+      const updated = await confirmBatch(id, ref, refField);
       setBatch(updated);
       setConfirmOpen(false);
-      toast("Bank receipt confirmed. Cash moved: Bank Pending → Bank Confirmed.");
+      toast(`Remittance confirmed. Cash moved: ${destinationLabel(dest, "pending")} → ${destinationLabel(dest, "settled")}.`);
     } catch (e) {
       const detail =
-        e?.response?.data?.detail || e?.response?.data?.bank_confirmation_ref || "Action failed.";
+        e?.response?.data?.detail ||
+        e?.response?.data?.bank_confirmation_ref ||
+        e?.response?.data?.lgu_or_number ||
+        "Action failed.";
       toast(detail, "error");
     } finally {
       setActioning(false);
@@ -140,6 +160,9 @@ export default function DepositBatchDetailPage() {
 
   if (!batch) return null;
 
+  const dest = batch.destination_type ?? "BANK";
+  const isLGU = dest === "LGU_TREASURY";
+
   return (
     <DashboardLayout>
       <DashboardNavbar />
@@ -150,6 +173,7 @@ export default function DepositBatchDetailPage() {
             Deposit Batch #{batch.id}
           </MDTypography>
           <BatchStatusChip status={batch.status} size="medium" />
+          <DestinationChip destinationType={batch.destination_type} />
         </MDBox>
 
         {/* Meta + Totals */}
@@ -166,15 +190,23 @@ export default function DepositBatchDetailPage() {
                 <Grid item xs={6}>
                   <LV label="Type" value={batch.batch_type} />
                 </Grid>
-                <Grid item xs={6}>
-                  <LV label="Bank" value={batch.bank_name} />
-                </Grid>
-                <Grid item xs={6}>
-                  <LV
-                    label="Account"
-                    value={batch.bank_account_last4 ? `••••${batch.bank_account_last4}` : "—"}
-                  />
-                </Grid>
+                {isLGU ? (
+                  <Grid item xs={6}>
+                    <LV label="LGU Office" value={batch.bank_name} />
+                  </Grid>
+                ) : (
+                  <>
+                    <Grid item xs={6}>
+                      <LV label="Bank" value={batch.bank_name} />
+                    </Grid>
+                    <Grid item xs={6}>
+                      <LV
+                        label="Account"
+                        value={batch.bank_account_last4 ? `••••${batch.bank_account_last4}` : "—"}
+                      />
+                    </Grid>
+                  </>
+                )}
                 <Grid item xs={6}>
                   <LV label="Deposit date" value={batch.deposit_date} />
                 </Grid>
@@ -184,7 +216,10 @@ export default function DepositBatchDetailPage() {
                 {batch.status === "CONFIRMED" && (
                   <>
                     <Grid item xs={6}>
-                      <LV label="Bank conf. ref" value={batch.bank_confirmation_ref} />
+                      <LV
+                        label={destinationLabel(dest, "refLabel")}
+                        value={isLGU ? batch.lgu_or_number : batch.bank_confirmation_ref}
+                      />
                     </Grid>
                     <Grid item xs={6}>
                       <LV
@@ -204,7 +239,7 @@ export default function DepositBatchDetailPage() {
               <MDTypography variant="h6" mb={1}>
                 Totals
               </MDTypography>
-              <LV label="Total to bank" value={peso(batch.total_to_bank)} />
+              <LV label="Total" value={peso(batch.total_to_bank)} />
               <LV label="Items" value={`${batch.item_count || (batch.items || []).length}`} />
               {batch.notes && <LV label="Notes" value={batch.notes} />}
             </Paper>
@@ -285,24 +320,24 @@ export default function DepositBatchDetailPage() {
           </>
         )}
 
-        {/* Bank proof docs */}
+        {/* Proof docs */}
         {(batch.bank_docs || []).length > 0 && (
           <>
             <MDTypography variant="h6" mb={1}>
-              Deposit Slip
+              {destinationLabel(dest, "proofLabel")}
             </MDTypography>
             {batch.bank_docs.map((d) => (
               <Paper key={d.id} variant="outlined" sx={{ p: 1.5, mb: 1 }}>
                 <MDBox display="flex" gap={2} alignItems="center">
                   <MDTypography variant="body2">
-                    {d.bank_name} ••••{d.account_last4}
+                    {d.bank_name} {d.account_last4 ? `••••${d.account_last4}` : ""}
                   </MDTypography>
                   <MDTypography variant="caption" color="secondary">
                     {d.deposit_date}
                   </MDTypography>
                   {d.file_url && (
-                    <Button size="small" href={`${MEDIA_BASE}${d.file_url}`} target="_blank" rel="noreferrer">
-                      View Slip
+                    <Button size="small" variant="outlined" color="dark" href={`${MEDIA_BASE}${d.file_url}`} target="_blank" rel="noreferrer">
+                      View {destinationLabel(dest, "proofLabel")}
                     </Button>
                   )}
                 </MDBox>
@@ -324,7 +359,7 @@ export default function DepositBatchDetailPage() {
           )}
           {batch.status === "POSTED" && canConfirmBatches(role) && (
             <Button variant="contained" color="success" onClick={() => setConfirmOpen(true)}>
-              Confirm Bank Receipt
+              Confirm Remittance
             </Button>
           )}
         </MDBox>

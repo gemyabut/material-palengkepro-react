@@ -119,8 +119,15 @@ export const canViewEodCounts   = (r) => canViewReports(r) || has(r, ["cashier",
 export const canApproveEodCounts = (r) => canViewReports(r);
 
 /**
- * Bank Reconciliation Report (D1-A, Phase 4 Unit 8).
+ * Remittance Reconciliation Report (D1-A, Phase 4 Unit 8; renamed Unit 11).
  * Finance roles only — mirrors IsFinanceViewer on the backend.
  * Cashier/collector excluded (this is an AR/Finance tool, not an ops screen).
  */
-export const canViewBankRec = (r) => canViewReports(r);
+export const canViewRemittanceRec = (r) => canViewReports(r);
+export const canViewBankRec = canViewRemittanceRec; // backwards-compat alias
+
+/**
+ * Destination override on Create Batch (DEC-040 D1, Phase 4 Unit 11).
+ * AR + admin/finance roles only; cashier sees read-only chip (separation of duties).
+ */
+export const canOverrideDestination = (r) => canViewReports(r);

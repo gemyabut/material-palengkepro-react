@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
 import Alert from "@mui/material/Alert";
 import Table from "@mui/material/Table";
@@ -19,6 +20,7 @@ import MDTypography from "components/MDTypography";
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import { canViewBatches, canEditBatches } from "utils/permissions";
+import { destinationLabel } from "utils/destinationLabels";
 import { listBatches } from "api/remittanceBatches";
 import BatchStatusChip from "./components/BatchStatusChip";
 
@@ -34,6 +36,19 @@ function getRole() {
 const peso = (v) => `₱${Number(v ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
 
 const STATUS_OPTIONS = ["", "OPEN", "POSTED", "CONFIRMED", "VOID"];
+const DEST_OPTIONS   = ["", "BANK", "LGU_TREASURY"];
+
+function DestinationChip({ destinationType }) {
+  if (!destinationType) return <MDTypography variant="caption" color="secondary">—</MDTypography>;
+  return (
+    <Chip
+      size="small"
+      label={destinationLabel(destinationType, "destinationName")}
+      color={destinationType === "LGU_TREASURY" ? "success" : "info"}
+      variant="outlined"
+    />
+  );
+}
 
 export default function DepositBatchListPage() {
   const role = getRole();
@@ -42,6 +57,7 @@ export default function DepositBatchListPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [statusFilter, setStatusFilter] = useState("");
+  const [destFilter,   setDestFilter]   = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -49,13 +65,15 @@ export default function DepositBatchListPage() {
     try {
       const params = {};
       if (statusFilter) params.status = statusFilter;
-      setBatches(await listBatches(params));
+      if (destFilter)   params.destination_type = destFilter;
+      const res = await listBatches(params);
+      setBatches(Array.isArray(res) ? res : (res?.results ?? []));
     } catch {
       setError("Failed to load deposit batches.");
     } finally {
       setLoading(false);
     }
-  }, [statusFilter]);
+  }, [statusFilter, destFilter]);
 
   useEffect(() => {
     load();
@@ -83,14 +101,22 @@ export default function DepositBatchListPage() {
               <InputLabel>Status</InputLabel>
               <Select value={statusFilter} label="Status" onChange={(e) => setStatusFilter(e.target.value)}>
                 {STATUS_OPTIONS.map((s) => (
-                  <MenuItem key={s} value={s}>
-                    {s || "All"}
+                  <MenuItem key={s} value={s}>{s || "All"}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <FormControl size="small" sx={{ minWidth: 160 }}>
+              <InputLabel>Destination</InputLabel>
+              <Select value={destFilter} label="Destination" onChange={(e) => setDestFilter(e.target.value)}>
+                {DEST_OPTIONS.map((d) => (
+                  <MenuItem key={d} value={d}>
+                    {d ? destinationLabel(d, "destinationName") : "All"}
                   </MenuItem>
                 ))}
               </Select>
             </FormControl>
             {canEditBatches(role) && (
-              <Button variant="contained" onClick={() => navigate("/deposit-batches/new")}>
+              <Button variant="contained" color="info" onClick={() => navigate("/deposit-batches/new")}>
                 + Create New Batch
               </Button>
             )}
@@ -114,9 +140,10 @@ export default function DepositBatchListPage() {
                 <TableRow>
                   <TableCell>ID</TableCell>
                   <TableCell>Date</TableCell>
-                  <TableCell>Bank</TableCell>
+                  <TableCell>Destination</TableCell>
+                  <TableCell>Bank / LGU Office</TableCell>
                   <TableCell>Status</TableCell>
-                  <TableCell align="right">Total to Bank</TableCell>
+                  <TableCell align="right">Total</TableCell>
                   <TableCell align="right">Items</TableCell>
                   <TableCell>Deposit Date</TableCell>
                   <TableCell>Confirmed</TableCell>
@@ -125,7 +152,7 @@ export default function DepositBatchListPage() {
               <TableBody>
                 {batches.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} align="center">
+                    <TableCell colSpan={9} align="center">
                       <MDTypography variant="body2" color="secondary">
                         No batches found.
                       </MDTypography>
@@ -141,6 +168,9 @@ export default function DepositBatchListPage() {
                     >
                       <TableCell>#{b.id}</TableCell>
                       <TableCell>{b.date}</TableCell>
+                      <TableCell>
+                        <DestinationChip destinationType={b.destination_type} />
+                      </TableCell>
                       <TableCell>
                         {b.bank_name}
                         {b.bank_account_last4 ? ` ••••${b.bank_account_last4}` : ""}

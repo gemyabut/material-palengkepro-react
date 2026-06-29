@@ -16,8 +16,6 @@ import { canViewCash } from "utils/permissions";
 import { getCashPosition } from "api/cashPosition";
 import AccountTypeSection from "./components/AccountTypeSection";
 
-const ACCOUNT_TYPES = ["COLLECTOR_POCKET", "OPERATOR_SAFE", "BANK_PENDING", "BANK"];
-
 function getRole() {
   const t = localStorage.getItem("access_token") || sessionStorage.getItem("access_token");
   try { return (jwtDecode(t).role || "").toLowerCase(); } catch { return ""; }
@@ -31,8 +29,18 @@ function fmtAsOf(iso) {
 const peso = (v) =>
   `₱${Number(v ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
 
+function getAccountTypes(destinationType) {
+  const isLGU = destinationType === "LGU_TREASURY";
+  return [
+    "COLLECTOR_POCKET",
+    "OPERATOR_SAFE",
+    isLGU ? "LGU_TREASURY_PENDING" : "BANK_PENDING",
+    isLGU ? "LGU_TREASURY"         : "BANK",
+  ];
+}
+
 export default function CashPositionDashboard() {
-  const role = getRole();
+  const role    = getRole();
   const allowed = canViewCash(role);
 
   const [data, setData]       = useState(null);
@@ -51,13 +59,14 @@ export default function CashPositionDashboard() {
     }
   }, []);
 
-  // Auto-load on first render (guard prevents API call when not authorized)
   React.useEffect(() => { if (allowed) fetchData(); }, [fetchData, allowed]);
 
   if (!allowed) return <Navigate to="/dashboard" replace />;
 
-  const totalCount = data
-    ? ACCOUNT_TYPES.reduce((n, t) => n + (data[t]?.length ?? 0), 0)
+  const destinationType = data?.market?.destination_type ?? "BANK";
+  const accountTypes    = getAccountTypes(destinationType);
+  const totalCount      = data
+    ? accountTypes.reduce((n, t) => n + (data[t]?.length ?? 0), 0)
     : 0;
 
   return (
@@ -84,6 +93,7 @@ export default function CashPositionDashboard() {
             )}
             <Button
               variant="outlined"
+              color="dark"
               size="small"
               startIcon={<Icon>refresh</Icon>}
               onClick={fetchData}
@@ -108,8 +118,7 @@ export default function CashPositionDashboard() {
 
         {!loading && data && (
           <>
-            {/* 4 account type sections */}
-            {ACCOUNT_TYPES.map((type) => (
+            {accountTypes.map((type) => (
               <AccountTypeSection
                 key={type}
                 accountType={type}

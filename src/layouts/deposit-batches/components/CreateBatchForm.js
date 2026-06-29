@@ -1,20 +1,26 @@
 import React, { useState, useEffect, useMemo } from "react";
+import Alert from "@mui/material/Alert";
 import Button from "@mui/material/Button";
 import Checkbox from "@mui/material/Checkbox";
+import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
 import Divider from "@mui/material/Divider";
+import FormControl from "@mui/material/FormControl";
 import FormControlLabel from "@mui/material/FormControlLabel";
+import InputLabel from "@mui/material/InputLabel";
+import MenuItem from "@mui/material/MenuItem";
 import Paper from "@mui/material/Paper";
+import Select from "@mui/material/Select";
 import TextField from "@mui/material/TextField";
-import Alert from "@mui/material/Alert";
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
+import { destinationLabel } from "utils/destinationLabels";
 import { getUnbatchedDCs } from "api/remittanceBatches";
 
 const peso = (v) =>
   `₱${Number(v ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
 
-export default function CreateBatchForm({ marketCode, onSubmit, submitting }) {
+export default function CreateBatchForm({ marketCode, destinationType, canOverride, onSubmit, submitting }) {
   const today = new Date().toISOString().slice(0, 10);
 
   const [dcs, setDcs]         = useState([]);
@@ -22,19 +28,25 @@ export default function CreateBatchForm({ marketCode, onSubmit, submitting }) {
   const [error, setError]     = useState(null);
   const [selected, setSelected] = useState(new Set());
 
-  const [bankName, setBankName]         = useState("");
-  const [last4, setLast4]               = useState("");
-  const [date, setDate]                 = useState(today);
-  const [notes, setNotes]               = useState("");
-  const [validErr, setValidErr]         = useState({});
+  const [localDest, setLocalDest]   = useState(destinationType || "BANK");
+  const [bankName, setBankName]     = useState("");
+  const [last4, setLast4]           = useState("");
+  const [date, setDate]             = useState(today);
+  const [notes, setNotes]           = useState("");
+  const [validErr, setValidErr]     = useState({});
+
+  useEffect(() => { setLocalDest(destinationType || "BANK"); }, [destinationType]);
 
   useEffect(() => {
     setLoading(true);
     getUnbatchedDCs({ market: marketCode })
-      .then(setDcs)
+      .then((res) => setDcs(Array.isArray(res) ? res : (res?.results ?? [])))
       .catch(() => setError("Failed to load unbatched collections."))
       .finally(() => setLoading(false));
   }, [marketCode]);
+
+  const isLGU = localDest === "LGU_TREASURY";
+  const isOverride = localDest !== (destinationType || "BANK");
 
   const toggle = (id) => {
     setSelected((prev) => {
@@ -45,22 +57,17 @@ export default function CreateBatchForm({ marketCode, onSubmit, submitting }) {
   };
 
   const toggleAll = () => {
-    if (selected.size === dcs.length) {
-      setSelected(new Set());
-    } else {
-      setSelected(new Set(dcs.map((d) => d.id)));
-    }
+    setSelected(selected.size === dcs.length ? new Set() : new Set(dcs.map((d) => d.id)));
   };
 
-  const runningTotal = useMemo(() => {
-    return dcs
-      .filter((d) => selected.has(d.id))
-      .reduce((sum, d) => sum + Number(d.total_amount || 0), 0);
-  }, [dcs, selected]);
+  const runningTotal = useMemo(
+    () => dcs.filter((d) => selected.has(d.id)).reduce((sum, d) => sum + Number(d.total_amount || 0), 0),
+    [dcs, selected]
+  );
 
   const validate = () => {
     const errs = {};
-    if (!bankName.trim()) errs.bankName = "Bank name is required.";
+    if (!isLGU && !bankName.trim()) errs.bankName = "Bank name is required.";
     if (!date) errs.date = "Date is required.";
     if (selected.size === 0) errs.dcs = "Select at least one collection.";
     setValidErr(errs);
@@ -72,9 +79,10 @@ export default function CreateBatchForm({ marketCode, onSubmit, submitting }) {
     onSubmit({
       date,
       bank_name: bankName.trim(),
-      bank_account_last4: last4.trim(),
+      bank_account_last4: isLGU ? "" : last4.trim(),
       notes,
       dc_ids: [...selected],
+      destination_type: localDest,
     });
   };
 
@@ -92,12 +100,45 @@ export default function CreateBatchForm({ marketCode, onSubmit, submitting }) {
 
   return (
     <MDBox>
-      {/* Bank metadata */}
+      {/* Destination selector */}
       <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
-        <MDTypography variant="h6" mb={1}>Bank Details</MDTypography>
+        <MDTypography variant="h6" mb={1}>Destination</MDTypography>
+        <MDBox display="flex" alignItems="center" gap={2} flexWrap="wrap">
+          {canOverride ? (
+            <FormControl size="small" sx={{ minWidth: 240 }}>
+              <InputLabel>Destination *</InputLabel>
+              <Select
+                value={localDest}
+                label="Destination *"
+                onChange={(e) => setLocalDest(e.target.value)}
+              >
+                <MenuItem value="BANK">Private Market (Bank)</MenuItem>
+                <MenuItem value="LGU_TREASURY">Public (LGU Treasury Office)</MenuItem>
+              </Select>
+            </FormControl>
+          ) : (
+            <Chip
+              label={`Destination: ${destinationLabel(localDest, "destinationName")}`}
+              size="small"
+              variant="outlined"
+            />
+          )}
+          {isOverride && (
+            <Alert severity="info" sx={{ py: 0 }}>
+              Override: market default is {destinationLabel(destinationType, "destinationName")}.
+            </Alert>
+          )}
+        </MDBox>
+      </Paper>
+
+      {/* Bank / LGU metadata */}
+      <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
+        <MDTypography variant="h6" mb={1}>
+          {isLGU ? "LGU Details" : "Bank Details"}
+        </MDTypography>
         <MDBox display="flex" gap={2} flexWrap="wrap">
           <TextField
-            label="Bank name *"
+            label={isLGU ? "LGU Office name" : "Bank name *"}
             value={bankName}
             onChange={(e) => setBankName(e.target.value)}
             error={!!validErr.bankName}
@@ -105,13 +146,15 @@ export default function CreateBatchForm({ marketCode, onSubmit, submitting }) {
             size="small"
             sx={{ minWidth: 200 }}
           />
-          <TextField
-            label="Account last 4 digits"
-            value={last4}
-            onChange={(e) => setLast4(e.target.value.replace(/\D/g, "").slice(0, 8))}
-            size="small"
-            sx={{ width: 160 }}
-          />
+          {!isLGU && (
+            <TextField
+              label="Account last 4 digits"
+              value={last4}
+              onChange={(e) => setLast4(e.target.value.replace(/\D/g, "").slice(0, 8))}
+              size="small"
+              sx={{ width: 160 }}
+            />
+          )}
           <TextField
             label="Operational date *"
             type="date"
@@ -213,11 +256,7 @@ export default function CreateBatchForm({ marketCode, onSubmit, submitting }) {
       </Paper>
 
       <MDBox mt={2} display="flex" gap={2}>
-        <Button
-          variant="contained"
-          onClick={handleSubmit}
-          disabled={submitting}
-        >
+        <Button variant="contained" color="info" onClick={handleSubmit} disabled={submitting}>
           {submitting ? "Creating…" : "Create Batch"}
         </Button>
       </MDBox>
