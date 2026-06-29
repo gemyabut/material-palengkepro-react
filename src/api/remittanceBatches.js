@@ -24,10 +24,8 @@ export async function markDeposited(id, formData) {
   return data;
 }
 
-export async function confirmBatch(id, bankConfirmationRef) {
-  const { data } = await apiClient.post(`${BASE}/${id}/confirm/`, {
-    bank_confirmation_ref: bankConfirmationRef,
-  });
+export async function confirmBatch(id, refValue, refField = "bank_confirmation_ref") {
+  const { data } = await apiClient.post(`${BASE}/${id}/confirm/`, { [refField]: refValue });
   return data;
 }
 

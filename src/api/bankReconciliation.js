@@ -6,3 +6,5 @@ export async function getBankReconciliation({ market_id, period_start, period_en
   });
   return data;
 }
+
+export const getRemittanceReconciliation = getBankReconciliation;

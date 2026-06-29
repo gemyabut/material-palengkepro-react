@@ -7,7 +7,7 @@ import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
-import { canEditBatches } from "utils/permissions";
+import { canEditBatches, canOverrideDestination } from "utils/permissions";
 import { createBatch } from "api/remittanceBatches";
 import { getMarket } from "api/markets";
 import CreateBatchForm from "./components/CreateBatchForm";
@@ -28,15 +28,14 @@ export default function CreateDepositBatchPage() {
   const { userProfile } = useProfile();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
-  const [marketCode, setMarketCode] = useState(null);
+  const [marketData, setMarketData] = useState(null); // { code, destinationType }
 
-  // Profile returns primary_market as an integer PK; resolve to code via markets API
   useEffect(() => {
     const mid = userProfile?.primary_market ?? userProfile?.primary_market_id;
     if (!mid) return;
     getMarket(mid)
-      .then((m) => setMarketCode(m.code))
-      .catch(() => setMarketCode(""));
+      .then((m) => setMarketData({ code: m.code, destinationType: m.destination_type ?? "BANK" }))
+      .catch(() => setMarketData({ code: "", destinationType: "BANK" }));
   }, [userProfile]);
 
   if (!canEditBatches(role)) return <Navigate to="/deposit-batches" replace />;
@@ -56,14 +55,14 @@ export default function CreateDepositBatchPage() {
   };
 
   const profileReady = userProfile !== null && userProfile?.role !== "guest";
-  const showForm = profileReady && marketCode !== null;
+  const showForm = profileReady && marketData !== null;
 
   return (
     <DashboardLayout>
       <DashboardNavbar />
       <MDBox py={3}>
         <MDBox display="flex" alignItems="center" gap={2} mb={3}>
-          <Button variant="outlined" size="small" onClick={() => navigate("/deposit-batches")}>
+          <Button variant="outlined" color="dark" size="small" onClick={() => navigate("/deposit-batches")}>
             ← Back
           </Button>
           <MDTypography variant="h4" fontWeight="bold">
@@ -78,7 +77,13 @@ export default function CreateDepositBatchPage() {
         )}
 
         {showForm ? (
-          <CreateBatchForm marketCode={marketCode} onSubmit={handleSubmit} submitting={submitting} />
+          <CreateBatchForm
+            marketCode={marketData.code}
+            destinationType={marketData.destinationType}
+            canOverride={canOverrideDestination(role)}
+            onSubmit={handleSubmit}
+            submitting={submitting}
+          />
         ) : (
           <MDTypography variant="body2" color="secondary">
             {profileReady ? "Loading market…" : "Loading profile…"}

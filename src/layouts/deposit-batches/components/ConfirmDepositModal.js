@@ -7,14 +7,18 @@ import DialogTitle from "@mui/material/DialogTitle";
 import TextField from "@mui/material/TextField";
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
+import { destinationLabel } from "utils/destinationLabels";
 
 export default function ConfirmDepositModal({ open, batch, onClose, onConfirm, submitting }) {
-  const [ref, setRef]         = useState("");
+  const [ref, setRef]           = useState("");
   const [refError, setRefError] = useState("");
+
+  const dest     = batch?.destination_type ?? "BANK";
+  const refLabel = destinationLabel(dest, "refLabel");
 
   const handleConfirm = () => {
     if (!ref.trim()) {
-      setRefError("Bank confirmation reference is required.");
+      setRefError(`${refLabel} is required.`);
       return;
     }
     setRefError("");
@@ -23,19 +27,19 @@ export default function ConfirmDepositModal({ open, batch, onClose, onConfirm, s
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Confirm Bank Receipt</DialogTitle>
+      <DialogTitle>Confirm Remittance</DialogTitle>
       <DialogContent>
         <MDTypography variant="body2" color="secondary" mb={2}>
           This will transition batch #{batch?.id} from POSTED to CONFIRMED and trigger the
-          cash movement from Bank Pending → Bank Confirmed.
+          cash movement from {destinationLabel(dest, "pending")} → {destinationLabel(dest, "settled")}.
         </MDTypography>
         <MDBox>
           <TextField
-            label="Bank confirmation reference *"
+            label={`${refLabel} *`}
             value={ref}
             onChange={(e) => { setRef(e.target.value); setRefError(""); }}
             error={!!refError}
-            helperText={refError || "e.g. bank transaction ID or reference number"}
+            helperText={refError || `Enter the ${refLabel.toLowerCase()}`}
             size="small"
             fullWidth
             autoFocus
@@ -51,7 +55,7 @@ export default function ConfirmDepositModal({ open, batch, onClose, onConfirm, s
           color="success"
           disabled={submitting}
         >
-          {submitting ? "Confirming…" : "Confirm Receipt"}
+          {submitting ? "Confirming…" : "Confirm"}
         </Button>
       </DialogActions>
     </Dialog>

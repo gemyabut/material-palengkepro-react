@@ -11,7 +11,8 @@ import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
-import { canViewBankRec, canConfirmBatches } from "utils/permissions";
+import { canViewRemittanceRec, canConfirmBatches } from "utils/permissions";
+import { destinationLabel } from "utils/destinationLabels";
 import { getBankReconciliation } from "api/bankReconciliation";
 import { confirmBatch } from "api/remittanceBatches";
 import useProfile from "layouts/profile/hooks/useProfile";
@@ -61,7 +62,7 @@ export default function BankReconciliationPage() {
         period_end:   periodEnd,
       }));
     } catch {
-      setError("Failed to load bank reconciliation report.");
+      setError("Failed to load reconciliation report.");
     } finally {
       setLoading(false);
     }
@@ -69,16 +70,19 @@ export default function BankReconciliationPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  if (!canViewBankRec(role)) return <Navigate to="/dashboard" replace />;
+  if (!canViewRemittanceRec(role)) return <Navigate to="/dashboard" replace />;
 
-  const canConfirm = canConfirmBatches(role);
+  const canConfirm    = canConfirmBatches(role);
+  const destinationType = data?.market?.destination_type ?? "BANK";
+  const pageTitle       = destinationLabel(destinationType, "pageTitle");
 
-  const handleConfirm = async (bankRef) => {
+  const handleConfirm = async (refValue) => {
     setConfirming(true);
     try {
-      await confirmBatch(confirmTarget.id, bankRef);
+      const refField = destinationLabel(confirmTarget.destination_type ?? destinationType, "refField");
+      await confirmBatch(confirmTarget.id, refValue, refField);
       setConfirmTarget(null);
-      setSnack({ open: true, message: "Batch confirmed. Bank movements created.", severity: "success" });
+      setSnack({ open: true, message: "Batch confirmed. Cash movements created.", severity: "success" });
       load();
     } catch (e) {
       const msg = e?.response?.data?.detail || "Confirmation failed.";
@@ -96,7 +100,7 @@ export default function BankReconciliationPage() {
       <MDBox py={3}>
         {/* Header + controls */}
         <MDBox display="flex" justifyContent="space-between" alignItems="flex-start" mb={2} flexWrap="wrap" gap={2}>
-          <MDTypography variant="h4" fontWeight="bold">Bank Reconciliation</MDTypography>
+          <MDTypography variant="h4" fontWeight="bold">{pageTitle}</MDTypography>
           <MDBox display="flex" gap={2} alignItems="center" flexWrap="wrap" className="no-print">
             <TextField
               label="Period start"
@@ -156,35 +160,31 @@ export default function BankReconciliationPage() {
           </Paper>
         )}
 
-        {/* Error */}
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-        {/* Loading */}
         {(profileLoading || loading) && (
           <MDBox display="flex" justifyContent="center" py={6}>
             <CircularProgress />
           </MDBox>
         )}
 
-        {/* Empty state */}
         {!loading && data && data.by_bank_account.length === 0 && (
           <MDTypography variant="body2" color="secondary">
-            No bank deposits found for this period.
+            No deposits found for this period.
           </MDTypography>
         )}
 
-        {/* Per-bank accordions */}
         {!loading && data && data.by_bank_account.map((entry) => (
           <BankAccountAccordion
             key={entry.bank_name}
             entry={entry}
+            destinationType={destinationType}
             canConfirm={canConfirm}
             onConfirmClick={setConfirmTarget}
           />
         ))}
       </MDBox>
 
-      {/* Quick Confirm modal (reuses Unit 6 component — D3-A) */}
       {confirmTarget && (
         <ConfirmDepositModal
           open={!!confirmTarget}

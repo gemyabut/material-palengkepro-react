@@ -2,12 +2,15 @@ import Grid from "@mui/material/Grid";
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 import AccountTile from "./AccountTile";
+import { DESTINATION_LABELS } from "utils/destinationLabels";
 
 const SECTION_LABELS = {
-  COLLECTOR_POCKET: "Collector Pockets",
-  OPERATOR_SAFE:    "Operator Safe",
-  BANK_PENDING:     "Bank Pending",
-  BANK:             "Bank Confirmed",
+  COLLECTOR_POCKET:     "Collector Pockets",
+  OPERATOR_SAFE:        "Operator Safe",
+  BANK_PENDING:         DESTINATION_LABELS.BANK.pending,
+  BANK:                 DESTINATION_LABELS.BANK.settled,
+  LGU_TREASURY_PENDING: DESTINATION_LABELS.LGU_TREASURY.pending,
+  LGU_TREASURY:         DESTINATION_LABELS.LGU_TREASURY.settled,
 };
 
 export default function AccountTypeSection({ accountType, accounts }) {

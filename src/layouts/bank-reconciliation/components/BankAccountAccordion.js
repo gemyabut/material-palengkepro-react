@@ -6,15 +6,19 @@ import Chip from "@mui/material/Chip";
 import Icon from "@mui/material/Icon";
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
+import { destinationLabel } from "utils/destinationLabels";
 import BatchRowsTable from "./BatchRowsTable";
 import UnmatchedAlert from "./UnmatchedAlert";
 
 const peso = (v) =>
   `₱${Number(v ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-export default function BankAccountAccordion({ entry, canConfirm, onConfirmClick }) {
+export default function BankAccountAccordion({ entry, destinationType, canConfirm, onConfirmClick }) {
   const [expanded, setExpanded] = useState(true);
   const hasUnmatched = entry.unmatched && entry.unmatched.length > 0;
+
+  const sectionTitle = entry.bank_name ||
+    destinationLabel(destinationType ?? "BANK", "destinationName");
 
   return (
     <Accordion
@@ -26,7 +30,7 @@ export default function BankAccountAccordion({ entry, canConfirm, onConfirmClick
       <AccordionSummary expandIcon={<Icon>expand_more</Icon>}>
         <MDBox display="flex" alignItems="center" gap={2} flexWrap="wrap" width="100%">
           <MDTypography variant="h6" fontWeight="bold">
-            {entry.bank_name || "Unknown Bank"}
+            {sectionTitle}
           </MDTypography>
 
           <MDBox display="flex" gap={1} alignItems="center">
