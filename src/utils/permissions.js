@@ -166,3 +166,13 @@ export const canSeeAllImportJobs = (r) =>
 
 // GRACE mode: Finance Mgr / Market Admin only for historical import (DEC-043).
 export const canUseGraceMode = (r) => has(r, ["market_administrator", "finance_head"]);
+
+/**
+ * Settings — ChargeType + ExpenseCategory master data (DEC-044 / Unit 16).
+ * Top Tier only: executive (Owner), finance_head (Finance Mgr), market_administrator.
+ * Vocabulary debt: DEC-055 uses "Owner/Finance Manager" — actual DB codes are
+ * "executive/finance_head". Mapping documented in DECISIONS.md after Unit 16 ships.
+ */
+const TOP_TIER = ["executive", "finance_head", "market_administrator"];
+export const canViewSettings      = (r) => has(r, TOP_TIER);
+export const canManageChargeTypes = (r) => has(r, TOP_TIER);

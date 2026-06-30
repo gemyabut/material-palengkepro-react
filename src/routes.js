@@ -63,6 +63,12 @@ import SignIn from "layouts/authentication/sign-in";
 import SignUp from "layouts/authentication/sign-up";
 import ForgotPassword from "layouts/authentication/forgot-password";
 import PasswordResetConfirm from "layouts/authentication/password-reset-confirm";
+import ChargeTypeListPage   from "layouts/settings/charge-types";
+import ChargeTypeCreatePage from "layouts/settings/charge-types/create";
+import ChargeTypeDetailPage from "layouts/settings/charge-types/detail";
+import ExpenseCategoryListPage   from "layouts/settings/expense-categories";
+import ExpenseCategoryCreatePage from "layouts/settings/expense-categories/create";
+import ExpenseCategoryDetailPage from "layouts/settings/expense-categories/detail";
 
 // @mui icons
 import Icon from "@mui/material/Icon";
@@ -233,6 +239,13 @@ const routes = [
     route: "/administration",
     component: <Administration />,
   },
+  // Settings — ChargeType + ExpenseCategory (Unit 16 / DEC-044; Top Tier only)
+  { type: "route", name: "Charge Types",             key: "charge-types",             route: "/settings/charge-types",              component: <ChargeTypeListPage /> },
+  { type: "route", name: "New Charge Type",          key: "charge-types-new",         route: "/settings/charge-types/new",          component: <ChargeTypeCreatePage /> },
+  { type: "route", name: "Charge Type Detail",       key: "charge-types-detail",      route: "/settings/charge-types/:id",          component: <ChargeTypeDetailPage /> },
+  { type: "route", name: "Expense Categories",       key: "expense-categories",       route: "/settings/expense-categories",        component: <ExpenseCategoryListPage /> },
+  { type: "route", name: "New Expense Category",     key: "expense-categories-new",   route: "/settings/expense-categories/new",    component: <ExpenseCategoryCreatePage /> },
+  { type: "route", name: "Expense Category Detail",  key: "expense-categories-detail",route: "/settings/expense-categories/:id",    component: <ExpenseCategoryDetailPage /> },
   {
     // Tenant-facing read-only portal — routable but NOT in the operator sidenav (type: route).
     type: "route",
