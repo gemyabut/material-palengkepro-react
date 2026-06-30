@@ -43,6 +43,7 @@ import Leases from "layouts/leases";
 import Stalls from "layouts/stalls";
 import Tenants from "layouts/tenants";
 import BatchImport from "layouts/batch-import";
+import SpreadsheetUpload from "layouts/spreadsheet-upload";
 import Reports from "layouts/reports";
 import SoaPage from "layouts/soa";
 import AgingDashboard from "layouts/aging";
@@ -114,6 +115,14 @@ const routes = [
     icon: <Icon fontSize="small">Person</Icon>,
     route: "/tenants",
     component: <Tenants />,
+  },
+  {
+    type: "collapse",
+    name: "Spreadsheet Upload",
+    key: "spreadsheet-upload",
+    icon: <Icon fontSize="small">table_view</Icon>,
+    route: "/spreadsheet-upload",
+    component: <SpreadsheetUpload />,
   },
   {
     type: "collapse",

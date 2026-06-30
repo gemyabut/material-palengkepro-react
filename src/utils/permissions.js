@@ -131,3 +131,38 @@ export const canViewBankRec = canViewRemittanceRec; // backwards-compat alias
  * AR + admin/finance roles only; cashier sees read-only chip (separation of duties).
  */
 export const canOverrideDestination = (r) => canViewReports(r);
+
+/**
+ * Spreadsheet Upload page RBAC (Unit 13, DEC-055).
+ * Per-domain stewardship mirrors doc 21 §5 but extended to all 10 csv_import domains.
+ * receipt_book is restricted to market_administrator + finance_head only (no admin_staff).
+ */
+const SPREADSHEET_DOMAIN_ROLES = {
+  tenant:             [...MARKET_ADMIN, "finance_head", "leasing_officer", "accounts_receivable"],
+  stall:              [...MARKET_ADMIN, "finance_head", "leasing_officer", "accounts_receivable"],
+  lease:              [...MARKET_ADMIN, "finance_head", "leasing_officer", "accounts_receivable"],
+  payment:            [...MARKET_ADMIN, "finance_head", "accounts_receivable", "accounting_staff", "cashier"],
+  collection_summary: [...MARKET_ADMIN, "finance_head", "accounts_receivable", "accounting_staff"],
+  receipt_issue:      [...MARKET_ADMIN, "finance_head", "accounts_receivable", "accounting_staff"],
+  receipt_book:       ["market_administrator", "finance_head"],
+  deposit_slip:       [...MARKET_ADMIN, "finance_head", "accounting_staff"],
+  cashier_intake:     [...MARKET_ADMIN, "finance_head", "accounting_staff"],
+  remittance_batch:   [...MARKET_ADMIN, "finance_head", "accounting_staff"],
+};
+
+export const SPREADSHEET_UPLOAD_DOMAINS = Object.keys(SPREADSHEET_DOMAIN_ROLES);
+
+export const canUploadSpreadsheetDomain = (r, domain) =>
+  has(r, SPREADSHEET_DOMAIN_ROLES[domain] || []);
+
+export const spreadsheetUploadDomains = (r) =>
+  SPREADSHEET_UPLOAD_DOMAINS.filter((d) => canUploadSpreadsheetDomain(r, d));
+
+export const canUseSpreadsheetUpload = (r) => spreadsheetUploadDomains(r).length > 0;
+
+// D4: top-tier sees all import jobs; others see own (requires actor field on ImportJob).
+export const canSeeAllImportJobs = (r) =>
+  has(r, ["market_administrator", "finance_head", "executive"]);
+
+// GRACE mode: Finance Mgr / Market Admin only for historical import (DEC-043).
+export const canUseGraceMode = (r) => has(r, ["market_administrator", "finance_head"]);
