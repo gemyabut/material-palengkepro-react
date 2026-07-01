@@ -58,6 +58,11 @@ import TenantInquiry from "layouts/tenant-inquiry";
 import Subscription from "layouts/subscription";
 import Administration from "layouts/administration";
 import TenantPortal from "layouts/tenant-portal";
+import TenantLogin from "layouts/tenant-portal/login";
+import TenantChangePassword from "layouts/tenant-portal/change-password";
+import TenantDashboard from "layouts/tenant-portal/dashboard";
+import TenantSOA from "layouts/tenant-portal/soa";
+import TenantPayments from "layouts/tenant-portal/payments";
 import Profile from "layouts/profile";
 import SignIn from "layouts/authentication/sign-in";
 import SignUp from "layouts/authentication/sign-up";
@@ -246,14 +251,14 @@ const routes = [
   { type: "route", name: "Expense Categories",       key: "expense-categories",       route: "/settings/expense-categories",        component: <ExpenseCategoryListPage /> },
   { type: "route", name: "New Expense Category",     key: "expense-categories-new",   route: "/settings/expense-categories/new",    component: <ExpenseCategoryCreatePage /> },
   { type: "route", name: "Expense Category Detail",  key: "expense-categories-detail",route: "/settings/expense-categories/:id",    component: <ExpenseCategoryDetailPage /> },
-  {
-    // Tenant-facing read-only portal — routable but NOT in the operator sidenav (type: route).
-    type: "route",
-    name: "Tenant Portal",
-    key: "tenant-portal",
-    route: "/tenant-portal",
-    component: <TenantPortal />,
-  },
+  // D9 (Unit 15 DEC-042): old /tenant-portal (IAM-3 unauthenticated) → redirects to /tenant/login.
+  { type: "route", name: "Tenant Portal Legacy", key: "tenant-portal-legacy", route: "/tenant-portal", component: <TenantPortal /> },
+  // D7 (Unit 15 DEC-042): JWT-authenticated tenant portal — /tenant/* prefix, NOT in operator sidenav.
+  { type: "route", name: "Tenant Login",           key: "tenant-login",           route: "/tenant/login",            component: <TenantLogin /> },
+  { type: "route", name: "Tenant Change Password", key: "tenant-change-password", route: "/tenant/change-password",  component: <TenantChangePassword /> },
+  { type: "route", name: "Tenant Dashboard",       key: "tenant-dashboard",       route: "/tenant/dashboard",        component: <TenantDashboard /> },
+  { type: "route", name: "Tenant SOA",             key: "tenant-soa",             route: "/tenant/soa",              component: <TenantSOA /> },
+  { type: "route", name: "Tenant Payments",        key: "tenant-payments",        route: "/tenant/payments",         component: <TenantPayments /> },
   {
     type: "collapse",
     name: "Profile",
