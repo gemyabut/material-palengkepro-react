@@ -21,9 +21,12 @@ import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import { canViewBatches, canEditBatches, canConfirmBatches } from "utils/permissions";
 import { destinationLabel } from "utils/destinationLabels";
 import { getBatch, markDeposited, confirmBatch } from "api/remittanceBatches";
+import { listBatchDeductions } from "api/deductions";
 import BatchStatusChip from "./components/BatchStatusChip";
 import MarkDepositedModal from "./components/MarkDepositedModal";
 import ConfirmDepositModal from "./components/ConfirmDepositModal";
+import DeductionList from "./components/DeductionList";
+import DeductionCreateModal from "./components/DeductionCreateModal";
 
 function getRole() {
   const t = localStorage.getItem("access_token") || sessionStorage.getItem("access_token");
@@ -73,18 +76,30 @@ export default function DepositBatchDetailPage() {
   const [depositOpen, setDepositOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [actioning, setActioning] = useState(false);
+  const [deductions, setDeductions] = useState(null);
+  const [deductionOpen, setDeductionOpen] = useState(false);
+
+  const loadDeductions = useCallback(async (batchId) => {
+    try {
+      setDeductions(await listBatchDeductions(batchId));
+    } catch {
+      /* non-blocking */
+    }
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      setBatch(await getBatch(id));
+      const b = await getBatch(id);
+      setBatch(b);
+      loadDeductions(id);
     } catch (e) {
       setError(e?.response?.status === 404 ? "Batch not found." : "Failed to load batch.");
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, loadDeductions]);
 
   useEffect(() => {
     load();
@@ -118,7 +133,12 @@ export default function DepositBatchDetailPage() {
       const updated = await confirmBatch(id, ref, refField);
       setBatch(updated);
       setConfirmOpen(false);
-      toast(`Remittance confirmed. Cash moved: ${destinationLabel(dest, "pending")} → ${destinationLabel(dest, "settled")}.`);
+      toast(
+        `Remittance confirmed. Cash moved: ${destinationLabel(
+          dest,
+          "pending"
+        )} → ${destinationLabel(dest, "settled")}.`
+      );
     } catch (e) {
       const detail =
         e?.response?.data?.detail ||
@@ -336,7 +356,14 @@ export default function DepositBatchDetailPage() {
                     {d.deposit_date}
                   </MDTypography>
                   {d.file_url && (
-                    <Button size="small" variant="outlined" color="dark" href={`${MEDIA_BASE}${d.file_url}`} target="_blank" rel="noreferrer">
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      color="dark"
+                      href={`${MEDIA_BASE}${d.file_url}`}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
                       View {destinationLabel(dest, "proofLabel")}
                     </Button>
                   )}
@@ -347,8 +374,16 @@ export default function DepositBatchDetailPage() {
           </>
         )}
 
+        <DeductionList
+          deductions={deductions}
+          batchId={id}
+          role={role}
+          onOpenCreate={() => setDeductionOpen(true)}
+          onRefresh={() => loadDeductions(id)}
+        />
+
         {/* Action buttons */}
-        <MDBox display="flex" gap={2} flexWrap="wrap">
+        <MDBox display="flex" gap={2} flexWrap="wrap" mt={3}>
           <Button variant="outlined" color="dark" onClick={() => navigate("/deposit-batches")}>
             Back to List
           </Button>
@@ -365,6 +400,20 @@ export default function DepositBatchDetailPage() {
         </MDBox>
       </MDBox>
 
+      {deductionOpen && (
+        <DeductionCreateModal
+          open={deductionOpen}
+          batchId={id}
+          pendingCount={
+            (deductions?.items || []).filter((d) => d.status === "PENDING_APPROVAL").length
+          }
+          onClose={() => setDeductionOpen(false)}
+          onCreated={() => {
+            setDeductionOpen(false);
+            loadDeductions(id);
+          }}
+        />
+      )}
       {depositOpen && (
         <MarkDepositedModal
           open={depositOpen}
