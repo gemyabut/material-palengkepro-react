@@ -51,6 +51,7 @@ import CashPositionDashboard from "layouts/cash-position";
 import DepositBatchListPage from "layouts/deposit-batches";
 import DepositBatchDetailPage from "layouts/deposit-batches/detail";
 import CreateDepositBatchPage from "layouts/deposit-batches/create";
+import DeductionApprovalQueue from "layouts/deposit-batches/components/DeductionApprovalQueue";
 import EodCashCountPage from "layouts/eod-cash-count";
 import SubmitEodCountPage from "layouts/eod-cash-count/submit";
 import BankReconciliationPage from "layouts/bank-reconciliation";
@@ -68,10 +69,10 @@ import SignIn from "layouts/authentication/sign-in";
 import SignUp from "layouts/authentication/sign-up";
 import ForgotPassword from "layouts/authentication/forgot-password";
 import PasswordResetConfirm from "layouts/authentication/password-reset-confirm";
-import ChargeTypeListPage   from "layouts/settings/charge-types";
+import ChargeTypeListPage from "layouts/settings/charge-types";
 import ChargeTypeCreatePage from "layouts/settings/charge-types/create";
 import ChargeTypeDetailPage from "layouts/settings/charge-types/detail";
-import ExpenseCategoryListPage   from "layouts/settings/expense-categories";
+import ExpenseCategoryListPage from "layouts/settings/expense-categories";
 import ExpenseCategoryCreatePage from "layouts/settings/expense-categories/create";
 import ExpenseCategoryDetailPage from "layouts/settings/expense-categories/detail";
 
@@ -198,6 +199,13 @@ const routes = [
     component: <CreateDepositBatchPage />,
   },
   {
+    type: "route",
+    name: "Deduction Approval Queue",
+    key: "deduction-approval-queue",
+    route: "/deposit-batches/deductions/pending",
+    component: <DeductionApprovalQueue />,
+  },
+  {
     type: "collapse",
     name: "EOD Cash Count",
     key: "eod-cash-count",
@@ -245,20 +253,92 @@ const routes = [
     component: <Administration />,
   },
   // Settings — ChargeType + ExpenseCategory (Unit 16 / DEC-044; Top Tier only)
-  { type: "route", name: "Charge Types",             key: "charge-types",             route: "/settings/charge-types",              component: <ChargeTypeListPage /> },
-  { type: "route", name: "New Charge Type",          key: "charge-types-new",         route: "/settings/charge-types/new",          component: <ChargeTypeCreatePage /> },
-  { type: "route", name: "Charge Type Detail",       key: "charge-types-detail",      route: "/settings/charge-types/:id",          component: <ChargeTypeDetailPage /> },
-  { type: "route", name: "Expense Categories",       key: "expense-categories",       route: "/settings/expense-categories",        component: <ExpenseCategoryListPage /> },
-  { type: "route", name: "New Expense Category",     key: "expense-categories-new",   route: "/settings/expense-categories/new",    component: <ExpenseCategoryCreatePage /> },
-  { type: "route", name: "Expense Category Detail",  key: "expense-categories-detail",route: "/settings/expense-categories/:id",    component: <ExpenseCategoryDetailPage /> },
+  {
+    type: "route",
+    name: "Charge Types",
+    key: "charge-types",
+    route: "/settings/charge-types",
+    component: <ChargeTypeListPage />,
+  },
+  {
+    type: "route",
+    name: "New Charge Type",
+    key: "charge-types-new",
+    route: "/settings/charge-types/new",
+    component: <ChargeTypeCreatePage />,
+  },
+  {
+    type: "route",
+    name: "Charge Type Detail",
+    key: "charge-types-detail",
+    route: "/settings/charge-types/:id",
+    component: <ChargeTypeDetailPage />,
+  },
+  {
+    type: "route",
+    name: "Expense Categories",
+    key: "expense-categories",
+    route: "/settings/expense-categories",
+    component: <ExpenseCategoryListPage />,
+  },
+  {
+    type: "route",
+    name: "New Expense Category",
+    key: "expense-categories-new",
+    route: "/settings/expense-categories/new",
+    component: <ExpenseCategoryCreatePage />,
+  },
+  {
+    type: "route",
+    name: "Expense Category Detail",
+    key: "expense-categories-detail",
+    route: "/settings/expense-categories/:id",
+    component: <ExpenseCategoryDetailPage />,
+  },
   // D9 (Unit 15 DEC-042): old /tenant-portal (IAM-3 unauthenticated) → redirects to /tenant/login.
-  { type: "route", name: "Tenant Portal Legacy", key: "tenant-portal-legacy", route: "/tenant-portal", component: <TenantPortal /> },
+  {
+    type: "route",
+    name: "Tenant Portal Legacy",
+    key: "tenant-portal-legacy",
+    route: "/tenant-portal",
+    component: <TenantPortal />,
+  },
   // D7 (Unit 15 DEC-042): JWT-authenticated tenant portal — /tenant/* prefix, NOT in operator sidenav.
-  { type: "route", name: "Tenant Login",           key: "tenant-login",           route: "/tenant/login",            component: <TenantLogin /> },
-  { type: "route", name: "Tenant Change Password", key: "tenant-change-password", route: "/tenant/change-password",  component: <TenantChangePassword /> },
-  { type: "route", name: "Tenant Dashboard",       key: "tenant-dashboard",       route: "/tenant/dashboard",        component: <TenantDashboard /> },
-  { type: "route", name: "Tenant SOA",             key: "tenant-soa",             route: "/tenant/soa",              component: <TenantSOA /> },
-  { type: "route", name: "Tenant Payments",        key: "tenant-payments",        route: "/tenant/payments",         component: <TenantPayments /> },
+  {
+    type: "route",
+    name: "Tenant Login",
+    key: "tenant-login",
+    route: "/tenant/login",
+    component: <TenantLogin />,
+  },
+  {
+    type: "route",
+    name: "Tenant Change Password",
+    key: "tenant-change-password",
+    route: "/tenant/change-password",
+    component: <TenantChangePassword />,
+  },
+  {
+    type: "route",
+    name: "Tenant Dashboard",
+    key: "tenant-dashboard",
+    route: "/tenant/dashboard",
+    component: <TenantDashboard />,
+  },
+  {
+    type: "route",
+    name: "Tenant SOA",
+    key: "tenant-soa",
+    route: "/tenant/soa",
+    component: <TenantSOA />,
+  },
+  {
+    type: "route",
+    name: "Tenant Payments",
+    key: "tenant-payments",
+    route: "/tenant/payments",
+    component: <TenantPayments />,
+  },
   {
     type: "collapse",
     name: "Profile",

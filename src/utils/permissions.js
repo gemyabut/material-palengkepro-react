@@ -24,11 +24,25 @@ export const canViewTenants = (r) => has(r, [...OPERATORS, "accounts_receivable"
 export const canViewStalls = (r) => has(r, OPERATORS);
 export const canViewLeases = (r) => has(r, [...OPERATORS, "accounts_receivable"]);
 export const canViewPayments = (r) =>
-  has(r, [...MARKET_ADMIN, "market_manager", "accounts_receivable", "accounting_staff", "cashier", "collector", "executive"]);
+  has(r, [
+    ...MARKET_ADMIN,
+    "market_manager",
+    "accounts_receivable",
+    "accounting_staff",
+    "cashier",
+    "collector",
+    "executive",
+  ]);
 
 // Upload Center access (doc 21 §5 UPLOAD roles; matches backend UPLOAD_ROLES).
 export const canUpload = (r) =>
-  has(r, ["market_administrator", "admin_staff", "leasing_officer", "accounts_receivable", "accounting_staff"]);
+  has(r, [
+    "market_administrator",
+    "admin_staff",
+    "leasing_officer",
+    "accounts_receivable",
+    "accounting_staff",
+  ]);
 
 // Per-domain upload stewardship (doc 21 §5): master data (tenant/stall/lease) is the
 // leasing side; payments/collections are the finance side. Market admins do all.
@@ -61,7 +75,14 @@ export const canEditLease = (r) => has(r, [...MARKET_ADMIN, "market_manager", "l
 // ---- Reports & Tenant Inquiry (doc 21 §6) ----
 // Finance reports (SOA / aging / collections / delinquent) — sees ₱ balances.
 export const canViewReports = (r) =>
-  has(r, [...MARKET_ADMIN, "market_manager", "finance_head", "accounts_receivable", "accounting_staff", "executive"]);
+  has(r, [
+    ...MARKET_ADMIN,
+    "market_manager",
+    "finance_head",
+    "accounts_receivable",
+    "accounting_staff",
+    "executive",
+  ]);
 // Tenant Inquiry is broader: finance roles + leasing officer (latter sees tenant+lease only).
 export const canUseInquiry = (r) => canViewReports(r) || has(r, ["leasing_officer"]);
 
@@ -87,8 +108,8 @@ export const canViewCash = (r) => canViewReports(r) || has(r, ["cashier", "colle
  * canViewBatches / canEditBatches: finance roles + cashier.
  * canConfirmBatches: finance roles only — cashier excluded (separation of duties).
  */
-export const canViewBatches  = (r) => canViewReports(r) || has(r, ["cashier"]);
-export const canEditBatches  = (r) => canViewBatches(r);
+export const canViewBatches = (r) => canViewReports(r) || has(r, ["cashier"]);
+export const canEditBatches = (r) => canViewBatches(r);
 export const canConfirmBatches = (r) => canViewReports(r);
 
 // Subscription & Billing self-service — the company's Market Administrator (doc: SUB-3).
@@ -115,7 +136,7 @@ export const canSeeRawAmounts = (r) =>
  * canViewEodCounts: finance roles + cashier + collector (same as canViewCash).
  * canApproveEodCounts: finance roles only — cashier/collector excluded (separation of duties).
  */
-export const canViewEodCounts   = (r) => canViewReports(r) || has(r, ["cashier", "collector"]);
+export const canViewEodCounts = (r) => canViewReports(r) || has(r, ["cashier", "collector"]);
 export const canApproveEodCounts = (r) => canViewReports(r);
 
 /**
@@ -138,16 +159,16 @@ export const canOverrideDestination = (r) => canViewReports(r);
  * receipt_book is restricted to market_administrator + finance_head only (no admin_staff).
  */
 const SPREADSHEET_DOMAIN_ROLES = {
-  tenant:             [...MARKET_ADMIN, "finance_head", "leasing_officer", "accounts_receivable"],
-  stall:              [...MARKET_ADMIN, "finance_head", "leasing_officer", "accounts_receivable"],
-  lease:              [...MARKET_ADMIN, "finance_head", "leasing_officer", "accounts_receivable"],
-  payment:            [...MARKET_ADMIN, "finance_head", "accounts_receivable", "accounting_staff", "cashier"],
+  tenant: [...MARKET_ADMIN, "finance_head", "leasing_officer", "accounts_receivable"],
+  stall: [...MARKET_ADMIN, "finance_head", "leasing_officer", "accounts_receivable"],
+  lease: [...MARKET_ADMIN, "finance_head", "leasing_officer", "accounts_receivable"],
+  payment: [...MARKET_ADMIN, "finance_head", "accounts_receivable", "accounting_staff", "cashier"],
   collection_summary: [...MARKET_ADMIN, "finance_head", "accounts_receivable", "accounting_staff"],
-  receipt_issue:      [...MARKET_ADMIN, "finance_head", "accounts_receivable", "accounting_staff"],
-  receipt_book:       ["market_administrator", "finance_head"],
-  deposit_slip:       [...MARKET_ADMIN, "finance_head", "accounting_staff"],
-  cashier_intake:     [...MARKET_ADMIN, "finance_head", "accounting_staff"],
-  remittance_batch:   [...MARKET_ADMIN, "finance_head", "accounting_staff"],
+  receipt_issue: [...MARKET_ADMIN, "finance_head", "accounts_receivable", "accounting_staff"],
+  receipt_book: ["market_administrator", "finance_head"],
+  deposit_slip: [...MARKET_ADMIN, "finance_head", "accounting_staff"],
+  cashier_intake: [...MARKET_ADMIN, "finance_head", "accounting_staff"],
+  remittance_batch: [...MARKET_ADMIN, "finance_head", "accounting_staff"],
 };
 
 export const SPREADSHEET_UPLOAD_DOMAINS = Object.keys(SPREADSHEET_DOMAIN_ROLES);
@@ -174,5 +195,23 @@ export const canUseGraceMode = (r) => has(r, ["market_administrator", "finance_h
  * "executive/finance_head". Mapping documented in DECISIONS.md after Unit 16 ships.
  */
 const TOP_TIER = ["executive", "finance_head", "market_administrator"];
-export const canViewSettings      = (r) => has(r, TOP_TIER);
+export const canViewSettings = (r) => has(r, TOP_TIER);
 export const canManageChargeTypes = (r) => has(r, TOP_TIER);
+
+/**
+ * Cash Deduction workflow (DEC-046 / Unit 18).
+ * canCreateDeduction: cashier + top-tier + admin_staff.
+ *   Collector excluded (mobile-only Tier 1, Quirk #24).
+ * canApproveDeduction: top-tier only (market_administrator, finance_head, executive).
+ *   Cashier cannot self-approve — separation of duties.
+ */
+const DEDUCTION_CREATOR_ROLES = [
+  "cashier",
+  "market_administrator",
+  "admin_staff",
+  "finance_head",
+  "executive",
+];
+const DEDUCTION_APPROVER_ROLES = [...TOP_TIER];
+export const canCreateDeduction = (r) => has(r, DEDUCTION_CREATOR_ROLES);
+export const canApproveDeduction = (r) => has(r, DEDUCTION_APPROVER_ROLES);

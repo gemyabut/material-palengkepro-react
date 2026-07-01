@@ -15,19 +15,27 @@ import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import { canViewCash } from "utils/permissions";
 import { getCashPosition } from "api/cashPosition";
 import AccountTypeSection from "./components/AccountTypeSection";
+import DeductionsTodayWidget from "./components/DeductionsTodayWidget";
 
 function getRole() {
   const t = localStorage.getItem("access_token") || sessionStorage.getItem("access_token");
-  try { return (jwtDecode(t).role || "").toLowerCase(); } catch { return ""; }
+  try {
+    return (jwtDecode(t).role || "").toLowerCase();
+  } catch {
+    return "";
+  }
 }
 
 function fmtAsOf(iso) {
   if (!iso) return "—";
-  try { return new Date(iso).toLocaleString(); } catch { return iso; }
+  try {
+    return new Date(iso).toLocaleString();
+  } catch {
+    return iso;
+  }
 }
 
-const peso = (v) =>
-  `₱${Number(v ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+const peso = (v) => `₱${Number(v ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
 
 function getAccountTypes(destinationType) {
   const isLGU = destinationType === "LGU_TREASURY";
@@ -35,17 +43,17 @@ function getAccountTypes(destinationType) {
     "COLLECTOR_POCKET",
     "OPERATOR_SAFE",
     isLGU ? "LGU_TREASURY_PENDING" : "BANK_PENDING",
-    isLGU ? "LGU_TREASURY"         : "BANK",
+    isLGU ? "LGU_TREASURY" : "BANK",
   ];
 }
 
 export default function CashPositionDashboard() {
-  const role    = getRole();
+  const role = getRole();
   const allowed = canViewCash(role);
 
-  const [data, setData]       = useState(null);
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError]     = useState(null);
+  const [error, setError] = useState(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -53,28 +61,40 @@ export default function CashPositionDashboard() {
     try {
       setData(await getCashPosition());
     } catch (e) {
-      setError(e?.response?.data?.error || e?.response?.data?.detail || e.message || "Failed to load cash position.");
+      setError(
+        e?.response?.data?.error ||
+          e?.response?.data?.detail ||
+          e.message ||
+          "Failed to load cash position."
+      );
     } finally {
       setLoading(false);
     }
   }, []);
 
-  React.useEffect(() => { if (allowed) fetchData(); }, [fetchData, allowed]);
+  React.useEffect(() => {
+    if (allowed) fetchData();
+  }, [fetchData, allowed]);
 
   if (!allowed) return <Navigate to="/dashboard" replace />;
 
   const destinationType = data?.market?.destination_type ?? "BANK";
-  const accountTypes    = getAccountTypes(destinationType);
-  const totalCount      = data
-    ? accountTypes.reduce((n, t) => n + (data[t]?.length ?? 0), 0)
-    : 0;
+  const accountTypes = getAccountTypes(destinationType);
+  const totalCount = data ? accountTypes.reduce((n, t) => n + (data[t]?.length ?? 0), 0) : 0;
 
   return (
     <DashboardLayout>
       <DashboardNavbar />
       <MDBox py={3}>
         {/* Header */}
-        <MDBox mb={3} display="flex" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={2}>
+        <MDBox
+          mb={3}
+          display="flex"
+          alignItems="center"
+          justifyContent="space-between"
+          flexWrap="wrap"
+          gap={2}
+        >
           <MDBox>
             <MDTypography variant="h4" fontWeight="bold">
               Cash Position
@@ -119,12 +139,10 @@ export default function CashPositionDashboard() {
         {!loading && data && (
           <>
             {accountTypes.map((type) => (
-              <AccountTypeSection
-                key={type}
-                accountType={type}
-                accounts={data[type] ?? []}
-              />
+              <AccountTypeSection key={type} accountType={type} accounts={data[type] ?? []} />
             ))}
+
+            <DeductionsTodayWidget deductionsToday={data.deductions_today} />
 
             {/* Grand total footer */}
             <Card>
