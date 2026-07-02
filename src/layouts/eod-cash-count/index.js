@@ -3,6 +3,7 @@ import { useNavigate, Navigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import Alert from "@mui/material/Alert";
 import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
 import FormControl from "@mui/material/FormControl";
 import InputLabel from "@mui/material/InputLabel";
@@ -37,10 +38,11 @@ const peso = (v) =>
   `₱${Number(v ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 const STATUS_OPTIONS = [
-  { value: "PENDING_APPROVAL", label: "Pending Approval" },
-  { value: "POSTED",           label: "Posted" },
-  { value: "LOCKED",           label: "Locked" },
-  { value: "",                 label: "All" },
+  { value: "PENDING_APPROVAL",  label: "Pending Approval" },
+  { value: "ESCALATED",         label: "Override Queue" },
+  { value: "POSTED",            label: "Posted" },
+  { value: "LOCKED",            label: "Locked" },
+  { value: "",                  label: "All" },
 ];
 
 export default function EodCashCountPage() {
@@ -59,7 +61,11 @@ export default function EodCashCountPage() {
     setError(null);
     try {
       const params = {};
-      if (statusFilter) params.status = statusFilter;
+      if (statusFilter === "ESCALATED") {
+        params.escalated_to_admin = "true";
+      } else if (statusFilter) {
+        params.status = statusFilter;
+      }
       const resp = await listEodCounts(params);
       setCounts(Array.isArray(resp) ? resp : (resp?.results ?? []));
     } catch {
@@ -170,7 +176,12 @@ export default function EodCashCountPage() {
                         </MDTypography>
                       </TableCell>
                       <TableCell>
-                        <CashierIntakeStatusChip status={c.status} />
+                        <MDBox display="flex" gap={0.5} flexWrap="wrap">
+                          <CashierIntakeStatusChip status={c.status} />
+                          {c.escalated_to_admin && (
+                            <Chip label="Override Pending" color="warning" size="small" />
+                          )}
+                        </MDBox>
                       </TableCell>
                       <TableCell>
                         {c.status === "OPEN" && (

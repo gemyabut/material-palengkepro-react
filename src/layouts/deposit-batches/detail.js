@@ -118,7 +118,11 @@ export default function DepositBatchDetailPage() {
       const dest = batch?.destination_type ?? "BANK";
       toast(`Batch marked as deposited. Cash moved: Safe → ${destinationLabel(dest, "pending")}.`);
     } catch (e) {
-      const detail = e?.response?.data?.detail || e?.response?.data?.slip_file || "Action failed.";
+      const detail =
+        e?.response?.data?.denomination_total?.[0] ||
+        e?.response?.data?.detail ||
+        e?.response?.data?.slip_file ||
+        "Action failed.";
       toast(detail, "error");
     } finally {
       setActioning(false);
@@ -265,6 +269,43 @@ export default function DepositBatchDetailPage() {
             </Paper>
           </Grid>
         </Grid>
+
+        {/* Denomination breakdown — shown when entered on mark-deposited (D4) */}
+        {batch.denomination_entered && (
+          <MDBox mb={2}>
+            <MDTypography variant="h6" mb={1}>Denomination Breakdown</MDTypography>
+            <Paper variant="outlined" sx={{ p: 2 }}>
+              {[
+                ["₱1,000 bills", batch.bill_1000, 1000],
+                ["₱500 bills",   batch.bill_500,  500],
+                ["₱200 bills",   batch.bill_200,  200],
+                ["₱100 bills",   batch.bill_100,  100],
+                ["₱50 bills",    batch.bill_50,   50],
+                ["₱20 bills",    batch.bill_20,   20],
+                ["₱20 coins",    batch.coin_20,   20],
+                ["₱10 coins",    batch.coin_10,   10],
+                ["₱5 coins",     batch.coin_5,    5],
+                ["₱1 coins",     batch.coin_1,    1],
+                ["25¢ coins",    batch.coin_025,  0.25],
+                ["10¢ coins",    batch.coin_010,  0.10],
+              ].filter(([, count]) => count > 0).map(([label, count, unit]) => (
+                <MDBox key={label} display="flex" justifyContent="space-between" mb={0.5}>
+                  <MDTypography variant="caption">{label} × {count}</MDTypography>
+                  <MDTypography variant="caption" fontWeight="medium">
+                    {peso(count * unit)}
+                  </MDTypography>
+                </MDBox>
+              ))}
+              <MDBox display="flex" justifyContent="space-between" mt={1} pt={1}
+                sx={{ borderTop: "1px solid #e0e0e0" }}>
+                <MDTypography variant="body2" fontWeight="bold">Denomination Total</MDTypography>
+                <MDTypography variant="body2" fontWeight="bold">
+                  {peso(batch.computed_denomination_total)}
+                </MDTypography>
+              </MDBox>
+            </Paper>
+          </MDBox>
+        )}
 
         {/* Items table */}
         <MDTypography variant="h6" mb={1}>

@@ -215,3 +215,23 @@ const DEDUCTION_CREATOR_ROLES = [
 const DEDUCTION_APPROVER_ROLES = [...TOP_TIER];
 export const canCreateDeduction = (r) => has(r, DEDUCTION_CREATOR_ROLES);
 export const canApproveDeduction = (r) => has(r, DEDUCTION_APPROVER_ROLES);
+
+/**
+ * Daily Collection Verification (D7, Unit 21 / DEC-050).
+ * Same roles as IsCashierIntakeApprover on the backend: finance + admin roles.
+ * Cashier/collector excluded — this is a reconciliation management tool.
+ */
+export const canViewDailyVerification = (r) => canViewReports(r);
+
+/**
+ * Denomination override approval (D2, Unit 21 / DEC-049).
+ * Mirrors _CI_OVERRIDE_APPROVER_ROLES on the backend.
+ */
+const DENOM_OVERRIDE_APPROVER_ROLES = [
+  "market_administrator",
+  "admin_staff",
+  "finance_head",
+  "market_manager",
+  "executive",
+];
+export const canApproveDenomOverride = (r) => has(r, DENOM_OVERRIDE_APPROVER_ROLES);

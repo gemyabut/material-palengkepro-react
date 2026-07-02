@@ -21,3 +21,12 @@ export async function approveEodCount(id, payload) {
   const { data } = await apiClient.post(`${BASE}/${id}/approve/`, payload);
   return data;
 }
+
+export async function approveDenominationOverride(id, payload) {
+  const { data } = await apiClient.post(`${BASE}/${id}/approve-denomination-override/`, payload);
+  return data;
+}
+
+export async function downloadTallyPdf(id) {
+  return apiClient.get(`${BASE}/${id}/tally-pdf/`, { responseType: "blob" });
+}

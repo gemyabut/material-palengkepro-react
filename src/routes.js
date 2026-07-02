@@ -54,6 +54,7 @@ import CreateDepositBatchPage from "layouts/deposit-batches/create";
 import DeductionApprovalQueue from "layouts/deposit-batches/components/DeductionApprovalQueue";
 import EodCashCountPage from "layouts/eod-cash-count";
 import SubmitEodCountPage from "layouts/eod-cash-count/submit";
+import DailyVerificationPage from "layouts/daily-verification";
 import BankReconciliationPage from "layouts/bank-reconciliation";
 import TenantInquiry from "layouts/tenant-inquiry";
 import Subscription from "layouts/subscription";
@@ -219,6 +220,14 @@ const routes = [
     key: "eod-cash-count-submit",
     route: "/eod-cash-count/:id/submit",
     component: <SubmitEodCountPage />,
+  },
+  {
+    type: "collapse",
+    name: "Daily Verification",
+    key: "daily-verification",
+    icon: <Icon fontSize="small">fact_check</Icon>,
+    route: "/daily-verification",
+    component: <DailyVerificationPage />,
   },
   {
     type: "collapse",
