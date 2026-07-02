@@ -56,6 +56,8 @@ import EodCashCountPage from "layouts/eod-cash-count";
 import SubmitEodCountPage from "layouts/eod-cash-count/submit";
 import DailyVerificationPage from "layouts/daily-verification";
 import BankReconciliationPage from "layouts/bank-reconciliation";
+import CashAccountabilityPage from "layouts/cash-accountability";
+import MonthlyClosePage from "layouts/monthly-close";
 import TenantInquiry from "layouts/tenant-inquiry";
 import Subscription from "layouts/subscription";
 import Administration from "layouts/administration";
@@ -236,6 +238,22 @@ const routes = [
     icon: <Icon fontSize="small">account_balance</Icon>,
     route: "/bank-reconciliation",
     component: <BankReconciliationPage />,
+  },
+  // Unit 22 — Cash Accountability (DEC-051)
+  {
+    type: "collapse",
+    name: "Cash Accountability",
+    key: "cash-accountability",
+    icon: <Icon fontSize="small">balance</Icon>,
+    route: "/cash-accountability",
+    component: <CashAccountabilityPage />,
+  },
+  {
+    type: "route",
+    name: "Monthly Close",
+    key: "monthly-close",
+    route: "/monthly-close/:id",
+    component: <MonthlyClosePage />,
   },
   {
     type: "collapse",
