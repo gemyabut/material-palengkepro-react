@@ -4,11 +4,16 @@ import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
+import Divider from "@mui/material/Divider";
 import TextField from "@mui/material/TextField";
 import Alert from "@mui/material/Alert";
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 import { destinationLabel } from "utils/destinationLabels";
+import DenominationBreakdownOptional, {
+  EMPTY_DENOM,
+  denomFieldsEntered,
+} from "./DenominationBreakdownOptional";
 
 const MAX_SIZE_BYTES = 5 * 1024 * 1024;
 const ALLOWED_TYPES = ["image/jpeg", "image/jpg", "image/png"];
@@ -25,6 +30,10 @@ export default function MarkDepositedModal({ open, batch, onClose, onConfirm, su
   const [file, setFile]               = useState(null);
   const [fileError, setFileError]     = useState("");
   const [fieldErr, setFieldErr]       = useState({});
+  const [denomFields, setDenomFields] = useState(EMPTY_DENOM);
+
+  // Cash total from batch (for denomination variance display in the optional section)
+  const cashTotal = parseFloat(batch?.totals?.cash ?? batch?.total_to_bank ?? 0);
 
   const handleFile = (e) => {
     const f = e.target.files[0];
@@ -58,6 +67,10 @@ export default function MarkDepositedModal({ open, batch, onClose, onConfirm, su
     fd.append("bank_account_last4", last4.trim());
     fd.append("deposit_date", depositDate);
     if (file) fd.append("slip_file", file);
+    // D4: append denomination fields only when at least one is non-zero
+    if (denomFieldsEntered(denomFields)) {
+      Object.entries(denomFields).forEach(([k, v]) => fd.append(k, String(v || 0)));
+    }
     onConfirm(fd);
   };
 
@@ -110,15 +123,21 @@ export default function MarkDepositedModal({ open, batch, onClose, onConfirm, su
               onChange={handleFile}
               style={{ display: "block" }}
             />
-            {fileError && (
-              <Alert severity="error" sx={{ mt: 1 }}>{fileError}</Alert>
-            )}
+            {fileError && <Alert severity="error" sx={{ mt: 1 }}>{fileError}</Alert>}
             {file && !fileError && (
               <MDTypography variant="caption" color="success">
                 {file.name} ({(file.size / 1024).toFixed(0)} KB)
               </MDTypography>
             )}
           </MDBox>
+
+          {/* D4: Optional denomination breakdown for Bank Deposit Tally Sheet */}
+          <Divider />
+          <DenominationBreakdownOptional
+            fields={denomFields}
+            onChange={setDenomFields}
+            cashTotal={cashTotal}
+          />
         </MDBox>
       </DialogContent>
 
