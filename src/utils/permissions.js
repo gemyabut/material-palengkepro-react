@@ -235,3 +235,24 @@ const DENOM_OVERRIDE_APPROVER_ROLES = [
   "executive",
 ];
 export const canApproveDenomOverride = (r) => has(r, DENOM_OVERRIDE_APPROVER_ROLES);
+
+/**
+ * Cash Accountability Dashboard + Monthly Close (DEC-051 / Unit 22).
+ * canViewCashAccountability: mirrors CASH_ACCOUNTABILITY_ROLES on the backend.
+ * canSignMarketAdmin: only the market_administrator signs the MA line.
+ * canSignAR: only accounts_receivable signs the AR line.
+ * canSignOwner: Owner (executive) optional sign-off.
+ * canReopenPeriodClose: top-tier only (executive + finance_head).
+ */
+const CASH_ACCOUNTABILITY_VIEWER_ROLES = [
+  "executive",
+  "finance_head",
+  "market_administrator",
+  "accounts_receivable",
+  "admin_staff",
+];
+export const canViewCashAccountability = (r) => has(r, CASH_ACCOUNTABILITY_VIEWER_ROLES);
+export const canSignMarketAdmin = (r) => has(r, ["market_administrator"]);
+export const canSignAR = (r) => has(r, ["accounts_receivable"]);
+export const canSignOwner = (r) => has(r, ["executive"]);
+export const canReopenPeriodClose = (r) => has(r, ["executive", "finance_head"]);
