@@ -47,6 +47,11 @@ import TenantDashboard from "layouts/tenant-portal/dashboard";
 import TenantSOA from "layouts/tenant-portal/soa";
 import TenantPayments from "layouts/tenant-portal/payments";
 import Profile from "layouts/profile";
+import ChangePassword from "layouts/profile/change-password";
+import Preferences from "layouts/preferences";
+import Help from "layouts/help";
+import Support from "layouts/support";
+import About from "layouts/about";
 import SignIn from "layouts/authentication/sign-in";
 import SignUp from "layouts/authentication/sign-up";
 import ForgotPassword from "layouts/authentication/forgot-password";
@@ -409,6 +414,48 @@ const routes = [
     key: "profile",
     route: "/profile",
     component: <Profile />,
+    allowedRoles: OPERATIONAL,
+  },
+  // F1.2 — Settings dropdown routes (not in sidebar)
+  {
+    type: "route",
+    name: "Change Password",
+    key: "change-password",
+    route: "/profile/password",
+    component: <ChangePassword />,
+    allowedRoles: OPERATIONAL,
+  },
+  {
+    type: "route",
+    name: "Preferences",
+    key: "preferences",
+    route: "/preferences",
+    component: <Preferences />,
+    allowedRoles: OPERATIONAL,
+  },
+  {
+    type: "route",
+    name: "Help",
+    key: "help",
+    route: "/help",
+    component: <Help />,
+    allowedRoles: OPERATIONAL,
+  },
+  {
+    type: "route",
+    name: "Support",
+    key: "support",
+    route: "/support",
+    component: <Support />,
+    allowedRoles: OPERATIONAL,
+  },
+  {
+    type: "route",
+    name: "About",
+    key: "about",
+    route: "/about",
+    component: <About />,
+    allowedRoles: OPERATIONAL,
   },
   {
     type: "route",
