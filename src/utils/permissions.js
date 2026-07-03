@@ -256,3 +256,32 @@ export const canSignMarketAdmin = (r) => has(r, ["market_administrator"]);
 export const canSignAR = (r) => has(r, ["accounts_receivable"]);
 export const canSignOwner = (r) => has(r, ["executive"]);
 export const canReopenPeriodClose = (r) => has(r, ["executive", "finance_head"]);
+
+/**
+ * DEC-055 role-tier helpers (Unit 26 / role finalization patch 2026-07-03).
+ * Mirror backend core/permissions.py ALLOWED_ROLES (A1 locked: existing DB codes).
+ * Use ROLE constants from constants/roles.js for new code; legacy role strings kept
+ * here for backwards-compat with existing callers that pass raw strings.
+ */
+export const isTopTier = (r) =>
+  has(r, ["executive", "finance_head", "market_administrator"]);
+
+export const isAdminStaffOrAbove = (r) =>
+  has(r, ["executive", "finance_head", "market_administrator", "admin_staff"]);
+
+export const isOperationalUser = (r) =>
+  has(r, [
+    "executive", "finance_head", "market_administrator", "admin_staff",
+    "leasing_officer",
+    "accounts_receivable", "accounts_payable", "cashier",
+  ]);
+
+// Mobile-only / portal-only — not web operator roles
+export const isMobileOnly = (r) => has(r, ["collector", "tenant"]);
+
+// Module access helpers (mirrors Sidenav allowedRoles per patch spec)
+export const canAccessAdminModule = (r, isStaff) => isStaff || isTopTier(r);
+export const canManageMasterData = (r, isStaff) => isStaff || isTopTier(r);
+export const canManageExpenseCategories = (r) => isTopTier(r);
+export const canSignMonthlyClose = (r) =>
+  has(r, ["executive", "finance_head", "market_administrator", "accounts_receivable"]);
