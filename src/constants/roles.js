@@ -55,20 +55,28 @@ export const SIDENAV_SECTIONS = [
 ];
 
 // ---------------------------------------------------------------------------
-// Domain → allowed roles (mirrors csv_import/permissions.py DOMAIN_ALLOWED_ROLES)
-// NOTE: domain keys here are the PATCH SPEC keys. The existing frontend
-// spreadsheetUploadDomains() helper uses legacy keys (tenant/stall/lease).
-// Key reconciliation is a follow-up patch — see O6 flag in F1 commit message.
+// Domain → allowed roles (mirrors csv_import/permissions.py DOMAIN_ALLOWED_ROLES O6.1)
+// Keys match the workbook-sheet taxonomy established in Unit 13 (tenant/stall/lease/
+// payment/cashier_intake/...). ERP-conceptual keys (daily_collections, tenants, etc.)
+// were renamed in backend O6.1 to align with these frontend keys.
+// 4 backend-only domains (charge_types, expense_categories, users, markets) are
+// included here for reference — no frontend picker yet.
 // ---------------------------------------------------------------------------
 export const DOMAIN_ALLOWED_ROLES = {
-  daily_collections:   [ROLE.EXEC, ROLE.FIN, ROLE.MKT, ROLE.CSH],
-  payment_corrections: [ROLE.EXEC, ROLE.FIN, ROLE.MKT, ROLE.AR],
-  tenants:             [ROLE.EXEC, ROLE.FIN, ROLE.MKT, ROLE.ADM, ROLE.LEA],
-  stalls:              [ROLE.EXEC, ROLE.FIN, ROLE.MKT, ROLE.ADM],
-  leases:              [ROLE.EXEC, ROLE.FIN, ROLE.MKT, ROLE.ADM, ROLE.LEA],
-  charge_types:        [ROLE.EXEC, ROLE.FIN, ROLE.MKT],
-  expense_categories:  [ROLE.EXEC, ROLE.FIN, ROLE.MKT],
-  users:               [ROLE.EXEC, ROLE.FIN, ROLE.MKT],
-  markets:             [ROLE.EXEC, ROLE.FIN],
-  bank_deposits:       [ROLE.EXEC, ROLE.FIN, ROLE.MKT],
+  // ── Workbook-sheet keys (Unit 13 taxonomy) ──────────────────────────────
+  tenant:             [...ADMIN_OR_ABOVE, ROLE.LEA, ROLE.AR],
+  stall:              [...ADMIN_OR_ABOVE, ROLE.LEA, ROLE.AR],
+  lease:              [...ADMIN_OR_ABOVE, ROLE.LEA, ROLE.AR],
+  payment:            [...TOP_TIER, ROLE.AR, ROLE.CSH],
+  collection_summary: [...TOP_TIER, ROLE.AR, ROLE.CSH],
+  receipt_issue:      [...TOP_TIER, ROLE.AR, ROLE.CSH],
+  receipt_book:       TOP_TIER,
+  deposit_slip:       [...TOP_TIER, ROLE.CSH],
+  cashier_intake:     [...TOP_TIER, ROLE.CSH],
+  remittance_batch:   [...TOP_TIER, ROLE.CSH],
+  // ── Backend-only domains (no frontend picker yet) ────────────────────────
+  charge_types:       TOP_TIER,
+  expense_categories: [...TOP_TIER, ROLE.AP],
+  users:              TOP_TIER,
+  markets:            [ROLE.EXEC, ROLE.FIN],
 };
