@@ -23,7 +23,6 @@ import TenantTable from "../components/TenantTable";
 import BulkActionBar from "../components/BulkActionBar";
 import CommunicationDialog from "../components/CommunicationDialog";
 import TenantForm from "../components/TenantForm";
-import TenantDetailDialog from "../components/TenantDetail";
 
 import {
   getTenants,
@@ -53,16 +52,19 @@ export default function MasterTenantList() {
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "info" });
   const [showForm, setShowForm] = useState(false);
   const [editTenant, setEditTenant] = useState(null);
-  const [detailTenant, setDetailTenant] = useState(null);
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(20);
+  const [search, setSearch] = useState('');
+  const [ordering, setOrdering] = useState('full_name');
 
   const allowBulk = canBulk(user);
 
   const fetchTenants = useCallback(() => {
     const offset = (page - 1) * rowsPerPage;
     setLoading(true);
-    getTenants({ limit: rowsPerPage, offset })
+    const params = { limit: rowsPerPage, offset, ordering };
+    if (search) params.search = search;
+    getTenants(params)
       .then((data) => {
         const tenantsList = Array.isArray(data.results) ? data.results : data;
         const count = data.count || tenantsList.length;
@@ -75,7 +77,7 @@ export default function MasterTenantList() {
         setSnackbar({ open: true, message: "Failed to load tenants.", severity: "error" });
       })
       .finally(() => setLoading(false));
-  }, [page, rowsPerPage]);
+  }, [page, rowsPerPage, search, ordering]);
 
   useEffect(() => {
     fetchTenants();
@@ -205,10 +207,7 @@ export default function MasterTenantList() {
               selectedIds={selectedIds}
               onSelect={setSelectedIds}
               onSelectAll={(checked) => setSelectedIds(checked ? tenants.map((t) => t.id) : [])}
-              onView={(id) => {
-                const tenant = tenants.find((t) => t.id === id);
-                setDetailTenant(tenant);
-              }}
+              onView={(id) => navigate(`/tenants/${id}`)}
               onEdit={(id) => {
                 const tenant = tenants.find((t) => t.id === id);
                 setEditTenant(tenant);
@@ -216,6 +215,10 @@ export default function MasterTenantList() {
               }}
               onDeactivate={handleDeactivate}
               showCheckbox={allowBulk}
+              search={search}
+              onSearchChange={(val) => { setSearch(val); setPage(1); }}
+              ordering={ordering}
+              onOrderingChange={(val) => { setOrdering(val); setPage(1); }}
             />
             <Stack direction="row" justifyContent="space-between" alignItems="center" p={2}>
               <FormControl sx={{ minWidth: 120 }} size="small">
@@ -254,14 +257,6 @@ export default function MasterTenantList() {
         user={user}
         loading={loading}
       />
-
-      {detailTenant && (
-        <TenantDetailDialog
-          open={!!detailTenant}
-          tenant={detailTenant}
-          onClose={() => setDetailTenant(null)}
-        />
-      )}
 
       <CommunicationDialog
         open={commOpen}

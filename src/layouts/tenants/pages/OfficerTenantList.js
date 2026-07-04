@@ -3,11 +3,11 @@
 import React, { useState, useEffect } from "react";
 import { Stack, Box, Button, Paper, CircularProgress, Typography } from "@mui/material";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 import TenantTable from "../components/TenantTable";
 import BulkActionBar from "../components/BulkActionBar";
 import TenantForm from "../components/TenantForm";
-import TenantDetail from "../components/TenantDetail";
 import CommunicationDialog from "../components/CommunicationDialog";
 
 import {
@@ -26,6 +26,7 @@ import { canBulk } from "../../leases/utils/roleUtils";
 
 export default function OfficerTenantList() {
   const { userProfile: user } = useAuth();
+  const navigate = useNavigate();
   const allowBulk = canBulk(user);
 
   const [tenants, setTenants] = useState([]);
@@ -33,19 +34,21 @@ export default function OfficerTenantList() {
   const [selectedIds, setSelectedIds] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editTenant, setEditTenant] = useState(null);
-  const [showDetail, setShowDetail] = useState(false);
-  const [viewTenant, setViewTenant] = useState(null);
   const [commOpen, setCommOpen] = useState(false);
   const [commLoading, setCommLoading] = useState(false);
   const [commError, setCommError] = useState(null);
+  const [search, setSearch] = useState('');
+  const [ordering, setOrdering] = useState('full_name');
 
   useEffect(() => {
     setLoading(true);
-    getTenants({ assigned_to: user?.id })
+    const params = { assigned_to: user?.id, ordering };
+    if (search) params.search = search;
+    getTenants(params)
       .then((data) => setTenants(data.results || data))
       .catch((err) => debugLog("Officer fetch tenants error:", err))
       .finally(() => setLoading(false));
-  }, [user?.id]);
+  }, [user?.id, search, ordering]);
 
   const handleAdd = () => {
     setEditTenant(null);
@@ -58,11 +61,7 @@ export default function OfficerTenantList() {
     setShowForm(true);
   };
 
-  const handleView = (id) => {
-    const tenant = tenants.find((t) => t.id === id);
-    setViewTenant(tenant || null);
-    setShowDetail(true);
-  };
+  const handleView = (id) => navigate(`/tenants/${id}`);
 
   const handleDeactivate = (id) => {
     if (!window.confirm("Are you sure you want to deactivate this tenant?")) return;
@@ -207,6 +206,10 @@ export default function OfficerTenantList() {
             onView={handleView}
             onDeactivate={handleDeactivate}
             showCheckbox={allowBulk}
+            search={search}
+            onSearchChange={(val) => setSearch(val)}
+            ordering={ordering}
+            onOrderingChange={(val) => setOrdering(val)}
           />
         )}
       </Paper>
@@ -219,8 +222,6 @@ export default function OfficerTenantList() {
         user={user}
         loading={loading}
       />
-
-      {showDetail && <TenantDetail tenant={viewTenant} user={user} onEdit={handleEdit} showEdit />}
 
       <CommunicationDialog
         open={commOpen}

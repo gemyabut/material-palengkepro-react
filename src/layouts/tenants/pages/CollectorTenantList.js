@@ -121,6 +121,7 @@ export default function CollectorTenantList() {
         onView={handleView}
         onDeactivate={null}
         showCheckbox={false}
+        ordering="-date_added"
       />
 
       {showDetail && <TenantDetail tenant={viewTenant} user={user} showEdit={false} />}
