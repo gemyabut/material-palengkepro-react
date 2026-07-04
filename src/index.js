@@ -17,6 +17,8 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "App";
+// UAT PATCH 2026-07-04: Self-host Material Icons — CDNs unreachable from Lead's network.
+import "material-icons/iconfont/material-icons.css";
 
 // Material Dashboard 2 React Context Provider
 import { MaterialUIControllerProvider } from "context";

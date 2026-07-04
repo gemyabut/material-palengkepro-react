@@ -34,36 +34,8 @@ export const canViewPayments = (r) =>
     "executive",
   ]);
 
-// Upload Center access (doc 21 §5 UPLOAD roles; matches backend UPLOAD_ROLES).
-export const canUpload = (r) =>
-  has(r, [
-    "market_administrator",
-    "admin_staff",
-    "leasing_officer",
-    "accounts_receivable",
-    "accounting_staff",
-  ]);
-
-// Per-domain upload stewardship (doc 21 §5): master data (tenant/stall/lease) is the
-// leasing side; payments/collections are the finance side. Market admins do all.
-const DOMAIN_UPLOAD_ROLES = {
-  tenant: [...MARKET_ADMIN, "leasing_officer"],
-  stall: [...MARKET_ADMIN, "leasing_officer"],
-  lease: [...MARKET_ADMIN, "leasing_officer"],
-  payment: [...MARKET_ADMIN, "accounts_receivable", "accounting_staff"],
-  receipt_book: [...MARKET_ADMIN, "accounts_receivable", "accounting_staff"],
-  deposit_slip: [...MARKET_ADMIN, "accounts_receivable", "accounting_staff"],
-};
-export const UPLOAD_DOMAINS = [
-  "tenant",
-  "stall",
-  "lease",
-  "payment",
-  "receipt_book",
-  "deposit_slip",
-];
-export const canUploadDomain = (r, domain) => has(r, DOMAIN_UPLOAD_ROLES[domain] || []);
-export const uploadableDomains = (r) => UPLOAD_DOMAINS.filter((d) => canUploadDomain(r, d));
+// Unit 27 F3: Upload Center retired — canUpload/uploadableDomains removed.
+// The Spreadsheet Upload UI uses canUseSpreadsheetUpload/spreadsheetUploadDomains below.
 
 // ---- Domain WRITE / actions ----
 export const canEditTenant = (r) => has(r, [...MARKET_ADMIN, "leasing_officer"]);
@@ -158,17 +130,19 @@ export const canOverrideDestination = (r) => canViewReports(r);
  * Per-domain stewardship mirrors doc 21 §5 but extended to all 10 csv_import domains.
  * receipt_book is restricted to market_administrator + finance_head only (no admin_staff).
  */
+// Unit 27 F2: `executive` is top-tier oversight and can perform any upload.
+// Added everywhere so canUseSpreadsheetUpload(executive) → true.
 const SPREADSHEET_DOMAIN_ROLES = {
-  tenant: [...MARKET_ADMIN, "finance_head", "leasing_officer", "accounts_receivable"],
-  stall: [...MARKET_ADMIN, "finance_head", "leasing_officer", "accounts_receivable"],
-  lease: [...MARKET_ADMIN, "finance_head", "leasing_officer", "accounts_receivable"],
-  payment: [...MARKET_ADMIN, "finance_head", "accounts_receivable", "accounting_staff", "cashier"],
-  collection_summary: [...MARKET_ADMIN, "finance_head", "accounts_receivable", "accounting_staff"],
-  receipt_issue: [...MARKET_ADMIN, "finance_head", "accounts_receivable", "accounting_staff"],
-  receipt_book: ["market_administrator", "finance_head"],
-  deposit_slip: [...MARKET_ADMIN, "finance_head", "accounting_staff"],
-  cashier_intake: [...MARKET_ADMIN, "finance_head", "accounting_staff"],
-  remittance_batch: [...MARKET_ADMIN, "finance_head", "accounting_staff"],
+  tenant: ["executive", ...MARKET_ADMIN, "finance_head", "leasing_officer", "accounts_receivable"],
+  stall: ["executive", ...MARKET_ADMIN, "finance_head", "leasing_officer", "accounts_receivable"],
+  lease: ["executive", ...MARKET_ADMIN, "finance_head", "leasing_officer", "accounts_receivable"],
+  payment: ["executive", ...MARKET_ADMIN, "finance_head", "accounts_receivable", "accounting_staff", "cashier"],
+  collection_summary: ["executive", ...MARKET_ADMIN, "finance_head", "accounts_receivable", "accounting_staff"],
+  receipt_issue: ["executive", ...MARKET_ADMIN, "finance_head", "accounts_receivable", "accounting_staff"],
+  receipt_book: ["executive", "market_administrator", "finance_head"],
+  deposit_slip: ["executive", ...MARKET_ADMIN, "finance_head", "accounting_staff"],
+  cashier_intake: ["executive", ...MARKET_ADMIN, "finance_head", "accounting_staff"],
+  remittance_batch: ["executive", ...MARKET_ADMIN, "finance_head", "accounting_staff"],
 };
 
 export const SPREADSHEET_UPLOAD_DOMAINS = Object.keys(SPREADSHEET_DOMAIN_ROLES);

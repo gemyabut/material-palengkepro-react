@@ -42,12 +42,15 @@ function SpreadsheetUpload() {
   const [mode,             setMode]             = useState("upsert");
   const [graceMode,        setGraceMode]        = useState(false);
   const [file,             setFile]             = useState(null);
+  const [attachment,       setAttachment]       = useState(null); // Unit 27 F4: deposit-slip scan
   const [validating,       setValidating]       = useState(false);
   const [publishing,       setPublishing]       = useState(false);
   const [validationResult, setValidationResult] = useState(null);
   const [publishResult,    setPublishResult]    = useState(null);
   const [error,            setError]            = useState(null);
   const [historyKey,       setHistoryKey]       = useState(0);
+
+  const showAttachment = domain === "deposit_slip";
 
   const loading = validating || publishing;
 
@@ -80,6 +83,7 @@ function SpreadsheetUpload() {
         domain: domain || undefined,
         mode,
         graceMode,
+        attachment: showAttachment ? attachment || undefined : undefined,
       });
       setValidationResult(data);
     } catch (err) {
@@ -99,6 +103,7 @@ function SpreadsheetUpload() {
         domain: domain || undefined,
         mode,
         graceMode,
+        attachment: showAttachment ? attachment || undefined : undefined,
       });
       setPublishResult(data);
       setValidationResult(null);
@@ -112,6 +117,7 @@ function SpreadsheetUpload() {
 
   const handleUploadAnother = () => {
     setFile(null);
+    setAttachment(null);
     setValidationResult(null);
     setPublishResult(null);
     setError(null);
@@ -134,7 +140,7 @@ function SpreadsheetUpload() {
       <DashboardNavbar />
       <MDBox py={3}>
         <MDBox mb={3}>
-          <MDTypography variant="h4">Spreadsheet Upload</MDTypography>
+          <MDTypography variant="h4">Data Import</MDTypography>
           <MDTypography variant="button" color="text">
             Validate first — fix errors in your spreadsheet — then Publish. Domain and action selections persist
             across re-uploads.
@@ -169,6 +175,35 @@ function SpreadsheetUpload() {
                 </MDTypography>
                 <FileDropzone file={file} onChange={handleFileChange} />
               </Grid>
+
+              {showAttachment && (
+                <Grid item xs={12}>
+                  <MDTypography variant="h6" mb={1}>
+                    3a. Attach scan (deposit slip)
+                  </MDTypography>
+                  <MDTypography variant="caption" color="text" display="block" mb={1}>
+                    Optional — one scan (PDF or image) applied to every row in this upload.
+                  </MDTypography>
+                  <Button variant="outlined" component="label" color="info">
+                    {attachment ? attachment.name : "Attach scan"}
+                    <input
+                      hidden
+                      type="file"
+                      accept="image/*,application/pdf"
+                      onChange={(e) => setAttachment(e.target.files?.[0] || null)}
+                    />
+                  </Button>
+                  {attachment && (
+                    <Button
+                      size="small"
+                      onClick={() => setAttachment(null)}
+                      sx={{ ml: 1 }}
+                    >
+                      Remove
+                    </Button>
+                  )}
+                </Grid>
+              )}
 
               {showGrace && (
                 <Grid item xs={12}>

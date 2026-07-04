@@ -36,6 +36,7 @@ export const OPERATIONAL = [
 export const WEB_OPERATOR_ROLES = [
   ROLE.EXEC, ROLE.FIN, ROLE.MKT, ROLE.ADM, ROLE.LEA,
   ROLE.AR, ROLE.AP, ROLE.CSH,
+  "system_administrator",   // UAT patch 2026-07-04: Octal Philippines platform admin
 ];
 
 // Mobile-only / portal-only — redirect on web (Quirk #24 / A4)

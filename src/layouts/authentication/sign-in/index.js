@@ -63,7 +63,15 @@ function SignIn() {
       setUserProfile(profileRes.data);
       debugLog("[SignIn] Profile loaded:", profileRes.data);
 
-      navigate("/dashboard");
+      // Role-based landing page (UAT patch 2026-07-04)
+      const userRole = profileRes.data.role;
+      if (userRole === "system_administrator") {
+        navigate("/octal-console");   // Octal platform admin — SaaS ops view
+      } else if (userRole === "tenant") {
+        navigate("/tenant/login");    // Tenant portal
+      } else {
+        navigate("/dashboard");       // Default: market operator dashboard
+      }
     } catch (err) {
       const detail = err.response?.data?.detail || "Login failed. Please try again.";
       debugLog("[SignIn] Login failed:", err);

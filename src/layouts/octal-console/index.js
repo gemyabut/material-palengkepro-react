@@ -1,7 +1,8 @@
-// src/layouts/octal-console/index.js — Unit 26 / F1.3
-// Read-only Octal Philippines platform admin console: all client subscriptions.
+// src/layouts/octal-console/index.js — Unit 26 / F1.4
+// Markets-first view: every Market in the platform with its subscription status.
+// Unsubscribed markets show "Onboard" → /administration.
+// Subscribed markets show tier/status and "View" → detail placeholder.
 // Access: role=system_administrator OR is_staff=True.
-// No mutation actions in v1 — Change Plan + Suspend deferred to Phase 5.
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -10,6 +11,7 @@ import {
   Card,
   CardContent,
   Chip,
+  Grid,
   LinearProgress,
   Table,
   TableBody,
@@ -25,25 +27,15 @@ import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 
 import { useAuthProfile } from "context/AuthContext";
-import { getSubscriptionList } from "api/octalConsole";
+import { getOctalConsoleData } from "api/octalConsole";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-// BillingAccount.company StringRelatedField returns "Name (CODE)"
-function parseCompany(str) {
-  const m = String(str || "").match(/^(.*)\s+\(([^)]+)\)$/);
-  return m ? { name: m[1], code: m[2] } : { name: str || "—", code: "—" };
-}
-
-// SubscriptionItem.market StringRelatedField returns "Name (CODE)" — extract code only
-function marketCodes(items) {
-  if (!items?.length) return "—";
-  return items
-    .map((i) => {
-      const m = String(i.market || "").match(/\(([^)]+)\)$/);
-      return m ? m[1] : i.market;
-    })
-    .join(", ");
+// BillingAccount.company StringRelatedField returns "Name (CODE)" — extract name only
+function companyName(accountDetail) {
+  if (!accountDetail?.company) return "—";
+  const m = String(accountDetail.company).match(/^(.*)\s+\([^)]+\)$/);
+  return m ? m[1] : accountDetail.company;
 }
 
 const TIER_COLOR = {
@@ -56,7 +48,6 @@ const TIER_COLOR = {
 const STATUS_COLOR = {
   active: "success",
   trialing: "warning",
-  past_due: "warning",
   suspended: "error",
   cancelled: "error",
   expired: "error",
@@ -76,7 +67,6 @@ function TierChip({ tier }) {
 function StatusChip({ status }) {
   if (!status) return <Chip size="small" label="—" color="default" />;
   const s = status.toLowerCase();
-  // past_due gets orange via sx since MUI has no orange color token
   const isOrange = s === "past_due";
   return (
     <Chip
@@ -88,13 +78,47 @@ function StatusChip({ status }) {
   );
 }
 
+// ── Summary cards ─────────────────────────────────────────────────────────────
+
+function SummaryCards({ markets, subscriptionByMarketCode }) {
+  const total = markets.length;
+  const subscribed = markets.filter((m) => subscriptionByMarketCode[m.code]).length;
+  const pending = total - subscribed;
+
+  const stats = [
+    { label: "Total Markets", value: total, color: "info" },
+    { label: "Subscribed", value: subscribed, color: "success" },
+    { label: "Pending Onboarding", value: pending, color: pending > 0 ? "warning" : "default" },
+  ];
+
+  return (
+    <Grid container spacing={2} mb={2}>
+      {stats.map((s) => (
+        <Grid item xs={12} sm={4} key={s.label}>
+          <Card>
+            <CardContent sx={{ py: 1.5, "&:last-child": { pb: 1.5 } }}>
+              <MDTypography variant="caption" color="text" display="block">
+                {s.label}
+              </MDTypography>
+              <MDTypography variant="h4" color={s.color}>
+                {s.value}
+              </MDTypography>
+            </CardContent>
+          </Card>
+        </Grid>
+      ))}
+    </Grid>
+  );
+}
+
 // ── Main component ─────────────────────────────────────────────────────────────
 
 export default function OctalConsole() {
   const { userProfile, loading: authLoading } = useAuthProfile();
   const navigate = useNavigate();
 
-  const [subs, setSubs] = useState([]);
+  const [markets, setMarkets] = useState([]);
+  const [subscriptionByMarketCode, setSubscriptionByMarketCode] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -106,8 +130,11 @@ export default function OctalConsole() {
   const load = () => {
     setLoading(true);
     setError(null);
-    getSubscriptionList()
-      .then(setSubs)
+    getOctalConsoleData()
+      .then(({ markets: m, subscriptionByMarketCode: s }) => {
+        setMarkets(m);
+        setSubscriptionByMarketCode(s);
+      })
       .catch((e) => setError(e?.response?.data?.detail || e.message || "Failed to load."))
       .finally(() => setLoading(false));
   };
@@ -127,7 +154,7 @@ export default function OctalConsole() {
       <DashboardNavbar />
       <MDBox py={3}>
         <MDBox display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-          <MDTypography variant="h4">Client Subscriptions</MDTypography>
+          <MDTypography variant="h4">Octal Console</MDTypography>
           {isAllowed && (
             <Button
               variant="outlined"
@@ -151,74 +178,89 @@ export default function OctalConsole() {
         ) : error ? (
           <Alert severity="error">{String(error)}</Alert>
         ) : (
-          <Card>
-            <CardContent sx={{ p: 0 }}>
-              {subs.length === 0 ? (
-                <MDBox p={4} textAlign="center">
-                  <MDTypography variant="body2" color="text">
-                    No subscriptions yet. Onboard your first client at{" "}
-                    <Button
-                      variant="text"
-                      size="small"
-                      onClick={() => navigate("/administration")}
-                      sx={{ textTransform: "none", p: 0, minWidth: 0, verticalAlign: "baseline" }}
-                    >
-                      /administration
-                    </Button>
-                    .
-                  </MDTypography>
-                </MDBox>
-              ) : (
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 600 }}>Company Name</TableCell>
-                      <TableCell sx={{ fontWeight: 600, width: 130 }}>Company Code</TableCell>
-                      <TableCell sx={{ fontWeight: 600, width: 200 }}>Market Code(s)</TableCell>
-                      <TableCell sx={{ fontWeight: 600, width: 130 }}>Tier</TableCell>
-                      <TableCell sx={{ fontWeight: 600, width: 110 }}>Status</TableCell>
-                      <TableCell sx={{ fontWeight: 600, width: 115 }}>Start Date</TableCell>
-                      <TableCell sx={{ fontWeight: 600, width: 110 }} align="right">
-                        Seats Cap
-                      </TableCell>
-                      <TableCell sx={{ width: 120 }} />
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {subs.map((sub) => {
-                      const company = parseCompany(sub._account?.company);
-                      return (
-                        <TableRow key={sub.id} hover>
-                          <TableCell>{company.name}</TableCell>
-                          <TableCell>{company.code}</TableCell>
-                          <TableCell>{marketCodes(sub.items)}</TableCell>
-                          <TableCell>
-                            <TierChip tier={sub.tier} />
-                          </TableCell>
-                          <TableCell>
-                            <StatusChip status={sub.status} />
-                          </TableCell>
-                          <TableCell>{sub.start_date || "—"}</TableCell>
-                          <TableCell align="right">
-                            {sub.seats_cap === 0 ? "∞" : sub.seats_cap ?? "—"}
-                          </TableCell>
-                          <TableCell>
-                            <Button
-                              size="small"
-                              variant="outlined"
-                              onClick={() => navigate(`/octal-console/subscription/${sub.id}`)}
-                            >
-                              View Details
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
+          <>
+            <SummaryCards
+              markets={markets}
+              subscriptionByMarketCode={subscriptionByMarketCode}
+            />
+
+            <Card>
+              <CardContent sx={{ p: 0 }}>
+                {markets.length === 0 ? (
+                  <MDBox p={4} textAlign="center">
+                    <MDTypography variant="body2" color="text">
+                      No markets in platform yet.
+                    </MDTypography>
+                  </MDBox>
+                ) : (
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell sx={{ fontWeight: 600, width: 110 }}>Market Code</TableCell>
+                        <TableCell sx={{ fontWeight: 600 }}>Market Name</TableCell>
+                        <TableCell sx={{ fontWeight: 600 }}>Company</TableCell>
+                        <TableCell sx={{ fontWeight: 600, width: 130 }}>Subscription Tier</TableCell>
+                        <TableCell sx={{ fontWeight: 600, width: 110 }}>Status</TableCell>
+                        <TableCell sx={{ fontWeight: 600, width: 115 }}>Start Date</TableCell>
+                        <TableCell sx={{ width: 120 }} />
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {markets.map((market) => {
+                        const entry = subscriptionByMarketCode[market.code];
+                        const sub = entry?.sub;
+                        const acct = entry?.account;
+                        return (
+                          <TableRow key={market.id} hover>
+                            <TableCell>
+                              <MDTypography variant="button" fontWeight="medium">
+                                {market.code}
+                              </MDTypography>
+                            </TableCell>
+                            <TableCell>{market.name}</TableCell>
+                            <TableCell>{companyName(acct)}</TableCell>
+                            <TableCell>
+                              {sub ? (
+                                <TierChip tier={sub.tier} />
+                              ) : (
+                                <Chip size="small" label="Not subscribed" color="default" />
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {sub ? <StatusChip status={sub.status} /> : "—"}
+                            </TableCell>
+                            <TableCell>{sub?.start_date ?? "—"}</TableCell>
+                            <TableCell>
+                              {sub ? (
+                                <Button
+                                  size="small"
+                                  variant="outlined"
+                                  onClick={() =>
+                                    navigate(`/octal-console/subscription/${sub.id}`)
+                                  }
+                                >
+                                  View
+                                </Button>
+                              ) : (
+                                <Button
+                                  size="small"
+                                  variant="contained"
+                                  color="success"
+                                  onClick={() => navigate("/administration")}
+                                >
+                                  Onboard
+                                </Button>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </>
         )}
       </MDBox>
     </DashboardLayout>

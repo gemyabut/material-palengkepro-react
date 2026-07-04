@@ -21,7 +21,6 @@ import InvoiceDetail from "layouts/invoices/detail";
 import Leases from "layouts/leases";
 import Stalls from "layouts/stalls";
 import Tenants from "layouts/tenants";
-import BatchImport from "layouts/batch-import";
 import SpreadsheetUpload from "layouts/spreadsheet-upload";
 import Reports from "layouts/reports";
 import SoaPage from "layouts/soa";
@@ -95,7 +94,7 @@ const routes = [
     route: "/dashboard",
     component: <Dashboard />,
     sidenavGroup: null,
-    allowedRoles: OPERATIONAL,
+    allowedRoles: OPERATIONAL,  // Octal lands on /octal-console instead (per role-based redirect)
   },
   {
     type: "collapse",
@@ -109,7 +108,7 @@ const routes = [
   },
   {
     type: "collapse",
-    name: "Spreadsheet Upload",
+    name: "Data Import",
     key: "spreadsheet-upload",
     icon: <Icon fontSize="small">table_view</Icon>,
     route: "/spreadsheet-upload",
@@ -118,16 +117,7 @@ const routes = [
     // Per patch matrix: ✓ for EXEC, FIN, MKT, ADM, LEA, AR, CSH — AP excluded
     allowedRoles: [ROLE.EXEC, ROLE.FIN, ROLE.MKT, ROLE.ADM, ROLE.LEA, ROLE.AR, ROLE.CSH],
   },
-  {
-    type: "collapse",
-    name: "Upload Center",
-    key: "upload",
-    icon: <Icon fontSize="small">upload_file</Icon>,
-    route: "/upload",
-    component: <BatchImport />,
-    sidenavGroup: null,
-    allowedRoles: ADMIN_OR_ABOVE,
-  },
+  // Unit 27 F3: Upload Center retired — consolidated onto Spreadsheet Upload.
 
   // =========================================================================
   // CRM — Tenants + Leases
@@ -393,7 +383,7 @@ const routes = [
     route: "/administration",
     component: <Administration />,
     sidenavGroup: "Admin",
-    allowedRoles: TOP_TIER,
+    allowedRoles: [...TOP_TIER, "system_administrator"],  // UAT patch: Octal onboards clients here
   },
   {
     type: "collapse",

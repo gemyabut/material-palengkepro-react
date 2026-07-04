@@ -1,13 +1,16 @@
-// src/api/octalConsole.js — Unit 26 / F1.3
-// Platform-admin subscription list for Octal Philippines console.
-// Requires is_staff=True; SubscriptionViewSet.get_queryset returns all companies.
-//
-// NOTE: SubscriptionSerializer.fields does not expose `status` (billing/serializers.py).
-//       The status field will be undefined until a backend serializer update adds it.
-//       All other fields (tier, start_date, seats_cap, items) are available.
+// src/api/octalConsole.js — Unit 26 / F1.4
+// Platform-admin data for Octal Philippines console.
+// fetchMarkets: all markets in the platform (IsAuthenticated).
+// getSubscriptionList: all subscriptions + billing accounts joined (is_staff=True).
+// getOctalConsoleData: parallel fetch + client-side join — one call for the page.
 import apiClient from "./axios";
 
 const normalize = (res) => (Array.isArray(res.data) ? res.data : res.data.results ?? []);
+
+export async function fetchMarkets() {
+  const res = await apiClient.get("/markets/");
+  return normalize(res);
+}
 
 export async function getSubscriptionList() {
   const [subsRes, acctRes] = await Promise.all([
@@ -19,4 +22,29 @@ export async function getSubscriptionList() {
     ...sub,
     _account: accountMap[sub.account] ?? null,
   }));
+}
+
+// Returns { markets, subscriptionByMarketCode }
+// subscriptionByMarketCode[code] = { sub, account } | undefined
+export async function getOctalConsoleData() {
+  const [markets, subs] = await Promise.all([fetchMarkets(), getSubscriptionList()]);
+  const subscriptionByMarketCode = {};
+  subs.forEach((sub) => {
+    (sub.items || []).forEach((item) => {
+      // item.market is StringRelatedField: "Market Name (CODE)"
+      const m = String(item.market || "").match(/\(([^)]+)\)$/);
+      const code = m ? m[1] : null;
+      if (code && !subscriptionByMarketCode[code]) {
+        subscriptionByMarketCode[code] = { sub, account: sub._account };
+      }
+    });
+  });
+  return { markets, subscriptionByMarketCode };
+}
+
+// F1.5 — full subscription detail (company + markets + operators + tenant count).
+// Wraps GET /api/billing/subscriptions/:id/detail-full/ — one call, platform-admin scoped.
+export async function getSubscriptionDetail(id) {
+  const res = await apiClient.get(`/billing/subscriptions/${id}/detail-full/`);
+  return res.data;
 }
