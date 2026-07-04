@@ -20,6 +20,7 @@ import Invoices from "layouts/invoices";
 import InvoiceDetail from "layouts/invoices/detail";
 import Leases from "layouts/leases";
 import Stalls from "layouts/stalls";
+import StallDetailPage from "layouts/stalls/StallDetailPage";
 import Tenants from "layouts/tenants";
 import TenantDetailPage from "layouts/tenants/TenantDetailPage";
 import SpreadsheetUpload from "layouts/spreadsheet-upload";
@@ -121,7 +122,7 @@ const routes = [
   // Unit 27 F3: Upload Center retired — consolidated onto Spreadsheet Upload.
 
   // =========================================================================
-  // CRM — Tenants + Leases
+  // CRM — Tenants > Stalls > Leases (F10 reorder: DEC-055 / F9)
   // =========================================================================
   {
     type: "collapse",
@@ -140,6 +141,24 @@ const routes = [
     route: "/tenants/:id",
     component: <TenantDetailPage />,
     allowedRoles: [ROLE.EXEC, ROLE.FIN, ROLE.MKT, ROLE.ADM, ROLE.LEA, ROLE.AR, ROLE.CSH],
+  },
+  {
+    type: "collapse",
+    name: "Stalls",
+    key: "Stalls",
+    icon: <Icon fontSize="small">storefront</Icon>,
+    route: "/stalls",
+    component: <Stalls />,
+    sidenavGroup: "CRM",
+    // Per patch matrix: TOP_TIER (✏) + ADM (✏) + LEA (👁) — AR + CSH excluded
+    allowedRoles: [ROLE.EXEC, ROLE.FIN, ROLE.MKT, ROLE.ADM, ROLE.LEA],
+  },
+  {
+    type: "route",
+    key: "stall-detail",
+    route: "/stalls/:id",
+    component: <StallDetailPage />,
+    allowedRoles: [ROLE.EXEC, ROLE.FIN, ROLE.MKT, ROLE.ADM, ROLE.LEA],
   },
   {
     type: "collapse",
@@ -304,17 +323,7 @@ const routes = [
   // =========================================================================
   // Master Data
   // =========================================================================
-  {
-    type: "collapse",
-    name: "Stalls",
-    key: "Stalls",
-    icon: <Icon fontSize="small">storefront</Icon>,
-    route: "/Stalls",
-    component: <Stalls />,
-    sidenavGroup: "Master Data",
-    // Per patch matrix: TOP_TIER (✏) + ADM (✏) + LEA (👁) — AR + CSH excluded
-    allowedRoles: [ROLE.EXEC, ROLE.FIN, ROLE.MKT, ROLE.ADM, ROLE.LEA],
-  },
+  // Stalls moved to CRM section (F10 sidebar reorder — DEC-055 / F9).
   // Charge Types — Unit 16 / DEC-044. TOP_TIER edits; LEA + AR view-only (👁 per matrix).
   {
     type: "collapse",

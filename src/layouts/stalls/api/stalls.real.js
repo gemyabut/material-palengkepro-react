@@ -48,3 +48,10 @@ export const fetchStallsByLease = async (leaseId) =>
   (await axios.get(`/stalls/by-lease/${leaseId}/`)).data;
 
 export const fetchStallWithLeaseAndTenant = async (id) => (await axios.get(`/stalls/${id}/`)).data;
+
+/**
+ * Nested detail actions (F9)
+ */
+export const getStallLeases = async (id) => (await axios.get(`/stalls/${id}/leases/`)).data;
+export const getStallLeaseholderRights = async (id) =>
+  (await axios.get(`/stalls/${id}/leaseholder-rights/`)).data;

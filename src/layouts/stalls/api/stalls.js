@@ -34,3 +34,5 @@ export const bulkUpdateStalls = api.bulkUpdateStalls;
 export const fetchStallsByCurrentTenant = api.fetchStallsByCurrentTenant;
 export const fetchStallsByLease = api.fetchStallsByLease;
 export const fetchStallWithLeaseAndTenant = api.fetchStallWithLeaseAndTenant;
+export const getStallLeases = api.getStallLeases;
+export const getStallLeaseholderRights = api.getStallLeaseholderRights;
