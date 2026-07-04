@@ -7,6 +7,10 @@ const source = USE_MOCK_DATA ? require("./tenants.mock") : require("./tenants.re
 // Core
 export const getTenants = source.getTenants;
 export const getTenantById = source.getTenantById;
+export const getTenantLeases = source.getTenantLeases;
+export const getTenantLeaseholderRights = source.getTenantLeaseholderRights;
+export const getTenantInvoices = source.getTenantInvoices;
+export const getTenantPayments = source.getTenantPayments;
 export const addTenant = source.addTenant;
 export const updateTenant = source.updateTenant;
 export const deactivateTenant = source.deactivateTenant;

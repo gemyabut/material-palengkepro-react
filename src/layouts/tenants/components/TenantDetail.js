@@ -1,13 +1,97 @@
-// src/layouts/tenants/components/TenantDetail.js
-
-import React from "react";
-import { Card, CardContent, Typography, Button, Grid, Divider } from "@mui/material";
+// src/layouts/tenants/components/TenantDetail.js — F11 Round A
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import PropTypes from "prop-types";
-import { debugLog } from "../../stalls/utils/debug";
-import { canEdit } from "../../leases/utils/roleUtils";
+import {
+  Avatar, Box, Button, Card, CardContent, CardHeader,
+  Chip, CircularProgress, Collapse, Divider, Grid,
+  Stack, Table, TableBody, TableCell, TableHead, TableRow,
+  Typography, Alert,
+} from "@mui/material";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 
+import { canEdit } from "../../leases/utils/roleUtils";
+import { getTenantLeases, getTenantLeaseholderRights, getTenantInvoices, getTenantPayments } from "../api/tenants";
+
+// ── Chip colour maps ──────────────────────────────────────────────────────────
+const STATUS_CHIP = {
+  ACTIVE:      { label: "Active",      color: "success" },
+  INACTIVE:    { label: "Inactive",    color: "default" },
+  DELINQUENT:  { label: "Delinquent",  color: "warning" },
+  BLACKLISTED: { label: "Blacklisted", color: "error"   },
+};
+const VERIFICATION_CHIP = {
+  VERIFIED:   { label: "Verified",   color: "success" },
+  PENDING:    { label: "Pending",    color: "warning" },
+  UNVERIFIED: { label: "Unverified", color: "default" },
+  REJECTED:   { label: "Rejected",   color: "error"   },
+};
+const INVOICE_STATUS_CHIP = {
+  PAID:    { label: "Paid",    color: "success" },
+  PARTIAL: { label: "Partial", color: "warning" },
+  OPEN:    { label: "Unpaid",  color: "error"   },
+  VOID:    { label: "Void",    color: "default" },
+};
+const METHOD_LABEL = {
+  CASH: "Cash", GCASH: "GCash", BANK: "Bank Transfer",
+  BANK_TRANSFER: "Bank Transfer", CHEQUE: "Cheque", CHECK: "Cheque",
+  MAYA: "Maya", OTHER: "Other",
+};
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function fmt(val) {
+  const n = parseFloat(val ?? 0);
+  return `₱${n.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+function initials(name) {
+  return (name || "?").split(" ").map((n) => n[0]).filter(Boolean).slice(0, 2).join("").toUpperCase();
+}
+function KV({ label, value }) {
+  if (value == null || value === "") return null;
+  return (
+    <Box>
+      <Typography variant="caption" color="text.secondary" display="block">{label}</Typography>
+      <Typography variant="body2">{value}</Typography>
+    </Box>
+  );
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
 export default function TenantDetail({ tenant, user, onEdit, onRequestUpdate, showEdit = true }) {
-  debugLog("TenantDetail render", tenant);
+  const navigate = useNavigate();
+  const [leases, setLeases] = useState([]);
+  const [rights, setRights] = useState([]);
+  const [invoices, setInvoices] = useState([]);
+  const [payments, setPayments] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [pastExpanded, setPastExpanded] = useState(false);
+
+  const loadSubResources = (id) => {
+    setLoading(true);
+    setError(null);
+    return Promise.all([
+      getTenantLeases(id),
+      getTenantLeaseholderRights(id),
+      getTenantInvoices(id),
+      getTenantPayments(id),
+    ])
+      .then(([ls, rts, inv, pay]) => {
+        setLeases(Array.isArray(ls) ? ls : []);
+        setRights(Array.isArray(rts) ? rts : []);
+        setInvoices(Array.isArray(inv) ? inv : []);
+        setPayments(Array.isArray(pay) ? pay : []);
+      })
+      .catch((e) => setError(e?.response?.data?.detail || "Failed to load tenant data."))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    if (!tenant?.id) return;
+    loadSubResources(tenant.id);
+  }, [tenant?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
   if (!tenant) {
     return (
       <Card>
@@ -19,116 +103,366 @@ export default function TenantDetail({ tenant, user, onEdit, onRequestUpdate, sh
   }
 
   const editable = canEdit(user);
+  const statusMeta = STATUS_CHIP[tenant.status] || { label: tenant.status, color: "default" };
+  const verMeta = VERIFICATION_CHIP[tenant.verification_status] || { label: tenant.verification_status, color: "default" };
+  const activeLeases = leases.filter((l) => l.status === "ACTIVE");
+  const pastLeases = leases.filter((l) => l.status !== "ACTIVE");
+  const leaseMap = Object.fromEntries(leases.map((l) => [l.id, l]));
 
   return (
-    <Card sx={{ mb: 2 }}>
-      <CardContent>
-        <Grid container spacing={2}>
-          <Grid item xs={12} md={8}>
-            <Typography variant="h5" gutterBottom>
-              {tenant.full_name}
-            </Typography>
-            <Typography variant="subtitle1">{tenant.business_name}</Typography>
-            <Typography variant="body2" sx={{ mt: 1 }}>
-              <b>Mobile:</b> {tenant.mobile_phone}
-            </Typography>
-            <Typography variant="body2">
-              <b>Email:</b> {tenant.email_address}
-            </Typography>
-            <Typography variant="body2">
-              <b>Address:</b> {tenant.address}
-            </Typography>
-            <Typography variant="body2">
-              <b>Status:</b> {tenant.status}
-            </Typography>
-          </Grid>
-          <Grid item xs={12} md={4} align="right">
-            {/* TODO: photo / document preview */}
-          </Grid>
-        </Grid>
-
-        <Divider sx={{ my: 2 }} />
-
-        <Typography variant="subtitle2" gutterBottom>
-          Analytics
-        </Typography>
-        <Typography variant="body2">
-          <b>Lifetime Payment Total:</b> ₱{tenant.lifetime_payment_total ?? "0.00"}
-        </Typography>
-        <Typography variant="body2">
-          <b>Late Payments:</b> {tenant.number_of_late_payments ?? 0}
-        </Typography>
-        <Typography variant="body2">
-          <b>Lease Duration (avg):</b> {tenant.lease_duration_average ?? 0} months
-        </Typography>
-
-        <Divider sx={{ my: 2 }} />
-
-        <Typography variant="subtitle2" gutterBottom>
-          Quick Contact
-        </Typography>
-        <Grid container spacing={1} sx={{ mb: 2 }}>
-          <Grid item>
-            <Button
-              size="small"
-              href={tenant.mobile_phone ? `tel:${tenant.mobile_phone}` : undefined}
-              disabled={!tenant.mobile_phone}
-              variant="outlined"
-            >
-              Call
-            </Button>
-          </Grid>
-          <Grid item>
-            <Button
-              size="small"
-              href={tenant.email_address ? `mailto:${tenant.email_address}` : undefined}
-              disabled={!tenant.email_address}
-              variant="outlined"
-            >
-              Email
-            </Button>
-          </Grid>
-        </Grid>
-
-        <Grid container spacing={1}>
-          {editable && showEdit && (
-            <Grid item>
-              <Button variant="outlined" onClick={() => onEdit?.(tenant.id)}>
-                Edit
-              </Button>
+    <Stack spacing={3}>
+      {/* ── Section 1: Identity & Verification ─────────────────────────── */}
+      <Card>
+        <CardContent>
+          <Grid container spacing={2} alignItems="flex-start">
+            {/* Photo / Avatar */}
+            <Grid item xs={12} sm="auto">
+              {tenant.photograph ? (
+                <Box
+                  component="img"
+                  src={tenant.photograph}
+                  alt={tenant.full_name}
+                  sx={{ width: 96, height: 96, borderRadius: 2, objectFit: "cover" }}
+                />
+              ) : (
+                <Avatar sx={{ width: 96, height: 96, bgcolor: "primary.main", fontSize: 32 }}>
+                  {initials(tenant.full_name)}
+                </Avatar>
+              )}
             </Grid>
-          )}
-          {user?.role === "tenant" && (
-            <Grid item>
-              <Button variant="contained" onClick={() => onRequestUpdate?.(tenant.id)}>
-                Request Update
-              </Button>
+
+            {/* Identity */}
+            <Grid item xs>
+              <Typography variant="body2" fontFamily="monospace" color="text.secondary">
+                {tenant.tenant_id || "—"}
+              </Typography>
+              <Typography variant="h5" fontWeight="bold">{tenant.full_name}</Typography>
+              {tenant.business_name && tenant.business_name !== tenant.full_name && (
+                <Typography variant="subtitle1" color="text.secondary">{tenant.business_name}</Typography>
+              )}
+              <Stack direction="row" spacing={1} mt={1}>
+                <Chip size="small" label={statusMeta.label} color={statusMeta.color} />
+                <Chip size="small" label={verMeta.label} color={verMeta.color} variant="outlined" />
+              </Stack>
             </Grid>
-          )}
-        </Grid>
-      </CardContent>
-    </Card>
+
+            {/* Actions */}
+            {(editable && showEdit) || user?.role === "tenant" ? (
+              <Grid item xs={12} sm="auto">
+                <Stack direction="row" spacing={1} flexWrap="wrap">
+                  {editable && showEdit && (
+                    <Button size="small" variant="outlined" onClick={() => onEdit?.(tenant.id)}>Edit</Button>
+                  )}
+                  {editable && showEdit && (
+                    <Button size="small" variant="outlined" color="error"
+                      onClick={() => onEdit?.(tenant.id, "deactivate")}>Deactivate</Button>
+                  )}
+                  {user?.role === "tenant" && (
+                    <Button size="small" variant="contained"
+                      onClick={() => onRequestUpdate?.(tenant.id)}>Request Update</Button>
+                  )}
+                </Stack>
+              </Grid>
+            ) : null}
+          </Grid>
+
+          <Divider sx={{ my: 2 }} />
+
+          {/* Key/value grid */}
+          <Grid container spacing={2} columns={2}>
+            <Grid item xs={2} sm={1}><KV label="Address" value={tenant.address} /></Grid>
+            <Grid item xs={2} sm={1}><KV label="Barangay" value={tenant.barangay} /></Grid>
+            <Grid item xs={2} sm={1}><KV label="Mobile" value={tenant.mobile_phone} /></Grid>
+            <Grid item xs={2} sm={1}><KV label="Email" value={tenant.email_address} /></Grid>
+            <Grid item xs={2} sm={1}><KV label="Contact Person" value={tenant.contact_person} /></Grid>
+            <Grid item xs={2} sm={1}><KV label="Contact Phone" value={tenant.contact_phone_number} /></Grid>
+            <Grid item xs={2} sm={1}><KV label="Government ID" value={tenant.government_id} /></Grid>
+            <Grid item xs={2} sm={1}><KV label="Barangay Permit" value={tenant.barangay_permit_number} /></Grid>
+            {tenant.verification_status === "VERIFIED" && (
+              <Grid item xs={2} sm={1}><KV label="Date Verified" value={tenant.date_verified} /></Grid>
+            )}
+            {tenant.verification_notes && (
+              <Grid item xs={2}><KV label="Verification Notes" value={tenant.verification_notes} /></Grid>
+            )}
+          </Grid>
+        </CardContent>
+      </Card>
+
+      {/* ── Error / Loading for sub-resources ──────────────────────────── */}
+      {loading && (
+        <Box display="flex" justifyContent="center" py={2}>
+          <CircularProgress size={28} />
+        </Box>
+      )}
+      {error && !loading && (
+        <Alert severity="error" action={
+          <Button size="small" onClick={() => loadSubResources(tenant.id)}>Retry</Button>
+        }>{error}</Alert>
+      )}
+
+      {!loading && !error && (
+        <>
+          {/* ── Section 2: Stalls & Leases ─────────────────────────────── */}
+          <Card>
+            <CardHeader
+              title={
+                <Typography variant="h6">
+                  Stalls &amp; Leases{" "}
+                  <Typography component="span" variant="body2" color="text.secondary">
+                    {activeLeases.length} active · {pastLeases.length} past
+                  </Typography>
+                </Typography>
+              }
+            />
+            <CardContent sx={{ pt: 0 }}>
+              {leases.length === 0 ? (
+                <Typography color="text.secondary" variant="body2">No leases on record for this tenant.</Typography>
+              ) : (
+                <>
+                  {activeLeases.length > 0 && (
+                    <LeaseTable leases={activeLeases} showTerminated={false} />
+                  )}
+                  {pastLeases.length > 0 && (
+                    <Box mt={activeLeases.length > 0 ? 2 : 0}>
+                      <Button
+                        size="small"
+                        endIcon={pastExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                        onClick={() => setPastExpanded((p) => !p)}
+                      >
+                        {pastExpanded ? "Hide" : "Show"} past leases ({pastLeases.length})
+                      </Button>
+                      <Collapse in={pastExpanded}>
+                        <Box mt={1}>
+                          <LeaseTable leases={pastLeases} showTerminated />
+                        </Box>
+                      </Collapse>
+                    </Box>
+                  )}
+                </>
+              )}
+              {/* ── Rights sub-section ─────────────────────────────── */}
+              {rights.length > 0 && (
+                <>
+                  <Divider sx={{ my: 2 }} />
+                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                    Stalls where this tenant holds leaseholder rights
+                  </Typography>
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        {["Stall #", "Market", "Since", "Reason", "From", "Current"].map((h) => (
+                          <TableCell key={h} sx={{ fontWeight: "bold", whiteSpace: "nowrap" }}>{h}</TableCell>
+                        ))}
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {(() => {
+                        // Latest record per stall = current holder
+                        const latestPerStall = {};
+                        rights.forEach((r) => {
+                          if (!latestPerStall[r.stall] || r.transfer_date > latestPerStall[r.stall].transfer_date) {
+                            latestPerStall[r.stall] = r;
+                          }
+                        });
+                        return rights.map((r) => (
+                          <TableRow key={r.id}>
+                            <TableCell sx={{ fontFamily: "monospace" }}>{r.stall_code}</TableCell>
+                            <TableCell>{r.market_code}</TableCell>
+                            <TableCell sx={{ whiteSpace: "nowrap" }}>{r.transfer_date}</TableCell>
+                            <TableCell>{r.transfer_reason?.replace(/_/g, " ")}</TableCell>
+                            <TableCell>{r.from_tenant_name || "—"}</TableCell>
+                            <TableCell>
+                              {latestPerStall[r.stall]?.id === r.id && (
+                                <Chip size="small" label="Current" color="success" />
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        ));
+                      })()}
+                    </TableBody>
+                  </Table>
+                </>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* ── Section 3: Financial Summary ────────────────────────────── */}
+          <Grid container spacing={2}>
+            {[
+              {
+                label: "Outstanding Balance",
+                value: fmt(tenant.outstanding_balance),
+                alert: parseFloat(tenant.outstanding_balance ?? 0) > 0,
+              },
+              { label: "Lifetime Payments", value: fmt(tenant.lifetime_payment_total) },
+              { label: "Late Payments", value: tenant.number_of_late_payments ?? 0 },
+              { label: "Active Leases", value: tenant.active_lease_count ?? 0 },
+            ].map(({ label, value, alert }) => (
+              <Grid item xs={6} sm={3} key={label}>
+                <Card>
+                  <CardContent sx={{ textAlign: "center", py: 2 }}>
+                    <Typography variant="caption" color="text.secondary" display="block">{label}</Typography>
+                    <Typography
+                      variant="h6"
+                      fontWeight="bold"
+                      color={alert ? "error.main" : "text.primary"}
+                    >
+                      {value}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+
+          {/* ── Section 4: Recent Invoices ──────────────────────────────── */}
+          <Card>
+            <CardHeader title="Recent Invoices" />
+            <CardContent sx={{ pt: 0 }}>
+              {invoices.length === 0 ? (
+                <Typography color="text.secondary" variant="body2">No invoices on record.</Typography>
+              ) : (
+                <>
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        {["Invoice #", "Period", "Total", "Paid", "Balance", "Due Date", "Status"].map((h) => (
+                          <TableCell key={h} sx={{ fontWeight: "bold", whiteSpace: "nowrap" }}>{h}</TableCell>
+                        ))}
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {invoices.map((inv) => {
+                        const meta = INVOICE_STATUS_CHIP[inv.status] || { label: inv.status, color: "default" };
+                        return (
+                          <TableRow
+                            key={inv.id}
+                            hover
+                            sx={{ cursor: "pointer" }}
+                            onClick={() => navigate(`/invoices/${inv.id}`)}
+                          >
+                            <TableCell sx={{ fontFamily: "monospace" }}>{inv.invoice_number || `#${inv.id}`}</TableCell>
+                            <TableCell sx={{ whiteSpace: "nowrap" }}>{inv.period_start} – {inv.period_end}</TableCell>
+                            <TableCell>{fmt(inv.total)}</TableCell>
+                            <TableCell>{fmt(inv.paid)}</TableCell>
+                            <TableCell
+                              sx={{ color: parseFloat(inv.balance ?? 0) > 0 ? "error.main" : "inherit", fontWeight: parseFloat(inv.balance ?? 0) > 0 ? "bold" : "normal" }}
+                            >
+                              {fmt(inv.balance)}
+                            </TableCell>
+                            <TableCell sx={{ whiteSpace: "nowrap" }}>{inv.due_date || "—"}</TableCell>
+                            <TableCell><Chip size="small" label={meta.label} color={meta.color} /></TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                  {invoices.length === 10 && (
+                    <Box mt={1} textAlign="right">
+                      <Button size="small" onClick={() => navigate(`/invoices?tenant=${tenant.id}`)}>
+                        View all invoices →
+                      </Button>
+                    </Box>
+                  )}
+                </>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* ── Section 5: Recent Payments ──────────────────────────────── */}
+          <Card>
+            <CardHeader title="Recent Payments" />
+            <CardContent sx={{ pt: 0 }}>
+              {payments.length === 0 ? (
+                <Typography color="text.secondary" variant="body2">No payments on record.</Typography>
+              ) : (
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      {["Date", "Amount", "Method", "Receipt #", "Stall"].map((h) => (
+                        <TableCell key={h} sx={{ fontWeight: "bold", whiteSpace: "nowrap" }}>{h}</TableCell>
+                      ))}
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {payments.map((pay) => {
+                      const lease = leaseMap[pay.lease];
+                      const stall = lease?.stall;
+                      return (
+                        <TableRow key={pay.id}>
+                          <TableCell sx={{ whiteSpace: "nowrap" }}>{pay.payment_date}</TableCell>
+                          <TableCell>{fmt(pay.amount)}</TableCell>
+                          <TableCell>{METHOD_LABEL[pay.method] || pay.method}</TableCell>
+                          <TableCell sx={{ fontFamily: "monospace" }}>{pay.receipt_number || "—"}</TableCell>
+                          <TableCell>{stall?.stall_number || `Lease #${pay.lease}`}</TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </>
+      )}
+    </Stack>
+  );
+}
+
+// ── LeaseTable sub-component ──────────────────────────────────────────────────
+function LeaseTable({ leases, showTerminated }) {
+  return (
+    <Table size="small">
+      <TableHead>
+        <TableRow>
+          {["Stall #", "Zone", "Type", "Start – End", "Rate", "Schedule",
+            ...(showTerminated ? ["Status"] : [])
+          ].map((h) => (
+            <TableCell key={h} sx={{ fontWeight: "bold", whiteSpace: "nowrap" }}>{h}</TableCell>
+          ))}
+        </TableRow>
+      </TableHead>
+      <TableBody>
+        {leases.map((l) => (
+          <TableRow key={l.id}>
+            <TableCell>{l.stall?.stall_number || "—"}</TableCell>
+            <TableCell>{l.stall?.zone || "—"}</TableCell>
+            <TableCell>{l.lease_type}</TableCell>
+            <TableCell sx={{ whiteSpace: "nowrap" }}>{l.start_date} – {l.end_date}</TableCell>
+            <TableCell>{fmt(l.lease_amount)}</TableCell>
+            <TableCell>{l.payment_schedule}</TableCell>
+            {showTerminated && <TableCell>{l.status}</TableCell>}
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
   );
 }
 
 TenantDetail.propTypes = {
   tenant: PropTypes.shape({
     id: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+    tenant_id: PropTypes.string,
     full_name: PropTypes.string,
     business_name: PropTypes.string,
     address: PropTypes.string,
+    barangay: PropTypes.string,
     mobile_phone: PropTypes.string,
     email_address: PropTypes.string,
-    barangay: PropTypes.string,
+    contact_person: PropTypes.string,
+    contact_phone_number: PropTypes.string,
+    government_id: PropTypes.string,
+    barangay_permit_number: PropTypes.string,
     status: PropTypes.string,
+    verification_status: PropTypes.string,
+    date_verified: PropTypes.string,
+    verification_notes: PropTypes.string,
     photograph: PropTypes.string,
-    uploaded_documents: PropTypes.string,
     lifetime_payment_total: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     number_of_late_payments: PropTypes.number,
     lease_duration_average: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-    leases: PropTypes.array,
-    stalls: PropTypes.array,
-    payments: PropTypes.array,
+    active_lease_count: PropTypes.number,
+    outstanding_balance: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   }),
   user: PropTypes.object,
   showEdit: PropTypes.bool,

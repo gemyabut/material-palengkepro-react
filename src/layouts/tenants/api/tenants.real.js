@@ -10,6 +10,22 @@ export async function getTenantById(id) {
   const { data } = await apiClient.get(`/tenants/${id}/`);
   return data;
 }
+export async function getTenantLeases(id) {
+  const { data } = await apiClient.get(`/tenants/${id}/leases/`);
+  return data;
+}
+export async function getTenantLeaseholderRights(id) {
+  const { data } = await apiClient.get(`/tenants/${id}/leaseholder-rights/`);
+  return data;
+}
+export async function getTenantInvoices(id) {
+  const { data } = await apiClient.get(`/tenants/${id}/invoices/`);
+  return data;
+}
+export async function getTenantPayments(id) {
+  const { data } = await apiClient.get(`/tenants/${id}/payments/`);
+  return data;
+}
 export async function addTenant(payload) {
   const { data } = await apiClient.post("/tenants/", payload);
   return data;
