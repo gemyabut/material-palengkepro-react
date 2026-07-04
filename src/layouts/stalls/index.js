@@ -1,211 +1,117 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 import {
-  Button,
-  Snackbar,
   Alert,
-  Pagination,
-  TextField,
-  MenuItem,
-  Stack,
+  Button,
+  Chip,
+  CircularProgress,
   Dialog,
+  MenuItem,
+  Pagination,
+  Snackbar,
+  Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  TextField,
 } from "@mui/material";
 import { canAddStall, canEditStall, canDeleteStall } from "utils/permissions";
-import StallsTable from "./components/StallsTable";
+import { useAuthProfile } from "context/AuthContext";
 import StallsSummaryWidget from "./components/StallsSummaryWidget";
 import AddStallForm from "./components/AddStallForm";
 import EditStallForm from "./components/EditStallForm";
-import StallDetailCard from "./components/StallDetailCard";
 import useStalls from "./hooks/useStalls";
-import { debugLog } from "layouts/stalls/utils/debug";
-import { STATUS_CHOICES, STALL_TYPE_CHOICES } from "layouts/stalls/data/choices";
-import { useAuthProfile } from "context/AuthContext";
+import { STATUS_CHOICES, COMMERCE_TYPE_CHOICES, LEASE_MODEL_CHOICES } from "./data/choices";
 
-// --- Any needed filter option arrays (status/type/section) ---
-const getLabel = (choices, value) => choices.find((opt) => opt.value === value)?.label || value;
+const STATUS_COLOR = {
+  AVAILABLE:   "success",
+  OCCUPIED:    "primary",
+  REPURPOSED:  "secondary",
+  MAINTENANCE: "warning",
+  INACTIVE:    "default",
+};
+
+function fmt(val) {
+  const n = parseFloat(val ?? 0);
+  return `₱${n.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+const pageSizeOptions = [20, 50, 100];
 
 export default function StallsPage() {
-  // --- UI State ---
-  const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("");
-  const [stallType, setStallType] = useState("");
-  const [section, setSection] = useState("");
-  const [addModalOpen, setAddModalOpen] = useState(false);
-  const [editModalOpen, setEditModalOpen] = useState(false);
-  const [viewModalOpen, setViewModalOpen] = useState(false);
-  const [selectedStall, setSelectedStall] = useState(null);
-  const [viewedStall, setViewedStall] = useState(null);
-  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
+  const navigate = useNavigate();
+  const { userProfile } = useAuthProfile();
+  const role = userProfile?.role || "";
 
-  // --- Pagination State ---
-
-  const pageSizeOptions = [20, 50, 100];
-
-  // --- Hooks / API ---
-  const { userProfile } = useAuthProfile(); // ✅ Pull userProfile from context
-  const role = userProfile?.role || ""; // ✅ Fallback to empty if not available
-  debugLog("[StallsPage] Current role:", role); // ✅ See actual role in console
-
-  const {
-    stalls,
-    summary,
-    total,
-    loading,
-    error,
-    goToPage,
-    changePageSize,
-    updateFilters,
-    page,
-    pageSize,
-    filters,
-    refresh,
-    createStall,
-    updateStall,
-    deactivateStall,
-    exportCSV,
-    exportXLSX,
-  } = useStalls();
-
-  // --- Role Logic ---
-  debugLog("[StallsPage] Current role:", role);
-
-  const canAdd = canAddStall(role);
-  const canEdit = canEditStall(role); // Leasing Officer is the Stall steward (doc 22 WF-02)
+  const canAdd    = canAddStall(role);
+  const canEdit   = canEditStall(role);
   const canDelete = canDeleteStall(role);
 
-  debugLog("[StallsPage] Current role:", role);
-  debugLog(
-    "[StallsPage] Permissions - canAdd:",
-    canAdd,
-    "canEdit:",
-    canEdit,
-    "canDelete:",
-    canDelete
-  );
+  const [addModalOpen, setAddModalOpen]   = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [selectedStall, setSelectedStall] = useState(null);
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
 
-  // --- Handlers ---
-  const handleAdd = () => {
-    debugLog("[StallsPage] handleAdd called");
-    setAddModalOpen(true);
-  };
-
-  const handleEdit = (stall) => {
-    setSelectedStall(stall);
-    setEditModalOpen(true);
-  };
-
-  const handleView = (stall) => {
-    setViewedStall(stall);
-    setViewModalOpen(true);
-  };
-
-  const handleDelete = async (stall) => {
-    try {
-      await deactivateStall(stall.id);
-      setSnackbar({ open: true, message: "Stall deactivated!", severity: "info" });
-      refresh();
-    } catch (e) {
-      setSnackbar({ open: true, message: "Failed to deactivate.", severity: "error" });
-    }
-  };
+  const {
+    stalls, summary, total, loading, error,
+    page, pageSize, filters,
+    goToPage, changePageSize, updateFilters, refresh,
+    createStall, updateStall, deactivateStall,
+    exportCSV, exportXLSX,
+  } = useStalls();
 
   const handleAddSave = async (data) => {
-    debugLog("[StallsPage] handleAddSave called", data);
     try {
       await createStall(data);
       setSnackbar({ open: true, message: "Stall added!", severity: "success" });
       setAddModalOpen(false);
-      goToPage(1);
-      debugLog("[StallsPage] After add, should refresh table");
-      refresh();
     } catch {
       setSnackbar({ open: true, message: "Error adding stall.", severity: "error" });
     }
   };
+
   const handleEditSave = async (data) => {
-    debugLog("[StallsPage] handleEditSave called", data);
     try {
       await updateStall(selectedStall.id, data);
       setSnackbar({ open: true, message: "Stall updated!", severity: "success" });
       setEditModalOpen(false);
       setSelectedStall(null);
-      goToPage(1);
-      debugLog("[StallsPage] After edit, should refresh table");
-      refresh();
     } catch {
       setSnackbar({ open: true, message: "Error updating stall.", severity: "error" });
     }
   };
 
-  const handleEditClose = () => {
-    setEditModalOpen(false);
-    setSelectedStall(null);
-  };
-
-  const handleEditSuccess = () => {
-    setEditModalOpen(false);
-    setSelectedStall(null);
-    refresh(); // <-- make sure you have this from useStalls
-    debugLog("[StallsPage] handleEditSuccess called");
-  };
-
-  // --- Filter/Field Handlers ---
-  // --- Filter/Field Handlers ---
-  const handleSearchChange = (e) => {
-    updateFilters({ search: e.target.value });
-  };
-  const handleStatusChange = (e) => {
-    updateFilters({ status: e.target.value });
-  };
-  const handleTypeChange = (e) => {
-    updateFilters({ stall_type: e.target.value });
-  };
-  const handleSectionChange = (e) => {
-    updateFilters({ section: e.target.value });
-  };
-
-  // --- Pagination Handlers ---
-  const handlePageChange = (event, value) => {
-    goToPage(value);
-  };
-  const handlePageSizeChange = (e) => {
-    changePageSize(Number(e.target.value));
-  };
-
-  // --- Export Handlers ---
-  const handleExportCSV = async () => {
+  const handleDeactivate = async (stall) => {
     try {
-      await exportCSV();
-      setSnackbar({ open: true, message: "CSV export started.", severity: "info" });
+      await deactivateStall(stall.id);
+      setSnackbar({ open: true, message: "Stall deactivated.", severity: "info" });
     } catch {
-      setSnackbar({ open: true, message: "CSV export failed.", severity: "error" });
+      setSnackbar({ open: true, message: "Failed to deactivate.", severity: "error" });
     }
+  };
+
+  const handleExportCSV = async () => {
+    try { await exportCSV(); setSnackbar({ open: true, message: "CSV export started.", severity: "info" }); }
+    catch { setSnackbar({ open: true, message: "CSV export failed.", severity: "error" }); }
   };
   const handleExportXLSX = async () => {
-    try {
-      await exportXLSX();
-      setSnackbar({ open: true, message: "Excel export started.", severity: "info" });
-    } catch {
-      setSnackbar({ open: true, message: "Excel export failed.", severity: "error" });
-    }
+    try { await exportXLSX(); setSnackbar({ open: true, message: "Excel export started.", severity: "info" }); }
+    catch { setSnackbar({ open: true, message: "Excel export failed.", severity: "error" }); }
   };
 
-  // --- Section Options (Dynamic) ---
-  const sectionOptions = Array.from(new Set(stalls.map((s) => s.section).filter(Boolean)));
-
-  // --- Debug Log ---
-  debugLog("StallsPage stalls:", stalls, "Total:", total, "Page:", page);
-
-  // --- Render ---
   return (
     <DashboardLayout>
       <DashboardNavbar />
       <MDBox p={3}>
         <StallsSummaryWidget summary={summary} total={total} loading={loading} />
-        {/* FILTER BAR & ACTION BUTTONS */}
+
+        {/* Filter bar */}
         <Stack direction="row" spacing={2} mb={2} alignItems="center" flexWrap="wrap">
           <TextField
             label="Search"
@@ -220,126 +126,203 @@ export default function StallsPage() {
             value={filters.status || ""}
             onChange={(e) => updateFilters({ status: e.target.value })}
             size="small"
-            sx={{ minWidth: 120 }}
+            sx={{ minWidth: 130 }}
           >
-            <MenuItem value="">All</MenuItem>
-            {STATUS_CHOICES.map((opt) => (
-              <MenuItem key={opt} value={opt}>
-                {opt.label}
-              </MenuItem>
+            <MenuItem value="">All statuses</MenuItem>
+            {STATUS_CHOICES.map((o) => (
+              <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>
             ))}
           </TextField>
           <TextField
-            label="Type"
+            label="Commerce type"
             select
-            value={filters.stall_type || ""}
-            onChange={(e) => updateFilters({ stall_type: e.target.value })}
+            value={filters.commerce_type || ""}
+            onChange={(e) => updateFilters({ commerce_type: e.target.value })}
             size="small"
-            sx={{ minWidth: 120 }}
+            sx={{ minWidth: 160 }}
           >
-            <MenuItem value="">All</MenuItem>
-            {STALL_TYPE_CHOICES.map((opt) => (
-              <MenuItem key={opt} value={opt}>
-                {opt.label}
-              </MenuItem>
+            <MenuItem value="">All types</MenuItem>
+            {COMMERCE_TYPE_CHOICES.map((o) => (
+              <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>
             ))}
           </TextField>
           <TextField
-            label="Section"
+            label="Lease model"
             select
-            value={filters.section || ""}
-            onChange={(e) => updateFilters({ section: e.target.value })}
+            value={filters.lease_model || ""}
+            onChange={(e) => updateFilters({ lease_model: e.target.value })}
             size="small"
-            sx={{ minWidth: 120 }}
+            sx={{ minWidth: 140 }}
           >
-            <MenuItem value="">All</MenuItem>
-            {sectionOptions.map((opt) => (
-              <MenuItem key={opt} value={opt}>
-                {opt}
-              </MenuItem>
+            <MenuItem value="">All models</MenuItem>
+            {LEASE_MODEL_CHOICES.map((o) => (
+              <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>
             ))}
           </TextField>
           {canAdd && (
-            <Button onClick={handleAdd} color="primary" variant="contained">
+            <Button variant="contained" color="primary" onClick={() => setAddModalOpen(true)}>
               Add Stall
             </Button>
           )}
-          <Button onClick={handleExportCSV} color="primary" variant="contained">
-            Export CSV
-          </Button>
-          <Button onClick={handleExportXLSX} color="primary" variant="contained">
-            Export Excel
-          </Button>
+          <Button variant="outlined" onClick={handleExportCSV}>CSV</Button>
+          <Button variant="outlined" onClick={handleExportXLSX}>Excel</Button>
         </Stack>
-        {/* PAGE SIZE SELECTOR */}
-        <Stack direction="row" spacing={2} alignItems="center" mb={1} justifyContent="flex-end">
+
+        {/* Page size */}
+        <Stack direction="row" spacing={1} alignItems="center" mb={1} justifyContent="flex-end">
           <MDTypography variant="button">Rows per page:</MDTypography>
           <TextField
-            select
-            size="small"
-            value={pageSize}
+            select size="small" value={pageSize}
             onChange={(e) => changePageSize(Number(e.target.value))}
             sx={{ width: 80 }}
           >
-            {pageSizeOptions.map((opt) => (
-              <MenuItem key={opt} value={opt}>
-                {opt}
-              </MenuItem>
-            ))}
+            {pageSizeOptions.map((n) => <MenuItem key={n} value={n}>{n}</MenuItem>)}
           </TextField>
         </Stack>
-        {/* MAIN TABLE */}
-        <StallsTable
-          stalls={stalls}
-          loading={loading}
-          canEdit={canEdit}
-          canDelete={canDelete}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          onView={handleView}
-          page={page}
-          pageSize={pageSize}
-        />
-        {/* PAGINATION */}
+
+        {/* Table */}
+        {loading ? (
+          <MDBox display="flex" justifyContent="center" p={4}><CircularProgress /></MDBox>
+        ) : error ? (
+          <Alert severity="error">{error}</Alert>
+        ) : (
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell><strong>Stall #</strong></TableCell>
+                <TableCell><strong>Zone / Section</strong></TableCell>
+                <TableCell><strong>Type</strong></TableCell>
+                <TableCell><strong>Status</strong></TableCell>
+                <TableCell><strong>Tenant</strong></TableCell>
+                <TableCell><strong>Lease ends</strong></TableCell>
+                <TableCell><strong>Outstanding</strong></TableCell>
+                {(canEdit || canDelete) && <TableCell><strong>Actions</strong></TableCell>}
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {stalls.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8}>
+                    <MDTypography variant="body2" color="text" textAlign="center">
+                      No stalls found.
+                    </MDTypography>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                stalls.map((s) => (
+                  <TableRow
+                    key={s.id}
+                    hover
+                    sx={{ cursor: "pointer" }}
+                    onClick={() => navigate(`/stalls/${s.id}`)}
+                  >
+                    <TableCell>
+                      <MDTypography variant="button" fontWeight="medium">{s.stall_number}</MDTypography>
+                    </TableCell>
+                    <TableCell>
+                      <MDTypography variant="caption">
+                        {[s.zone, s.section].filter(Boolean).join(" / ") || "—"}
+                      </MDTypography>
+                    </TableCell>
+                    <TableCell>
+                      <MDTypography variant="caption">
+                        {s.commerce_type?.replace(/_/g, " ") || "—"}
+                      </MDTypography>
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={s.status}
+                        color={STATUS_COLOR[s.status] || "default"}
+                        size="small"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <MDTypography variant="caption">
+                        {s.current_tenant_name || "—"}
+                      </MDTypography>
+                    </TableCell>
+                    <TableCell>
+                      <MDTypography variant="caption">
+                        {s.current_lease_end_date || "—"}
+                      </MDTypography>
+                    </TableCell>
+                    <TableCell>
+                      <MDTypography
+                        variant="caption"
+                        color={parseFloat(s.outstanding_balance) > 0 ? "error" : "text"}
+                        fontWeight={parseFloat(s.outstanding_balance) > 0 ? "medium" : "regular"}
+                      >
+                        {s.outstanding_balance != null ? fmt(s.outstanding_balance) : "—"}
+                      </MDTypography>
+                    </TableCell>
+                    {(canEdit || canDelete) && (
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <Stack direction="row" spacing={0.5}>
+                          {canEdit && (
+                            <Button
+                              size="small"
+                              onClick={(e) => { e.stopPropagation(); setSelectedStall(s); setEditModalOpen(true); }}
+                            >
+                              Edit
+                            </Button>
+                          )}
+                          {canDelete && s.status !== "INACTIVE" && (
+                            <Button
+                              size="small"
+                              color="error"
+                              onClick={(e) => { e.stopPropagation(); handleDeactivate(s); }}
+                            >
+                              Deactivate
+                            </Button>
+                          )}
+                        </Stack>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        )}
+
+        {/* Pagination */}
         <MDBox display="flex" justifyContent="center" mt={2}>
           <Pagination
             count={Math.ceil(total / pageSize)}
             page={page}
-            onChange={(_, value) => goToPage(value)}
+            onChange={(_, v) => goToPage(v)}
             color="primary"
             size="large"
             showFirstButton
             showLastButton
           />
         </MDBox>
-        {/* MODALS */}
+
+        {/* Modals */}
         <Dialog open={addModalOpen} onClose={() => setAddModalOpen(false)} maxWidth="sm" fullWidth>
           <AddStallForm
-            open={addModalOpen} // <-- pass if AddStallForm requires!
+            open={addModalOpen}
             onSave={handleAddSave}
-            onClose={() => setAddModalOpen(false)} // <-- pass if AddStallForm requires!
-            onSuccess={() => setAddModalOpen(false)} // <-- pass if AddStallForm requires!
+            onClose={() => setAddModalOpen(false)}
+            onSuccess={() => setAddModalOpen(false)}
           />
         </Dialog>
-        <Dialog open={editModalOpen} onClose={handleEditClose} maxWidth="sm" fullWidth>
+        <Dialog
+          open={editModalOpen}
+          onClose={() => { setEditModalOpen(false); setSelectedStall(null); }}
+          maxWidth="sm"
+          fullWidth
+        >
           {selectedStall && (
             <EditStallForm
               open={editModalOpen}
               stall={selectedStall}
-              onClose={handleEditClose}
-              onSuccess={handleEditSuccess}
+              onClose={() => { setEditModalOpen(false); setSelectedStall(null); }}
+              onSuccess={() => { setEditModalOpen(false); setSelectedStall(null); refresh(); }}
             />
           )}
         </Dialog>
-        <Dialog
-          open={viewModalOpen}
-          onClose={() => setViewModalOpen(false)}
-          maxWidth="sm"
-          fullWidth
-        >
-          {viewedStall && <StallDetailCard stall={viewedStall} />}
-        </Dialog>
-        {/* SNACKBAR */}
+
         <Snackbar
           open={snackbar.open}
           autoHideDuration={4000}
@@ -354,7 +337,6 @@ export default function StallsPage() {
             {snackbar.message}
           </Alert>
         </Snackbar>
-        {error && <MDTypography color="error">{error}</MDTypography>}
       </MDBox>
     </DashboardLayout>
   );
