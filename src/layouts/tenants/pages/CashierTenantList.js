@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect } from "react";
 import { Typography, Box } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 
 import TenantTable from "../components/TenantTable";
-import TenantDetail from "../components/TenantDetail";
 import BulkActionBar from "../components/BulkActionBar";
 import CommunicationDialog from "../components/CommunicationDialog";
 
@@ -15,33 +15,31 @@ import { canBulk } from "../../leases/utils/roleUtils"; // cashier => false
 
 export default function CashierTenantList() {
   const { userProfile: user } = useAuth();
+  const navigate = useNavigate();
 
   const [tenants, setTenants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedIds, setSelectedIds] = useState([]);
 
-  const [showDetail, setShowDetail] = useState(false);
-  const [viewTenant, setViewTenant] = useState(null);
-
   const [commOpen, setCommOpen] = useState(false);
   const [commLoading, setCommLoading] = useState(false);
   const [commError, setCommError] = useState(null);
+  const [search, setSearch] = useState('');
+  const [ordering, setOrdering] = useState('full_name');
 
   const allowBulk = canBulk(user);
 
   useEffect(() => {
     setLoading(true);
-    getTenants({ payment_status: "any" })
+    const params = { payment_status: "any", ordering };
+    if (search) params.search = search;
+    getTenants(params)
       .then((data) => setTenants(data.results || data))
       .catch((err) => debugLog("Cashier fetch tenants error:", err))
       .finally(() => setLoading(false));
-  }, []);
+  }, [search, ordering]);
 
-  const handleView = (id) => {
-    const t = tenants.find((x) => x.id === id);
-    setViewTenant(t || null);
-    setShowDetail(true);
-  };
+  const handleView = (id) => navigate(`/tenants/${id}`);
 
   const handleBulkExport = async () => {
     if (!allowBulk || !selectedIds.length) return;
@@ -120,9 +118,11 @@ export default function CashierTenantList() {
         onView={handleView}
         onDeactivate={null}
         showCheckbox={false}
+        search={search}
+        onSearchChange={(val) => setSearch(val)}
+        ordering={ordering}
+        onOrderingChange={(val) => setOrdering(val)}
       />
-
-      {showDetail && <TenantDetail tenant={viewTenant} user={user} showEdit={false} />}
 
       <CommunicationDialog
         open={commOpen}

@@ -21,6 +21,7 @@ import InvoiceDetail from "layouts/invoices/detail";
 import Leases from "layouts/leases";
 import Stalls from "layouts/stalls";
 import Tenants from "layouts/tenants";
+import TenantDetailPage from "layouts/tenants/TenantDetailPage";
 import SpreadsheetUpload from "layouts/spreadsheet-upload";
 import Reports from "layouts/reports";
 import SoaPage from "layouts/soa";
@@ -131,6 +132,13 @@ const routes = [
     component: <Tenants />,
     sidenavGroup: "CRM",
     // Per patch matrix: TOP_TIER + ADM + LEA (edit); AR + CSH (view-only but shown)
+    allowedRoles: [ROLE.EXEC, ROLE.FIN, ROLE.MKT, ROLE.ADM, ROLE.LEA, ROLE.AR, ROLE.CSH],
+  },
+  {
+    type: "route",
+    key: "tenant-detail",
+    route: "/tenants/:id",
+    component: <TenantDetailPage />,
     allowedRoles: [ROLE.EXEC, ROLE.FIN, ROLE.MKT, ROLE.ADM, ROLE.LEA, ROLE.AR, ROLE.CSH],
   },
   {
