@@ -2,23 +2,16 @@
 =========================================================
 * Material Dashboard 2 React - v2.2.0
 =========================================================
-
 * Product Page: https://www.creative-tim.com/product/material-dashboard-react
 * Copyright 2023 Creative Tim (https://www.creative-tim.com)
-
-Coded by www.creative-tim.com
-
- =========================================================
-
-* The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+=========================================================
 */
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 
-// react-router-dom components
-import { useLocation, NavLink } from "react-router-dom";
+// react-router-dom
+import { useLocation, NavLink, useNavigate } from "react-router-dom";
 
-// prop-types is a library for typechecking of props.
 import PropTypes from "prop-types";
 
 // @mui material components
@@ -26,6 +19,7 @@ import List from "@mui/material/List";
 import Divider from "@mui/material/Divider";
 import Link from "@mui/material/Link";
 import Icon from "@mui/material/Icon";
+import Chip from "@mui/material/Chip";
 
 // Material Dashboard 2 React components
 import MDBox from "components/MDBox";
@@ -47,14 +41,77 @@ import {
   setWhiteSidenav,
 } from "context";
 
+// Auth context for role-based filtering (Unit 26 / DEC-055)
+import { useAuth } from "context/AuthContext";
+
+// Role constants
+import { ROLE, SIDENAV_SECTIONS, MOBILE_ONLY_ROLES, WEB_OPERATOR_ROLES } from "constants/roles";
+
+// ---------------------------------------------------------------------------
+// buildSidenavSections — filter + group routes for a given role
+//
+// Returns: array of { section: string|null, items: [] }
+//   section === null → cross-cutting entries (render above named sections, no header)
+//   section === string → named section (render under labelled section header)
+// Returns null → caller triggers redirect (unknown/mobile-only role)
+// ---------------------------------------------------------------------------
+function buildSidenavSections(routes, role, isStaff) {
+  if (isStaff) {
+    // Django is_staff bypass (Quirk #15): show all sidebar entries flat, no role filter
+    const items = routes.filter((r) => r.type === "collapse" && r.sidenavGroup !== undefined);
+    return [{ section: null, items }];
+  }
+
+  // Mobile-only or tenant → redirect (Quirk #24 / A4)
+  if (MOBILE_ONLY_ROLES.includes(role)) return null;
+
+  // Unknown or legacy role → redirect + "Contact administrator" (A4)
+  if (role && !WEB_OPERATOR_ROLES.includes(role)) return null;
+
+  // Filter sidebar entries by allowedRoles
+  const filtered = routes.filter((r) => {
+    if (r.type !== "collapse") return false;
+    if (r.sidenavGroup === undefined) return false;
+    const allowed = r.allowedRoles;
+    if (!allowed) return true;
+    return allowed.includes(role);
+  });
+
+  // Split cross-cutting (sidenavGroup: null) from named sections
+  const crossCutting = filtered.filter((r) => r.sidenavGroup === null);
+  const grouped = {};
+  for (const r of filtered) {
+    if (r.sidenavGroup === null) continue;
+    if (!grouped[r.sidenavGroup]) grouped[r.sidenavGroup] = [];
+    grouped[r.sidenavGroup].push(r);
+  }
+
+  const sections = [];
+  if (crossCutting.length > 0) {
+    sections.push({ section: null, items: crossCutting });
+  }
+  // Named sections in canonical order; skip empty (D3)
+  for (const s of SIDENAV_SECTIONS) {
+    if (grouped[s] && grouped[s].length > 0) {
+      sections.push({ section: s, items: grouped[s] });
+    }
+  }
+  return sections;
+}
+
 function Sidenav({ color, brand, brandName, routes, ...rest }) {
   const [controller, dispatch] = useMaterialUIController();
-  const { miniSidenav, transparentSidenav, whiteSidenav, darkMode, sidenavColor } = controller;
+  const { miniSidenav, transparentSidenav, whiteSidenav, darkMode } = controller;
   const location = useLocation();
+  const navigate = useNavigate();
   const collapseName = location.pathname.replace("/", "");
 
-  let textColor = "white";
+  // Role from auth context (Unit 26 / DEC-055)
+  const { userProfile } = useAuth();
+  const role = userProfile?.role || null;
+  const isStaff = userProfile?.is_staff || false;
 
+  let textColor = "white";
   if (transparentSidenav || (whiteSidenav && !darkMode)) {
     textColor = "dark";
   } else if (whiteSidenav && darkMode) {
@@ -64,31 +121,56 @@ function Sidenav({ color, brand, brandName, routes, ...rest }) {
   const closeSidenav = () => setMiniSidenav(dispatch, true);
 
   useEffect(() => {
-    // A function that sets the mini state of the sidenav.
     function handleMiniSidenav() {
       setMiniSidenav(dispatch, window.innerWidth < 1200);
       setTransparentSidenav(dispatch, window.innerWidth < 1200 ? false : transparentSidenav);
       setWhiteSidenav(dispatch, window.innerWidth < 1200 ? false : whiteSidenav);
     }
-
-    /** 
-     The event listener that's calling the handleMiniSidenav function when resizing the window.
-    */
     window.addEventListener("resize", handleMiniSidenav);
-
-    // Call the handleMiniSidenav function to set the state with the initial value.
     handleMiniSidenav();
-
-    // Remove event listener on cleanup
     return () => window.removeEventListener("resize", handleMiniSidenav);
   }, [dispatch, location]);
 
-  // Render all the routes from the routes.js (All the visible items on the Sidenav)
-  const renderRoutes = routes.map(({ type, name, icon, title, noCollapse, key, href, route }) => {
-    let returnValue;
+  // Route guard (D4 + A4): redirect on load for mobile-only and unknown roles
+  useEffect(() => {
+    if (!userProfile) return;
+    if (isStaff) return;
+    if (role === ROLE.TEN) {
+      navigate("/tenant/login", { replace: true });
+      return;
+    }
+    if (MOBILE_ONLY_ROLES.includes(role) || (role && !WEB_OPERATOR_ROLES.includes(role))) {
+      navigate("/authentication/sign-in", { replace: true });
+    }
+  }, [userProfile, role, isStaff, navigate]);
 
-    if (type === "collapse") {
-      returnValue = href ? (
+  // Build filtered, grouped sections (memoized — only recomputes when role/routes change)
+  const sidenavSections = useMemo(
+    () => buildSidenavSections(routes, role, isStaff),
+    [routes, role, isStaff]
+  );
+
+  // Render one sidebar item
+  const renderItem = ({ key, name, icon, href, route, noCollapse, signerRole: isSigner }) => {
+    const isActive = key === collapseName;
+    // SIGNS badge for Monthly Close required signers (MA + AR per DEC-051)
+    const label =
+      isSigner && !miniSidenav ? (
+        <MDBox display="flex" alignItems="center" justifyContent="space-between" width="100%">
+          <span>{name}</span>
+          <Chip
+            label="SIGNS"
+            size="small"
+            color="warning"
+            sx={{ height: 16, fontSize: "0.6rem", ml: 0.5 }}
+          />
+        </MDBox>
+      ) : (
+        name
+      );
+
+    if (href) {
+      return (
         <Link
           href={href}
           key={key}
@@ -96,49 +178,44 @@ function Sidenav({ color, brand, brandName, routes, ...rest }) {
           rel="noreferrer"
           sx={{ textDecoration: "none" }}
         >
-          <SidenavCollapse
-            name={name}
-            icon={icon}
-            active={key === collapseName}
-            noCollapse={noCollapse}
-          />
+          <SidenavCollapse name={label} icon={icon} active={isActive} noCollapse={noCollapse} />
         </Link>
-      ) : (
-        <NavLink key={key} to={route}>
-          <SidenavCollapse name={name} icon={icon} active={key === collapseName} />
-        </NavLink>
-      );
-    } else if (type === "title") {
-      returnValue = (
-        <MDTypography
-          key={key}
-          color={textColor}
-          display="block"
-          variant="caption"
-          fontWeight="bold"
-          textTransform="uppercase"
-          pl={3}
-          mt={2}
-          mb={1}
-          ml={1}
-        >
-          {title}
-        </MDTypography>
-      );
-    } else if (type === "divider") {
-      returnValue = (
-        <Divider
-          key={key}
-          light={
-            (!darkMode && !whiteSidenav && !transparentSidenav) ||
-            (darkMode && !transparentSidenav && whiteSidenav)
-          }
-        />
       );
     }
+    return (
+      <NavLink key={key} to={route}>
+        <SidenavCollapse name={label} icon={icon} active={isActive} />
+      </NavLink>
+    );
+  };
 
-    return returnValue;
-  });
+  // Render one section (optional header + items)
+  const renderSection = ({ section, items }) => {
+    const entries = items.map(renderItem);
+    if (!section) return entries;
+    return [
+      <MDTypography
+        key={`section-${section}`}
+        color={textColor}
+        display="block"
+        variant="caption"
+        fontWeight="bold"
+        textTransform="uppercase"
+        pl={3}
+        mt={2}
+        mb={1}
+        ml={1}
+      >
+        {section}
+      </MDTypography>,
+      ...entries,
+    ];
+  };
+
+  const renderRoutes = sidenavSections ? sidenavSections.flatMap(renderSection) : [];
+
+  // A/P sparse-view upsell nudge (Tier 1 — patch spec "A/P Staff: Tier 1 sparse view")
+  const showApUpsell = !isStaff && role === ROLE.AP;
 
   return (
     <SidenavRoot
@@ -180,6 +257,33 @@ function Sidenav({ color, brand, brandName, routes, ...rest }) {
       />
       <List>{renderRoutes}</List>
       <MDBox p={2} mt="auto">
+        {showApUpsell && !miniSidenav && (
+          <MDBox
+            mb={1.5}
+            p={1.5}
+            borderRadius="lg"
+            sx={{
+              background: "rgba(255,255,255,0.08)",
+              border: "1px solid rgba(255,255,255,0.2)",
+            }}
+          >
+            <MDTypography variant="caption" color={textColor} fontWeight="bold" display="block">
+              Unlock full A/P
+            </MDTypography>
+            <MDTypography variant="caption" color={textColor} display="block" mb={1}>
+              Payables management, approval workflows + vendor reports available in Tier 2.
+            </MDTypography>
+            <MDButton
+              variant="outlined"
+              color="warning"
+              size="small"
+              fullWidth
+              onClick={() => navigate("/subscription")}
+            >
+              Upgrade plan
+            </MDButton>
+          </MDBox>
+        )}
         <MDButton
           variant="gradient"
           color="warning"
@@ -198,13 +302,11 @@ function Sidenav({ color, brand, brandName, routes, ...rest }) {
   );
 }
 
-// Setting default values for the props of Sidenav
 Sidenav.defaultProps = {
   color: "info",
   brand: "",
 };
 
-// Typechecking props for the Sidenav
 Sidenav.propTypes = {
   color: PropTypes.oneOf(["primary", "secondary", "info", "success", "warning", "error", "dark"]),
   brand: PropTypes.string,
