@@ -40,6 +40,8 @@ import MonthlyClosePage from "layouts/monthly-close";
 import TenantInquiry from "layouts/tenant-inquiry";
 import Subscription from "layouts/subscription";
 import Administration from "layouts/administration";
+import OctalConsole from "layouts/octal-console";
+import OctalConsoleDetail from "layouts/octal-console/detail";
 import TenantPortal from "layouts/tenant-portal";
 import TenantLogin from "layouts/tenant-portal/login";
 import TenantChangePassword from "layouts/tenant-portal/change-password";
@@ -402,6 +404,24 @@ const routes = [
     component: <Subscription />,
     sidenavGroup: "Admin",
     allowedRoles: TOP_TIER,
+  },
+  // F1.3 — Octal platform admin: cross-company subscription list (system_administrator only)
+  {
+    type: "collapse",
+    name: "Octal Console",
+    key: "octal-console",
+    icon: <Icon fontSize="small">admin_panel_settings</Icon>,
+    route: "/octal-console",
+    component: <OctalConsole />,
+    sidenavGroup: "Admin",
+    allowedRoles: ["system_administrator"],
+  },
+  {
+    type: "route",
+    name: "Octal Console — Subscription Detail",
+    key: "octal-console-detail",
+    route: "/octal-console/subscription/:id",
+    component: <OctalConsoleDetail />,
   },
 
   // =========================================================================
