@@ -33,6 +33,7 @@ import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
+import APPlaceholder from "./APPlaceholder";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8000/api";
 
@@ -217,6 +218,11 @@ export default function Dashboard() {
     return <Navigate to="/authentication/sign-in" replace />;
   }
 
+  // A/P placeholder — backend signals Tier 2 upsell (D16 / BUG #20)
+  if (!loading && !error && stats.placeholder === true) {
+    return <APPlaceholder data={stats} />;
+  }
+
   // 3. Normal role-based dashboard UI
   return (
     <DashboardLayout>
@@ -374,6 +380,30 @@ export default function Dashboard() {
             </Grid>
           )}
 
+          {/* Cashier — treasury operations: collections received + occupancy snapshot (BUG #23) */}
+          {role === "cashier" && (
+            <>
+              <Grid item xs={12} sm={6} md={4}>
+                <ComplexStatisticsCard
+                  color="primary"
+                  icon={<Icon fontSize="large">payments</Icon>}
+                  title="Collections (MTD)"
+                  count={`₱${Number(stats.kpis?.collections?.total_payments ?? 0).toLocaleString()}`}
+                  percentage={{ color: "success", amount: "", label: "" }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6} md={4}>
+                <ComplexStatisticsCard
+                  color="success"
+                  icon={<Icon fontSize="large">storefront</Icon>}
+                  title="Occupied Stalls"
+                  count={stats.kpis?.occupancy?.active_leases ?? 0}
+                  percentage={{ color: "success", amount: "", label: `of ${stats.kpis?.occupancy?.total_stalls ?? 0}` }}
+                />
+              </Grid>
+            </>
+          )}
+
           {/* Tenant */}
           {role === "tenant" && (
             <>
@@ -442,7 +472,7 @@ export default function Dashboard() {
 
           {/* Default for unknown roles */}
           {!role ||
-            (!["admin", "executive", "market_manager", "collector", "tenant", "guest"].includes(
+            (!["admin", "executive", "market_manager", "collector", "cashier", "tenant", "guest"].includes(
               role
             ) && (
               <Grid item xs={12}>
