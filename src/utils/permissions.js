@@ -87,6 +87,10 @@ export const canConfirmBatches = (r) => canViewReports(r);
 // Subscription & Billing self-service — top-tier (BUG #14: executive was missing).
 export const canManageSubscription = (r) => has(r, [...MARKET_ADMIN, "finance_head", "executive"]);
 
+// Market Users read-only list (BUG #13): top-tier + platform admin.
+export const canViewMarketUsers = (r) =>
+  has(r, ["executive", "finance_head", "market_administrator", "system_administrator"]);
+
 // Onboarding & staff provisioning (IAM-2).
 export const canOnboard = (r) => has(r, ["system_administrator"]); // platform-admin onboards companies
 export const canManageStaff = (r) => has(r, [...MARKET_ADMIN, "system_administrator"]); // market admin adds staff
