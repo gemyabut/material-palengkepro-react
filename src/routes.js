@@ -65,6 +65,7 @@ import ChargeTypeDetailPage from "layouts/settings/charge-types/detail";
 import ExpenseCategoryListPage from "layouts/settings/expense-categories";
 import ExpenseCategoryCreatePage from "layouts/settings/expense-categories/create";
 import ExpenseCategoryDetailPage from "layouts/settings/expense-categories/detail";
+import MarketUsersPage from "layouts/settings/users";
 
 // @mui icons
 import Icon from "@mui/material/Icon";
@@ -417,6 +418,17 @@ const routes = [
     component: <Subscription />,
     sidenavGroup: "Admin",
     allowedRoles: TOP_TIER,
+  },
+  {
+    type: "collapse",
+    name: "Market Users",
+    key: "settings-users",
+    icon: <Icon fontSize="small">group</Icon>,
+    route: "/settings/users",
+    component: <MarketUsersPage />,
+    sidenavGroup: "Admin",
+    // BUG #13: top-tier can view who's in their market
+    allowedRoles: [...TOP_TIER, "system_administrator"],
   },
   // F1.3 — Octal platform admin: cross-company subscription list (system_administrator only)
   {

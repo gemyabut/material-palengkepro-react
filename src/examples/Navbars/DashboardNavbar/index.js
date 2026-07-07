@@ -240,6 +240,10 @@ function DashboardNavbar({ absolute, light, isMini }) {
           <MDTypography variant="caption" fontWeight="bold" textTransform="uppercase" sx={{ px: 2, pt: 0.5, display: "block" }}>
             System
           </MDTypography>
+          <MenuItem onClick={() => { setSettingsAnchor(null); navigate("/settings/users"); }}>
+            <ListItemIcon><Icon fontSize="small">group</Icon></ListItemIcon>
+            <ListItemText primary="Market Users" />
+          </MenuItem>
           <MenuItem onClick={() => { setSettingsAnchor(null); navigate("/administration"); }}>
             <ListItemIcon><Icon fontSize="small">admin_panel_settings</Icon></ListItemIcon>
             <ListItemText primary="System Settings" />
