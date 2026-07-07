@@ -106,7 +106,8 @@ const routes = [
     route: "/cash-position",
     component: <CashPositionDashboard />,
     sidenavGroup: null,
-    allowedRoles: OPERATIONAL,
+    // BUG #15: leasing_officer removed; BUG #18: accounts_receivable removed (D15)
+    allowedRoles: [ROLE.EXEC, ROLE.FIN, ROLE.MKT, ROLE.ADM, ROLE.AP, ROLE.CSH],
   },
   {
     type: "collapse",
