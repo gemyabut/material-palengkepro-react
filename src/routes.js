@@ -184,8 +184,9 @@ const routes = [
     route: "/invoices",
     component: <Invoices />,
     sidenavGroup: "Accounts Receivable",
-    // Per patch matrix: TOP_TIER + ADM + LEA + AR — AP + CSH excluded
-    allowedRoles: [ROLE.EXEC, ROLE.FIN, ROLE.MKT, ROLE.ADM, ROLE.LEA, ROLE.AR],
+    // BUG #16: leasing_officer removed — backend IsFinanceViewer already blocked them;
+    // sidenav now aligns (leasing never had meaningful access here)
+    allowedRoles: [ROLE.EXEC, ROLE.FIN, ROLE.MKT, ROLE.ADM, ROLE.AR],
   },
   {
     type: "route",
@@ -202,6 +203,7 @@ const routes = [
     route: "/soa",
     component: <SoaPage />,
     sidenavGroup: "Accounts Receivable",
+    // D12: leasing_officer KEEPS SOA access (IsARSOAReader on backend)
     allowedRoles: [ROLE.EXEC, ROLE.FIN, ROLE.MKT, ROLE.ADM, ROLE.LEA, ROLE.AR],
   },
   {
@@ -212,7 +214,9 @@ const routes = [
     route: "/aging",
     component: <AgingDashboard />,
     sidenavGroup: "Accounts Receivable",
-    allowedRoles: [ROLE.EXEC, ROLE.FIN, ROLE.MKT, ROLE.ADM, ROLE.LEA, ROLE.AR],
+    // BUG #16: leasing_officer removed — backend IsFinanceViewer already blocked them;
+    // sidenav now aligns
+    allowedRoles: [ROLE.EXEC, ROLE.FIN, ROLE.MKT, ROLE.ADM, ROLE.AR],
   },
   {
     type: "collapse",
@@ -325,7 +329,8 @@ const routes = [
   // Master Data
   // =========================================================================
   // Stalls moved to CRM section (F10 sidebar reorder — DEC-055 / F9).
-  // Charge Types — Unit 16 / DEC-044. TOP_TIER edits; LEA + AR view-only (👁 per matrix).
+  // Charge Types — Unit 16 / DEC-044. TOP_TIER edits; AR view-only (👁).
+  // BUG #17: leasing_officer removed — Settings is top-tier + AR only (DEC-055).
   {
     type: "collapse",
     name: "Charge Types",
@@ -334,7 +339,7 @@ const routes = [
     route: "/settings/charge-types",
     component: <ChargeTypeListPage />,
     sidenavGroup: "Master Data",
-    allowedRoles: [ROLE.EXEC, ROLE.FIN, ROLE.MKT, ROLE.LEA, ROLE.AR],
+    allowedRoles: [ROLE.EXEC, ROLE.FIN, ROLE.MKT, ROLE.AR],
   },
   {
     type: "route",
