@@ -84,8 +84,8 @@ export const canViewBatches = (r) => canViewReports(r) || has(r, ["cashier"]);
 export const canEditBatches = (r) => canViewBatches(r);
 export const canConfirmBatches = (r) => canViewReports(r);
 
-// Subscription & Billing self-service — the company's Market Administrator (doc: SUB-3).
-export const canManageSubscription = (r) => has(r, [...MARKET_ADMIN, "finance_head"]);
+// Subscription & Billing self-service — top-tier (BUG #14: executive was missing).
+export const canManageSubscription = (r) => has(r, [...MARKET_ADMIN, "finance_head", "executive"]);
 
 // Onboarding & staff provisioning (IAM-2).
 export const canOnboard = (r) => has(r, ["system_administrator"]); // platform-admin onboards companies
