@@ -25,11 +25,12 @@ export const DOMAIN_LABELS = {
   deposit_slip:       "Deposit Slip — bank/LGU deposits",
   cashier_intake:     "Cashier Intake — EOD cash count history",
   remittance_batch:   "Remittance Batch — bank/LGU batches",
+  opening_balance:    "Opening Balance — arrears carry-forward (go-live)",
 };
 
 // Unit 27 F6 — group domains by ERP module for the tab layout.
 export const DOMAIN_MODULE = {
-  tenant: "crm", stall: "crm", lease: "crm",
+  tenant: "crm", stall: "crm", lease: "crm", opening_balance: "crm",
   payment: "ar", collection_summary: "ar", receipt_book: "ar", receipt_issue: "ar",
   cashier_intake: "treasury", remittance_batch: "treasury", deposit_slip: "treasury",
 };

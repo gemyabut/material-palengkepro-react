@@ -147,6 +147,7 @@ const SPREADSHEET_DOMAIN_ROLES = {
   deposit_slip: ["executive", ...MARKET_ADMIN, "finance_head", "accounting_staff"],
   cashier_intake: ["executive", ...MARKET_ADMIN, "finance_head", "accounting_staff"],
   remittance_batch: ["executive", ...MARKET_ADMIN, "finance_head", "accounting_staff"],
+  opening_balance: ["executive", "finance_head", "market_administrator"],
 };
 
 export const SPREADSHEET_UPLOAD_DOMAINS = Object.keys(SPREADSHEET_DOMAIN_ROLES);
