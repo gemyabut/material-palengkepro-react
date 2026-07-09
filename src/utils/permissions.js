@@ -168,6 +168,14 @@ export const canSeeAllImportJobs = (r) =>
 export const canUseGraceMode = (r) => has(r, ["market_administrator", "finance_head"]);
 
 /**
+ * Invoice Generation (Unit 37 / DEC-TBD).
+ * Mirrors IsInvoiceGenerationOperator on the backend (finance/views.py:103).
+ * Triggers POST /api/finance/generate-invoices/ — month-end AR batch.
+ */
+export const canGenerateInvoices = (r) =>
+  has(r, ["finance_head", "market_administrator", "admin_staff", "executive"]);
+
+/**
  * Settings — ChargeType + ExpenseCategory master data (DEC-044 / Unit 16).
  * Top Tier only: executive (Owner), finance_head (Finance Mgr), market_administrator.
  * Vocabulary debt: DEC-055 uses "Owner/Finance Manager" — actual DB codes are
