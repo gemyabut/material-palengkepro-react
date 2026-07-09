@@ -18,7 +18,7 @@ export default function ApproveIntakeModal({ open, intake, onClose, onConfirm, s
 
   return (
     <Dialog open={open} onClose={!submitting ? onClose : undefined} maxWidth="sm" fullWidth>
-      <DialogTitle>Approve Cash Count</DialogTitle>
+      <DialogTitle>Approve EOD Collection</DialogTitle>
       <DialogContent>
         <MDTypography variant="body2" color="secondary" mb={2}>
           Approving will post this count and create handover cash movements (Pocket → Safe).

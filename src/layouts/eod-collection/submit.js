@@ -52,7 +52,7 @@ export default function SubmitEodCountPage() {
   useEffect(() => {
     getEodCount(id)
       .then(setIntake)
-      .catch(() => setFetchErr("Could not load cash count record."))
+      .catch(() => setFetchErr("Could not load collection record."))
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -136,7 +136,7 @@ export default function SubmitEodCountPage() {
             ← Back
           </Button>
           <MDTypography variant="h4" fontWeight="bold">
-            End-of-Day Cash Count
+            End-of-Day Collection
           </MDTypography>
           {showTallyPdfBtn && (
             <Button

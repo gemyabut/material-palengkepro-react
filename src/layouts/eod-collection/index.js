@@ -69,7 +69,7 @@ export default function EodCashCountPage() {
       const resp = await listEodCounts(params);
       setCounts(Array.isArray(resp) ? resp : (resp?.results ?? []));
     } catch {
-      setError("Failed to load EOD cash counts.");
+      setError("Failed to load EOD collections.");
     } finally {
       setLoading(false);
     }
@@ -109,7 +109,7 @@ export default function EodCashCountPage() {
           gap={2}
         >
           <MDTypography variant="h4" fontWeight="bold">
-            EOD Cash Counts
+            EOD Collections
           </MDTypography>
           <FormControl size="small" sx={{ minWidth: 200 }}>
             <InputLabel>Status</InputLabel>
