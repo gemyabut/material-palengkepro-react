@@ -185,15 +185,18 @@ export default function EodCashCountPage() {
                       </TableCell>
                       <TableCell>
                         {c.status === "OPEN" && (
-                          <MDBox display="flex" gap={1}>
-                            <Button
-                              size="small"
-                              variant="contained"
-                              color="info"
-                              onClick={() => navigate(`/eod-cash-count/${c.id}/submit`)}
-                            >
-                              Submit Count
-                            </Button>
+                          <Button
+                            size="small"
+                            variant="contained"
+                            color="info"
+                            onClick={() => navigate(`/eod-cash-count/${c.id}/submit`)}
+                          >
+                            Submit Count
+                          </Button>
+                        )}
+                        {c.status === "PENDING_APPROVAL" && (
+                          <MDBox display="flex" gap={1} alignItems="center">
+                            <Chip label="Submitted" color="info" size="small" />
                             {canApprove && (
                               <Button
                                 size="small"
