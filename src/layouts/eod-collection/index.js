@@ -69,7 +69,7 @@ export default function EodCashCountPage() {
       const resp = await listEodCounts(params);
       setCounts(Array.isArray(resp) ? resp : (resp?.results ?? []));
     } catch {
-      setError("Failed to load EOD cash counts.");
+      setError("Failed to load EOD collections.");
     } finally {
       setLoading(false);
     }
@@ -109,7 +109,7 @@ export default function EodCashCountPage() {
           gap={2}
         >
           <MDTypography variant="h4" fontWeight="bold">
-            EOD Cash Counts
+            EOD Collections
           </MDTypography>
           <FormControl size="small" sx={{ minWidth: 200 }}>
             <InputLabel>Status</InputLabel>
@@ -144,6 +144,11 @@ export default function EodCashCountPage() {
                   <TableCell>Date</TableCell>
                   <TableCell align="right">Expected</TableCell>
                   <TableCell align="right">Actual</TableCell>
+                  <TableCell align="right">Cash</TableCell>
+                  <TableCell align="right">Check</TableCell>
+                  <TableCell align="right">GCASH</TableCell>
+                  <TableCell align="right">Bank</TableCell>
+                  <TableCell align="right">Total</TableCell>
                   <TableCell align="right">Variance</TableCell>
                   <TableCell>Reason</TableCell>
                   <TableCell>Status</TableCell>
@@ -159,6 +164,18 @@ export default function EodCashCountPage() {
                       <TableCell>{c.date}</TableCell>
                       <TableCell align="right">{peso(c.expected_amount)}</TableCell>
                       <TableCell align="right">{peso(c.actual_amount)}</TableCell>
+                      <TableCell align="right">{peso(c.total_cash)}</TableCell>
+                      <TableCell align="right">{peso(c.total_check)}</TableCell>
+                      <TableCell align="right">{peso(c.total_gcash)}</TableCell>
+                      <TableCell align="right">{peso(c.total_bank)}</TableCell>
+                      <TableCell align="right">
+                        {peso(
+                          (parseFloat(c.total_cash  || 0)) +
+                          (parseFloat(c.total_check || 0)) +
+                          (parseFloat(c.total_gcash || 0)) +
+                          (parseFloat(c.total_bank  || 0))
+                        )}
+                      </TableCell>
                       <TableCell
                         align="right"
                         sx={{
@@ -189,7 +206,7 @@ export default function EodCashCountPage() {
                             size="small"
                             variant="contained"
                             color="info"
-                            onClick={() => navigate(`/eod-cash-count/${c.id}/submit`)}
+                            onClick={() => navigate(`/eod-collection/${c.id}/submit`)}
                           >
                             Submit Count
                           </Button>

@@ -32,8 +32,8 @@ import DepositBatchListPage from "layouts/deposit-batches";
 import DepositBatchDetailPage from "layouts/deposit-batches/detail";
 import CreateDepositBatchPage from "layouts/deposit-batches/create";
 import DeductionApprovalQueue from "layouts/deposit-batches/components/DeductionApprovalQueue";
-import EodCashCountPage from "layouts/eod-cash-count";
-import SubmitEodCountPage from "layouts/eod-cash-count/submit";
+import EodCashCountPage from "layouts/eod-collection";
+import SubmitEodCountPage from "layouts/eod-collection/submit";
 import DailyVerificationPage from "layouts/daily-verification";
 import BankReconciliationPage from "layouts/bank-reconciliation";
 import CashAccountabilityPage from "layouts/cash-accountability";
@@ -66,6 +66,9 @@ import ExpenseCategoryListPage from "layouts/settings/expense-categories";
 import ExpenseCategoryCreatePage from "layouts/settings/expense-categories/create";
 import ExpenseCategoryDetailPage from "layouts/settings/expense-categories/detail";
 import MarketUsersPage from "layouts/settings/users";
+
+// react-router
+import { Navigate } from "react-router-dom";
 
 // @mui icons
 import Icon from "@mui/material/Icon";
@@ -298,10 +301,10 @@ const routes = [
   },
   {
     type: "collapse",
-    name: "EOD Cash Count",
-    key: "eod-cash-count",
+    name: "EOD Collection",
+    key: "eod-collection",
     icon: <Icon fontSize="small">schedule</Icon>,
-    route: "/eod-cash-count",
+    route: "/eod-collection",
     component: <EodCashCountPage />,
     sidenavGroup: "Treasury",
     // Per patch matrix "Treasury · Cashier Intake": TOP_TIER + AR (👁) + CSH (✏)
@@ -309,10 +312,25 @@ const routes = [
   },
   {
     type: "route",
-    name: "Submit EOD Count",
-    key: "eod-cash-count-submit",
-    route: "/eod-cash-count/:id/submit",
+    name: "Submit EOD Collection",
+    key: "eod-collection-submit",
+    route: "/eod-collection/:id/submit",
     component: <SubmitEodCountPage />,
+  },
+  // Backwards-compat: old /eod-cash-count URLs redirect to new path
+  {
+    type: "route",
+    name: "EOD Cash Count Legacy Redirect",
+    key: "eod-cash-count-legacy",
+    route: "/eod-cash-count",
+    component: <Navigate to="/eod-collection" replace />,
+  },
+  {
+    type: "route",
+    name: "EOD Cash Count Submit Legacy Redirect",
+    key: "eod-cash-count-submit-legacy",
+    route: "/eod-cash-count/:id/submit",
+    component: <Navigate to="/eod-collection" replace />,
   },
   {
     type: "collapse",

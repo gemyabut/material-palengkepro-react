@@ -94,7 +94,7 @@ export default function SubmitIntakeForm({ intake, onSubmit, submitting }) {
         </MDBox>
 
         <TextField
-          label="Actual Cash Count *"
+          label="Actual Cash Amount *"
           type="number"
           inputProps={{ min: 0, step: "0.01" }}
           value={actualAmount}
