@@ -144,6 +144,11 @@ export default function EodCashCountPage() {
                   <TableCell>Date</TableCell>
                   <TableCell align="right">Expected</TableCell>
                   <TableCell align="right">Actual</TableCell>
+                  <TableCell align="right">Cash</TableCell>
+                  <TableCell align="right">Check</TableCell>
+                  <TableCell align="right">GCASH</TableCell>
+                  <TableCell align="right">Bank</TableCell>
+                  <TableCell align="right">Total</TableCell>
                   <TableCell align="right">Variance</TableCell>
                   <TableCell>Reason</TableCell>
                   <TableCell>Status</TableCell>
@@ -159,6 +164,18 @@ export default function EodCashCountPage() {
                       <TableCell>{c.date}</TableCell>
                       <TableCell align="right">{peso(c.expected_amount)}</TableCell>
                       <TableCell align="right">{peso(c.actual_amount)}</TableCell>
+                      <TableCell align="right">{peso(c.total_cash)}</TableCell>
+                      <TableCell align="right">{peso(c.total_check)}</TableCell>
+                      <TableCell align="right">{peso(c.total_gcash)}</TableCell>
+                      <TableCell align="right">{peso(c.total_bank)}</TableCell>
+                      <TableCell align="right">
+                        {peso(
+                          (parseFloat(c.total_cash  || 0)) +
+                          (parseFloat(c.total_check || 0)) +
+                          (parseFloat(c.total_gcash || 0)) +
+                          (parseFloat(c.total_bank  || 0))
+                        )}
+                      </TableCell>
                       <TableCell
                         align="right"
                         sx={{
