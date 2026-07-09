@@ -132,7 +132,7 @@ export default function SubmitEodCountPage() {
       <DashboardNavbar />
       <MDBox py={3}>
         <MDBox display="flex" alignItems="center" gap={2} mb={3} flexWrap="wrap">
-          <Button variant="outlined" size="small" onClick={() => navigate("/eod-cash-count")}>
+          <Button variant="outlined" size="small" onClick={() => navigate("/eod-collection")}>
             ← Back
           </Button>
           <MDTypography variant="h4" fontWeight="bold">

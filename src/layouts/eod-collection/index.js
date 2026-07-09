@@ -189,7 +189,7 @@ export default function EodCashCountPage() {
                             size="small"
                             variant="contained"
                             color="info"
-                            onClick={() => navigate(`/eod-cash-count/${c.id}/submit`)}
+                            onClick={() => navigate(`/eod-collection/${c.id}/submit`)}
                           >
                             Submit Count
                           </Button>

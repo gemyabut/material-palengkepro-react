@@ -7,7 +7,7 @@ import MDTypography from "components/MDTypography";
 import DenominationBreakdown, {
   computeDenomTotal,
   denomFieldsEntered,
-} from "layouts/eod-cash-count/components/DenominationBreakdown";
+} from "layouts/eod-collection/components/DenominationBreakdown";
 
 export const EMPTY_DENOM = {
   bill_1000: 0,
