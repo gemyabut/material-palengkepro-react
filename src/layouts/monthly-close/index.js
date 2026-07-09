@@ -34,6 +34,7 @@ import {
   periodClosePdfUrl,
 } from "api/periodClose";
 import { getCashAccountabilityDashboard } from "api/cashAccountability";
+import { getMarket } from "api/markets";
 import useProfile from "layouts/profile/hooks/useProfile";
 
 function getRole() {
@@ -155,9 +156,9 @@ export default function MonthlyClosePage() {
   const role = getRole();
   const navigate = useNavigate();
   const { userProfile, loading: profileLoading } = useProfile();
-  const marketId = userProfile?.primary_market ?? userProfile?.primary_market_id;
 
   const [pc, setPc] = useState(null);
+  const [marketCode, setMarketCode] = useState("");
   const [dashboard, setDashboard] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -166,15 +167,21 @@ export default function MonthlyClosePage() {
   const [reopening, setReopening] = useState(false);
   const [snack, setSnack] = useState({ open: false, message: "", severity: "success" });
 
+  useEffect(() => {
+    const mid = userProfile?.primary_market ?? userProfile?.primary_market_id;
+    if (!mid) return;
+    getMarket(mid).then((m) => setMarketCode(m.code || "")).catch(() => {});
+  }, [userProfile]);
+
   const loadPc = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const pcData = await getPeriodClose(id);
       setPc(pcData);
-      if (marketId) {
+      if (marketCode) {
         const period = `${pcData.period_start?.slice(0, 7)}`;
-        const dash = await getCashAccountabilityDashboard({ market: marketId, period });
+        const dash = await getCashAccountabilityDashboard({ market: marketCode, period });
         setDashboard(dash);
       }
     } catch (e) {
@@ -182,7 +189,7 @@ export default function MonthlyClosePage() {
     } finally {
       setLoading(false);
     }
-  }, [id, marketId]);
+  }, [id, marketCode]);
 
   useEffect(() => {
     if (!profileLoading) loadPc();

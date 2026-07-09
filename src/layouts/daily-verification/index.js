@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import Alert from "@mui/material/Alert";
@@ -19,6 +19,8 @@ import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import { canViewDailyVerification } from "utils/permissions";
 import { getDailyVerification, downloadDailyVerificationPdf } from "api/dailyVerification";
+import { getMarket } from "api/markets";
+import useProfile from "layouts/profile/hooks/useProfile";
 
 function getRole() {
   const t = localStorage.getItem("access_token") || sessionStorage.getItem("access_token");
@@ -65,12 +67,19 @@ function SummaryCard({ label, value, alert }) {
 
 export default function DailyVerificationPage() {
   const role = getRole();
+  const { userProfile } = useProfile();
   const [market, setMarket] = useState("");
   const [date, setDate] = useState(todayStr());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [data, setData] = useState(null);
   const [pdfLoading, setPdfLoading] = useState(false);
+
+  useEffect(() => {
+    const id = userProfile?.primary_market ?? userProfile?.primary_market_id;
+    if (!id) return;
+    getMarket(id).then((m) => setMarket(m.code || "")).catch(() => {});
+  }, [userProfile]);
 
   if (!canViewDailyVerification(role)) return <Navigate to="/dashboard" replace />;
 

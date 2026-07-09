@@ -15,6 +15,7 @@ import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import { canViewCashAccountability } from "utils/permissions";
 import { getCashAccountabilityDashboard } from "api/cashAccountability";
+import { getMarket } from "api/markets";
 import useProfile from "layouts/profile/hooks/useProfile";
 
 function getRole() {
@@ -68,7 +69,6 @@ export default function CashAccountabilityPage() {
   const role = getRole();
   const navigate = useNavigate();
   const { userProfile, loading: profileLoading } = useProfile();
-  const marketId = userProfile?.primary_market ?? userProfile?.primary_market_id;
 
   const nowParts = splitPeriod(currentYYYYMM());
   const [year, setYear] = useState(nowParts.year);
@@ -77,22 +77,29 @@ export default function CashAccountabilityPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [snack, setSnack] = useState({ open: false, message: "", severity: "info" });
+  const [marketCode, setMarketCode] = useState("");
+
+  useEffect(() => {
+    const id = userProfile?.primary_market ?? userProfile?.primary_market_id;
+    if (!id) return;
+    getMarket(id).then((m) => setMarketCode(m.code || "")).catch(() => {});
+  }, [userProfile]);
 
   const period = buildPeriod(year, month);
 
   const load = useCallback(async () => {
-    if (profileLoading || !marketId) return;
+    if (profileLoading || !marketCode) return;
     setLoading(true);
     setError(null);
     try {
-      setData(await getCashAccountabilityDashboard({ market: marketId, period }));
+      setData(await getCashAccountabilityDashboard({ market: marketCode, period }));
     } catch (e) {
       const msg = e?.response?.data?.detail || "Failed to load cash accountability data.";
       setError(msg);
     } finally {
       setLoading(false);
     }
-  }, [marketId, period, profileLoading]);
+  }, [marketCode, period, profileLoading]);
 
   useEffect(() => {
     load();
