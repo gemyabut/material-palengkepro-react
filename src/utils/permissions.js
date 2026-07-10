@@ -176,6 +176,13 @@ export const canGenerateInvoices = (r) =>
   has(r, ["finance_head", "market_administrator", "admin_staff", "executive"]);
 
 /**
+ * Retry Unapplied Payments (Unit 40 B3 / BUG-05).
+ * Mirrors IsInvoiceGenerationOperator on the backend (finance/views.py:103).
+ * Same 4-role gate as canGenerateInvoices — do not duplicate the role list.
+ */
+export const canRetryUnappliedPayments = (r) => canGenerateInvoices(r);
+
+/**
  * Settings — ChargeType + ExpenseCategory master data (DEC-044 / Unit 16).
  * Top Tier only: executive (Owner), finance_head (Finance Mgr), market_administrator.
  * Vocabulary debt: DEC-055 uses "Owner/Finance Manager" — actual DB codes are

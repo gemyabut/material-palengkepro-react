@@ -10,6 +10,7 @@ import CircularProgress from "@mui/material/CircularProgress";
 import InvoiceTable from "./components/InvoiceTable";
 import InvoiceFilters from "./components/InvoiceFilters";
 import GenerateInvoicesDialog from "./components/GenerateInvoicesDialog";
+import RetryUnappliedDialog from "./components/RetryUnappliedDialog";
 import { canViewInvoices, canGenerateInvoices } from "utils/permissions";
 
 const DEFAULT_LIMIT = 20;
@@ -20,6 +21,7 @@ function InvoicesPage() {
   const [page, setPage] = useState(1);
   const [snackbar, setSnackbar] = useState({ open: false, message: "" });
   const [generateDialogOpen, setGenerateDialogOpen] = useState(false);
+  const [retryDialogOpen, setRetryDialogOpen] = useState(false);
 
   // All hooks above any early return
   const queryFilters = useMemo(() => {
@@ -78,6 +80,10 @@ function InvoicesPage() {
     setSnackbar({ open: true, message: "Invoices generated successfully." });
   };
 
+  const handleRetrySuccess = (result) => {
+    setSnackbar({ open: true, message: `Retry complete — ${result.applied ?? 0} payment(s) applied.` });
+  };
+
   return (
     <DashboardLayout>
       <DashboardNavbar userProfile={userProfile} />
@@ -87,13 +93,22 @@ function InvoicesPage() {
             Invoices{marketName ? ` — ${marketName}` : ""}
           </MDTypography>
           {showGenerateBtn && (
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={() => setGenerateDialogOpen(true)}
-            >
-              Generate Monthly Invoices
-            </Button>
+            <MDBox display="flex" gap={1}>
+              <Button
+                variant="outlined"
+                color="primary"
+                onClick={() => setRetryDialogOpen(true)}
+              >
+                Retry Unapplied Payments
+              </Button>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={() => setGenerateDialogOpen(true)}
+              >
+                Generate Monthly Invoices
+              </Button>
+            </MDBox>
           )}
         </MDBox>
 
@@ -125,6 +140,13 @@ function InvoicesPage() {
         open={generateDialogOpen}
         onClose={() => setGenerateDialogOpen(false)}
         onSuccess={handleGenerateSuccess}
+        marketId={marketId}
+      />
+
+      <RetryUnappliedDialog
+        open={retryDialogOpen}
+        onClose={() => setRetryDialogOpen(false)}
+        onSuccess={handleRetrySuccess}
         marketId={marketId}
       />
     </DashboardLayout>
