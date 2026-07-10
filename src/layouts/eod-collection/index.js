@@ -201,7 +201,7 @@ export default function EodCashCountPage() {
                         </MDBox>
                       </TableCell>
                       <TableCell>
-                        {c.status === "OPEN" && (
+                        {c.status === "OPEN" && !c.cashier_counted_at && (
                           <Button
                             size="small"
                             variant="contained"
@@ -211,7 +211,7 @@ export default function EodCashCountPage() {
                             Submit Count
                           </Button>
                         )}
-                        {c.status === "PENDING_APPROVAL" && (
+                        {c.status === "OPEN" && c.cashier_counted_at && (
                           <MDBox display="flex" gap={1} alignItems="center">
                             <Chip label="Submitted" color="info" size="small" />
                             {canApprove && (
