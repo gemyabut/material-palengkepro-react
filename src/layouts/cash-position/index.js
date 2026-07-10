@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Navigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import Button from "@mui/material/Button";
@@ -14,6 +14,8 @@ import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import { canViewCash } from "utils/permissions";
 import { getCashPosition } from "api/cashPosition";
+import { getMarket } from "api/markets";
+import useProfile from "layouts/profile/hooks/useProfile";
 import AccountTypeSection from "./components/AccountTypeSection";
 import DeductionsTodayWidget from "./components/DeductionsTodayWidget";
 
@@ -50,16 +52,25 @@ function getAccountTypes(destinationType) {
 export default function CashPositionDashboard() {
   const role = getRole();
   const allowed = canViewCash(role);
+  const { userProfile, loading: profileLoading } = useProfile();
 
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [marketCode, setMarketCode] = useState("");
+
+  useEffect(() => {
+    const id = userProfile?.primary_market ?? userProfile?.primary_market_id;
+    if (!id) return;
+    getMarket(id).then((m) => setMarketCode(m.code || "")).catch(() => {});
+  }, [userProfile]);
 
   const fetchData = useCallback(async () => {
+    if (profileLoading || !marketCode) return;
     setLoading(true);
     setError(null);
     try {
-      setData(await getCashPosition());
+      setData(await getCashPosition(marketCode));
     } catch (e) {
       setError(
         e?.response?.data?.error ||
@@ -70,7 +81,7 @@ export default function CashPositionDashboard() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [marketCode, profileLoading]);
 
   React.useEffect(() => {
     if (allowed) fetchData();
