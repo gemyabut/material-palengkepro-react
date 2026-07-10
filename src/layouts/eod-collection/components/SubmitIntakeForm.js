@@ -28,8 +28,8 @@ const EMPTY_DENOM = {
 };
 
 export default function SubmitIntakeForm({ intake, onSubmit, submitting }) {
-  // Cash
-  const [actualAmount, setActualAmount] = useState(
+  // Cash — Unit 48: renamed from actualAmount to actualCash (API key renamed to actual_cash)
+  const [actualCash, setActualCash] = useState(
     intake?.total_cash && parseFloat(intake.total_cash) > 0 ? String(intake.total_cash) : ""
   );
   const [denomEnabled, setDenomEnabled] = useState(false);
@@ -54,12 +54,12 @@ export default function SubmitIntakeForm({ intake, onSubmit, submitting }) {
 
   // Derived totals
   const expected    = parseFloat(intake?.expected_amount || 0);
-  const cash        = parseFloat(actualAmount) || 0;
+  const cash        = parseFloat(actualCash) || 0;
   const check       = parseFloat(actualCheck) || 0;
   const gcash       = parseFloat(actualGcash) || 0;
   const bank        = parseFloat(actualBank) || 0;
   const grandTotal  = cash + check + gcash + bank;
-  const variance    = actualAmount !== "" ? grandTotal - expected : null;
+  const variance    = actualCash !== "" ? grandTotal - expected : null;
 
   const denomTotal    = computeDenomTotal(denomFields);
   const denomEntered  = denomEnabled && denomFieldsEntered(denomFields);
@@ -74,10 +74,10 @@ export default function SubmitIntakeForm({ intake, onSubmit, submitting }) {
 
   const validate = () => {
     const errs = {};
-    if (actualAmount === "" || isNaN(parseFloat(actualAmount))) {
-      errs.actualAmount = "Actual cash amount is required.";
-    } else if (parseFloat(actualAmount) < 0) {
-      errs.actualAmount = "Amount cannot be negative.";
+    if (actualCash === "" || isNaN(parseFloat(actualCash))) {
+      errs.actualCash = "Actual cash amount is required.";
+    } else if (parseFloat(actualCash) < 0) {
+      errs.actualCash = "Amount cannot be negative.";
     }
     if (!gcashConfirmed) {
       errs.gcashConfirmed = "Please verify GCASH receipts before submitting.";
@@ -93,7 +93,7 @@ export default function SubmitIntakeForm({ intake, onSubmit, submitting }) {
   };
 
   const buildPayload = () => ({
-    actual_amount:   parseFloat(actualAmount).toFixed(2),
+    actual_cash:     parseFloat(actualCash).toFixed(2),
     actual_check:    parseFloat(actualCheck || 0).toFixed(2),
     actual_gcash:    parseFloat(actualGcash || 0).toFixed(2),
     actual_bank:     parseFloat(actualBank || 0).toFixed(2),
@@ -139,10 +139,10 @@ export default function SubmitIntakeForm({ intake, onSubmit, submitting }) {
             label="Actual Cash Amount *"
             type="number"
             inputProps={{ min: 0, step: "0.01" }}
-            value={actualAmount}
-            onChange={(e) => { setActualAmount(e.target.value); clearErrors(); }}
-            error={!!fieldErr.actualAmount}
-            helperText={fieldErr.actualAmount}
+            value={actualCash}
+            onChange={(e) => { setActualCash(e.target.value); clearErrors(); }}
+            error={!!fieldErr.actualCash}
+            helperText={fieldErr.actualCash}
             size="small"
             sx={{ maxWidth: 280 }}
             InputProps={{
