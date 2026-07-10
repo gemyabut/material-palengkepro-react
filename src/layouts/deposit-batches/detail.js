@@ -263,7 +263,7 @@ export default function DepositBatchDetailPage() {
               <MDTypography variant="h6" mb={1}>
                 Totals
               </MDTypography>
-              <LV label="Total" value={peso(batch.total_to_bank)} />
+              <LV label="Total" value={peso((Number(batch.total_to_bank) || 0) + (Number(batch.total_to_lgu) || 0))} />
               <LV label="Items" value={`${batch.item_count || (batch.items || []).length}`} />
               {batch.notes && <LV label="Notes" value={batch.notes} />}
             </Paper>
