@@ -178,7 +178,7 @@ export default function DepositBatchListPage() {
                       <TableCell>
                         <BatchStatusChip status={b.status} />
                       </TableCell>
-                      <TableCell align="right">{peso(b.total_to_bank)}</TableCell>
+                      <TableCell align="right">{peso((Number(b.total_to_bank) || 0) + (Number(b.total_to_lgu) || 0))}</TableCell>
                       <TableCell align="right">{b.item_count}</TableCell>
                       <TableCell>{b.deposit_date || "—"}</TableCell>
                       <TableCell>
