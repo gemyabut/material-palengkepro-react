@@ -65,6 +65,35 @@ function SummaryCard({ label, value, alert }) {
   );
 }
 
+// eslint-disable-next-line react/prop-types
+function MethodCard({ label, actual, expected, grandAlert }) {
+  const act = parseFloat(actual || 0);
+  const exp = parseFloat(expected || 0);
+  const varNum = act - exp;
+  const varColor = varNum < 0 ? "error.main" : varNum === 0 ? "success.main" : "info.main";
+  return (
+    <Paper
+      variant="outlined"
+      sx={{ p: 2, textAlign: "center", borderColor: grandAlert ? "error.main" : undefined }}
+    >
+      <MDTypography variant="h5" fontWeight="bold" color={grandAlert ? "error" : "text"}>
+        {peso(act)}
+      </MDTypography>
+      <MDTypography variant="caption" color="secondary">
+        {label}
+      </MDTypography>
+      <MDBox sx={{ borderTop: "1px solid", borderColor: "divider", mt: 0.75, pt: 0.75 }}>
+        <MDTypography variant="caption" display="block" color="secondary" sx={{ fontSize: "0.72rem" }}>
+          Exp {peso(exp)}
+        </MDTypography>
+        <MDTypography variant="caption" display="block" sx={{ fontSize: "0.72rem", color: varColor }}>
+          Var {varNum > 0 ? "+" : ""}{peso(varNum)}
+        </MDTypography>
+      </MDBox>
+    </Paper>
+  );
+}
+
 export default function DailyVerificationPage() {
   const role = getRole();
   const { userProfile } = useProfile();
@@ -127,16 +156,6 @@ export default function DailyVerificationPage() {
   const actionRequired = (data?.collectors || []).filter(
     (r) => !r.has_intake || r.escalated_to_admin || r.denomination_mismatch
   );
-  const totalActualAll = (data?.collectors || []).reduce(
-    (sum, r) =>
-      sum +
-      parseFloat(r.total_cash || 0) +
-      parseFloat(r.total_check || 0) +
-      parseFloat(r.total_gcash || 0) +
-      parseFloat(r.total_bank || 0),
-    0
-  );
-
   return (
     <DashboardLayout>
       <DashboardNavbar />
@@ -188,45 +207,56 @@ export default function DailyVerificationPage() {
             <MDTypography variant="h6" mb={1.5}>
               {data.market_name} — {data.date}
             </MDTypography>
-            <Grid container spacing={2} mb={3}>
-              <Grid item xs={6} sm={3}>
-                <SummaryCard label="Collectors" value={s.collector_count} />
+            {/* Row 1 — 5 method cards */}
+            <Grid container spacing={2} mb={2}>
+              <Grid item xs={6} sm={true}>
+                <MethodCard label="Total Cash" actual={s.total_actual_cash} expected={s.total_expected_cash} />
               </Grid>
-              <Grid item xs={6} sm={3}>
-                <SummaryCard label="Total Expected" value={peso(s.total_expected)} />
+              <Grid item xs={6} sm={true}>
+                <MethodCard label="Total Check" actual={s.total_actual_check} expected={s.total_expected_check} />
               </Grid>
-              <Grid item xs={6} sm={3}>
-                <SummaryCard label="Total Actual" value={peso(totalActualAll)} />
+              <Grid item xs={6} sm={true}>
+                <MethodCard label="Total GCASH" actual={s.total_actual_gcash} expected={s.total_expected_gcash} />
               </Grid>
-              <Grid item xs={6} sm={3}>
-                <SummaryCard
-                  label="Total Variance"
-                  value={peso(s.total_variance)}
-                  alert={parseFloat(s.total_variance || 0) !== 0}
+              <Grid item xs={6} sm={true}>
+                <MethodCard label="Total Bank" actual={s.total_actual_bank} expected={s.total_expected_bank} />
+              </Grid>
+              <Grid item xs={6} sm={true}>
+                <MethodCard
+                  label="Grand Total"
+                  actual={s.total_actual}
+                  expected={s.total_expected}
+                  grandAlert={parseFloat(s.total_variance || 0) !== 0}
                 />
               </Grid>
-              <Grid item xs={6} sm={3}>
+            </Grid>
+            {/* Row 2 — status cards */}
+            <Grid container spacing={2} mb={3}>
+              <Grid item xs={6} sm={true}>
+                <SummaryCard label="Collectors" value={s.collector_count} />
+              </Grid>
+              <Grid item xs={6} sm={true}>
                 <SummaryCard
                   label="Missing Handovers"
                   value={s.missing_count}
                   alert={s.missing_count > 0}
                 />
               </Grid>
-              <Grid item xs={6} sm={3}>
+              <Grid item xs={6} sm={true}>
                 <SummaryCard
                   label="Escalated Overrides"
                   value={s.escalated_count}
                   alert={s.escalated_count > 0}
                 />
               </Grid>
-              <Grid item xs={6} sm={3}>
+              <Grid item xs={6} sm={true}>
                 <SummaryCard
                   label="Denomination Mismatch"
                   value={s.mismatch_count}
                   alert={s.mismatch_count > 0}
                 />
               </Grid>
-              <Grid item xs={6} sm={3}>
+              <Grid item xs={6} sm={true}>
                 <SummaryCard label="Posted" value={s.posted_count} />
               </Grid>
             </Grid>
