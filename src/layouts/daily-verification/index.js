@@ -127,6 +127,15 @@ export default function DailyVerificationPage() {
   const actionRequired = (data?.collectors || []).filter(
     (r) => !r.has_intake || r.escalated_to_admin || r.denomination_mismatch
   );
+  const totalActualAll = (data?.collectors || []).reduce(
+    (sum, r) =>
+      sum +
+      parseFloat(r.total_cash || 0) +
+      parseFloat(r.total_check || 0) +
+      parseFloat(r.total_gcash || 0) +
+      parseFloat(r.total_bank || 0),
+    0
+  );
 
   return (
     <DashboardLayout>
@@ -187,7 +196,7 @@ export default function DailyVerificationPage() {
                 <SummaryCard label="Total Expected" value={peso(s.total_expected)} />
               </Grid>
               <Grid item xs={6} sm={3}>
-                <SummaryCard label="Total Actual" value={peso(s.total_actual)} />
+                <SummaryCard label="Total Actual" value={peso(totalActualAll)} />
               </Grid>
               <Grid item xs={6} sm={3}>
                 <SummaryCard
@@ -249,7 +258,11 @@ export default function DailyVerificationPage() {
                     <TableCell>Collector</TableCell>
                     <TableCell align="right">DC Cash</TableCell>
                     <TableCell align="right">Expected</TableCell>
-                    <TableCell align="right">Actual</TableCell>
+                    <TableCell align="right">Cash</TableCell>
+                    <TableCell align="right">Check</TableCell>
+                    <TableCell align="right">GCASH</TableCell>
+                    <TableCell align="right">Bank</TableCell>
+                    <TableCell align="right">Total</TableCell>
                     <TableCell align="right">Variance</TableCell>
                     <TableCell>Status</TableCell>
                     <TableCell>Flags</TableCell>
@@ -281,7 +294,26 @@ export default function DailyVerificationPage() {
                           {row.expected !== null ? peso(row.expected) : "—"}
                         </TableCell>
                         <TableCell align="right">
-                          {row.actual !== null ? peso(row.actual) : "—"}
+                          {row.has_intake ? peso(row.total_cash) : "—"}
+                        </TableCell>
+                        <TableCell align="right">
+                          {row.has_intake ? peso(row.total_check) : "—"}
+                        </TableCell>
+                        <TableCell align="right">
+                          {row.has_intake ? peso(row.total_gcash) : "—"}
+                        </TableCell>
+                        <TableCell align="right">
+                          {row.has_intake ? peso(row.total_bank) : "—"}
+                        </TableCell>
+                        <TableCell align="right">
+                          {row.has_intake
+                            ? peso(
+                                parseFloat(row.total_cash || 0) +
+                                parseFloat(row.total_check || 0) +
+                                parseFloat(row.total_gcash || 0) +
+                                parseFloat(row.total_bank || 0)
+                              )
+                            : "—"}
                         </TableCell>
                         <TableCell
                           align="right"
@@ -313,7 +345,7 @@ export default function DailyVerificationPage() {
                   })}
                   {(data.collectors || []).length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={7} align="center">
+                      <TableCell colSpan={11} align="center">
                         <MDTypography variant="body2" color="secondary">
                           No collection activity for this date.
                         </MDTypography>
