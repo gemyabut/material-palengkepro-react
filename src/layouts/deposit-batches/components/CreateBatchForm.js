@@ -29,6 +29,7 @@ export default function CreateBatchForm({ marketCode, destinationType, canOverri
   const [selected, setSelected] = useState(new Set());
 
   const [localDest, setLocalDest]   = useState(destinationType || "BANK");
+  const [reference, setReference]   = useState("");
   const [bankName, setBankName]     = useState("");
   const [last4, setLast4]           = useState("");
   const [date, setDate]             = useState(today);
@@ -67,6 +68,7 @@ export default function CreateBatchForm({ marketCode, destinationType, canOverri
 
   const validate = () => {
     const errs = {};
+    if (!reference.trim()) errs.reference = "Reference is required.";
     if (!isLGU && !bankName.trim()) errs.bankName = "Bank name is required.";
     if (!date) errs.date = "Date is required.";
     if (selected.size === 0) errs.dcs = "Select at least one collection.";
@@ -78,6 +80,7 @@ export default function CreateBatchForm({ marketCode, destinationType, canOverri
     if (!validate()) return;
     onSubmit({
       date,
+      reference: reference.trim(),
       bank_name: bankName.trim(),
       bank_account_last4: isLGU ? "" : last4.trim(),
       notes,
@@ -137,6 +140,19 @@ export default function CreateBatchForm({ marketCode, destinationType, canOverri
           {isLGU ? "LGU Details" : "Bank Details"}
         </MDTypography>
         <MDBox display="flex" gap={2} flexWrap="wrap">
+          <TextField
+            label="Reference *"
+            value={reference}
+            onChange={(e) => setReference(e.target.value)}
+            error={!!validErr.reference}
+            helperText={
+              validErr.reference ||
+              "Enter manually or upload REMITTANCE_LGU_YYYY-MM-DD.xlsx via Spreadsheet Upload to auto-populate"
+            }
+            size="small"
+            required
+            sx={{ minWidth: 260 }}
+          />
           <TextField
             label={isLGU ? "LGU Office name" : "Bank name *"}
             value={bankName}
