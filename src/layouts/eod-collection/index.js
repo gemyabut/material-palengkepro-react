@@ -10,7 +10,6 @@ import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
 import Paper from "@mui/material/Paper";
 import Select from "@mui/material/Select";
-import Snackbar from "@mui/material/Snackbar";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -20,10 +19,8 @@ import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
-import { canViewEodCounts, canApproveEodCounts } from "utils/permissions";
-import { listEodCounts, approveEodCount } from "api/cashierIntakes";
-import CashierIntakeStatusChip from "./components/CashierIntakeStatusChip";
-import ApproveIntakeModal from "./components/ApproveIntakeModal";
+import { canViewEodCounts } from "utils/permissions";
+import { listEodCounts } from "api/cashierIntakes";
 
 function getRole() {
   const t = localStorage.getItem("access_token") || sessionStorage.getItem("access_token");
@@ -45,6 +42,24 @@ const STATUS_OPTIONS = [
   { value: "",                  label: "All" },
 ];
 
+// Unit 21.5 F1b-6: one button per row, driven by the dual-gate state — both
+// buttons land on the same /cashier-intake/:id detail page, which decides
+// what the viewer can actually do there based on role.
+function rowStatusLabel(c) {
+  if (c.status === "LOCKED") return { label: "Locked", color: "default" };
+  if (c.status === "POSTED") return { label: "Posted", color: "success" };
+  return c.cashier_verified
+    ? { label: "Submitted", color: "info" }
+    : { label: "Open", color: "default" };
+}
+
+function rowAction(c) {
+  if (c.status === "POSTED" || c.status === "LOCKED") return null;
+  return c.cashier_verified
+    ? { label: "Post Payment", color: "success" }
+    : { label: "Submit Count", color: "info" };
+}
+
 export default function EodCashCountPage() {
   const role = getRole();
   const navigate = useNavigate();
@@ -52,9 +67,6 @@ export default function EodCashCountPage() {
   const [loading, setLoading]           = useState(true);
   const [error, setError]               = useState(null);
   const [statusFilter, setStatusFilter] = useState("PENDING_APPROVAL");
-  const [approveTarget, setApproveTarget] = useState(null);
-  const [approving, setApproving]       = useState(false);
-  const [snack, setSnack]               = useState({ open: false, message: "", severity: "success" });
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -78,23 +90,6 @@ export default function EodCashCountPage() {
   useEffect(() => { load(); }, [load]);
 
   if (!canViewEodCounts(role)) return <Navigate to="/dashboard" replace />;
-
-  const handleApprove = async (payload) => {
-    setApproving(true);
-    try {
-      await approveEodCount(approveTarget.id, payload);
-      setApproveTarget(null);
-      setSnack({ open: true, message: "Count approved. Handover movements created.", severity: "success" });
-      load();
-    } catch (e) {
-      const msg = e?.response?.data?.detail || "Approval failed.";
-      setSnack({ open: true, message: msg, severity: "error" });
-    } finally {
-      setApproving(false);
-    }
-  };
-
-  const canApprove = canApproveEodCounts(role);
 
   return (
     <DashboardLayout>
@@ -194,38 +189,32 @@ export default function EodCashCountPage() {
                       </TableCell>
                       <TableCell>
                         <MDBox display="flex" gap={0.5} flexWrap="wrap">
-                          <CashierIntakeStatusChip status={c.status} />
+                          <Chip {...rowStatusLabel(c)} size="small" />
                           {c.escalated_to_admin && (
                             <Chip label="Override Pending" color="warning" size="small" />
                           )}
                         </MDBox>
                       </TableCell>
                       <TableCell>
-                        {c.status === "OPEN" && !c.cashier_counted_at && (
-                          <Button
-                            size="small"
-                            variant="contained"
-                            color="info"
-                            onClick={() => navigate(`/eod-collection/${c.id}/submit`)}
-                          >
-                            Submit Count
-                          </Button>
-                        )}
-                        {c.status === "OPEN" && c.cashier_counted_at && (
-                          <MDBox display="flex" gap={1} alignItems="center">
-                            <Chip label="Submitted" color="info" size="small" />
-                            {canApprove && (
+                        <MDBox display="flex" gap={1} alignItems="center">
+                          {!rowAction(c) ? (
+                            <Chip {...rowStatusLabel(c)} size="small" />
+                          ) : (
+                            <>
+                              {c.cashier_verified && (
+                                <Chip label="Submitted" color="info" size="small" />
+                              )}
                               <Button
                                 size="small"
                                 variant="contained"
-                                color="success"
-                                onClick={() => setApproveTarget(c)}
+                                color={rowAction(c).color}
+                                onClick={() => navigate(`/cashier-intake/${c.id}`)}
                               >
-                                Approve
+                                {rowAction(c).label}
                               </Button>
-                            )}
-                          </MDBox>
-                        )}
+                            </>
+                          )}
+                        </MDBox>
                       </TableCell>
                     </TableRow>
                   );
@@ -235,30 +224,6 @@ export default function EodCashCountPage() {
           </Paper>
         )}
       </MDBox>
-
-      {approveTarget && (
-        <ApproveIntakeModal
-          open={!!approveTarget}
-          intake={approveTarget}
-          onClose={() => !approving && setApproveTarget(null)}
-          onConfirm={handleApprove}
-          submitting={approving}
-        />
-      )}
-
-      <Snackbar
-        open={snack.open}
-        autoHideDuration={5000}
-        onClose={() => setSnack((s) => ({ ...s, open: false }))}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      >
-        <Alert
-          severity={snack.severity}
-          onClose={() => setSnack((s) => ({ ...s, open: false }))}
-        >
-          {snack.message}
-        </Alert>
-      </Snackbar>
     </DashboardLayout>
   );
 }
