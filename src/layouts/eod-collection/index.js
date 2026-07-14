@@ -19,8 +19,9 @@ import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
-import { canViewEodCounts } from "utils/permissions";
+import { canViewEodCounts, canAcceptPayments, canPostPayments } from "utils/permissions";
 import { listEodCounts } from "api/cashierIntakes";
+import { useAuth } from "context/AuthContext";
 
 function getRole() {
   const t = localStorage.getItem("access_token") || sessionStorage.getItem("access_token");
@@ -53,15 +54,25 @@ function rowStatusLabel(c) {
     : { label: "Open", color: "default" };
 }
 
-function rowAction(c) {
+// Unit 21.5 F1b-9: role-gated — Cashier only ever sees Accept Payments, A/R
+// only ever sees Post Payments; Owner (executive) or staff sees whichever
+// the row's state calls for. Returns null (no button, chip-only) otherwise.
+function rowAction(c, role, isStaff) {
   if (c.status === "POSTED" || c.status === "LOCKED") return null;
-  return c.cashier_verified
-    ? { label: "Post Payments", color: "success", route: (id) => `/eod-collection/${id}/post-payments` }
-    : { label: "Accept Cash", color: "info", route: (id) => `/eod-collection/${id}/verify-cash` };
+  if (c.cashier_verified) {
+    return canPostPayments(role, isStaff)
+      ? { label: "Post Payments", color: "success", route: (id) => `/eod-collection/${id}/post-payments` }
+      : null;
+  }
+  return canAcceptPayments(role, isStaff)
+    ? { label: "Accept Payments", color: "info", route: (id) => `/eod-collection/${id}/verify-cash` }
+    : null;
 }
 
 export default function EodCashCountPage() {
   const role = getRole();
+  const { userProfile } = useAuth();
+  const isStaff = userProfile?.is_staff || false;
   const navigate = useNavigate();
   const [counts, setCounts]             = useState([]);
   const [loading, setLoading]           = useState(true);
@@ -197,23 +208,25 @@ export default function EodCashCountPage() {
                       </TableCell>
                       <TableCell>
                         <MDBox display="flex" gap={1} alignItems="center">
-                          {!rowAction(c) ? (
-                            <Chip {...rowStatusLabel(c)} size="small" />
-                          ) : (
-                            <>
-                              {c.cashier_verified && (
-                                <Chip label="Submitted" color="info" size="small" />
-                              )}
-                              <Button
-                                size="small"
-                                variant="contained"
-                                color={rowAction(c).color}
-                                onClick={() => navigate(rowAction(c).route(c.id))}
-                              >
-                                {rowAction(c).label}
-                              </Button>
-                            </>
-                          )}
+                          {(() => {
+                            const action = rowAction(c, role, isStaff);
+                            if (!action) return <Chip {...rowStatusLabel(c)} size="small" />;
+                            return (
+                              <>
+                                {c.cashier_verified && (
+                                  <Chip label="Submitted" color="info" size="small" />
+                                )}
+                                <Button
+                                  size="small"
+                                  variant="contained"
+                                  color={action.color}
+                                  onClick={() => navigate(action.route(c.id))}
+                                >
+                                  {action.label}
+                                </Button>
+                              </>
+                            );
+                          })()}
                         </MDBox>
                       </TableCell>
                     </TableRow>

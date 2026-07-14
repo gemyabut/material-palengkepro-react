@@ -290,3 +290,11 @@ export const canVerifyCashCount = (r) => has(r, ["cashier"]);
 export const canFlagPayment = (r) => has(r, ["accounts_receivable"]);
 export const canApproveIntake = (r) => has(r, ["accounts_receivable"]);
 export const canCorrectFlaggedPayment = (r) => has(r, ["accounts_receivable"]);
+
+/**
+ * EOD Collection list Actions column button visibility (Unit 21.5 F1b-9).
+ * Cashier sees only Accept Payments, A/R sees only Post Payments; Owner
+ * (executive) sees whichever the row's state calls for. Staff bypass sees both.
+ */
+export const canAcceptPayments = (r, isStaff) => isStaff || has(r, ["cashier", "executive"]);
+export const canPostPayments = (r, isStaff) => isStaff || has(r, ["accounts_receivable", "executive"]);
