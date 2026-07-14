@@ -34,6 +34,7 @@ import CreateDepositBatchPage from "layouts/deposit-batches/create";
 import DeductionApprovalQueue from "layouts/deposit-batches/components/DeductionApprovalQueue";
 import EodCashCountPage from "layouts/eod-collection";
 import SubmitEodCountPage from "layouts/eod-collection/submit";
+import CashierIntakeDetailPage from "layouts/cashier-intake/detail";
 import DailyVerificationPage from "layouts/daily-verification";
 import BankReconciliationPage from "layouts/bank-reconciliation";
 import CashAccountabilityPage from "layouts/cash-accountability";
@@ -316,6 +317,13 @@ const routes = [
     key: "eod-collection-submit",
     route: "/eod-collection/:id/submit",
     component: <SubmitEodCountPage />,
+  },
+  {
+    type: "route",
+    name: "Cashier Intake Detail",
+    key: "cashier-intake-detail",
+    route: "/cashier-intake/:id",
+    component: <CashierIntakeDetailPage />,
   },
   // Backwards-compat: old /eod-cash-count URLs redirect to new path
   {

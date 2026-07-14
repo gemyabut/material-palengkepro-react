@@ -279,3 +279,14 @@ export const canManageMasterData = (r, isStaff) => isStaff || isTopTier(r);
 export const canManageExpenseCategories = (r) => isTopTier(r);
 export const canSignMonthlyClose = (r) =>
   has(r, ["executive", "finance_head", "market_administrator", "accounts_receivable"]);
+
+/**
+ * Cashier Intake Phase D review workflow (Unit 21.5 F1b).
+ * Mirrors backend IsCashierVerifier / IsPaymentFlagger — cashier verifies
+ * cash counts, A/R flags/corrects/approves. Separation of duties: neither
+ * role can do the other's action.
+ */
+export const canVerifyCashCount = (r) => has(r, ["cashier"]);
+export const canFlagPayment = (r) => has(r, ["accounts_receivable"]);
+export const canApproveIntake = (r) => has(r, ["accounts_receivable"]);
+export const canCorrectFlaggedPayment = (r) => has(r, ["accounts_receivable"]);
