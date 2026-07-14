@@ -34,6 +34,8 @@ import CreateDepositBatchPage from "layouts/deposit-batches/create";
 import DeductionApprovalQueue from "layouts/deposit-batches/components/DeductionApprovalQueue";
 import EodCashCountPage from "layouts/eod-collection";
 import SubmitEodCountPage from "layouts/eod-collection/submit";
+import CashVerificationPage from "layouts/eod-collection/verify-cash";
+import PostPaymentsPage from "layouts/eod-collection/post-payments";
 import CashierIntakeDetailPage from "layouts/cashier-intake/detail";
 import PaymentDetailPage from "layouts/payments/detail";
 import DailyVerificationPage from "layouts/daily-verification";
@@ -318,6 +320,20 @@ const routes = [
     key: "eod-collection-submit",
     route: "/eod-collection/:id/submit",
     component: <SubmitEodCountPage />,
+  },
+  {
+    type: "route",
+    name: "Cash Verification",
+    key: "eod-collection-verify-cash",
+    route: "/eod-collection/:id/verify-cash",
+    component: <CashVerificationPage />,
+  },
+  {
+    type: "route",
+    name: "Post Payments",
+    key: "eod-collection-post-payments",
+    route: "/eod-collection/:id/post-payments",
+    component: <PostPaymentsPage />,
   },
   {
     type: "route",

@@ -42,9 +42,9 @@ const STATUS_OPTIONS = [
   { value: "",                  label: "All" },
 ];
 
-// Unit 21.5 F1b-6: one button per row, driven by the dual-gate state — both
-// buttons land on the same /cashier-intake/:id detail page, which decides
-// what the viewer can actually do there based on role.
+// Unit 21.5 F1b-6/F1b-7: one button per row, driven by the dual-gate state —
+// each state routes to its own dedicated page (F1b-7 split the old shared
+// /cashier-intake/:id page into a Cashier page and an A/R page).
 function rowStatusLabel(c) {
   if (c.status === "LOCKED") return { label: "Locked", color: "default" };
   if (c.status === "POSTED") return { label: "Posted", color: "success" };
@@ -56,8 +56,8 @@ function rowStatusLabel(c) {
 function rowAction(c) {
   if (c.status === "POSTED" || c.status === "LOCKED") return null;
   return c.cashier_verified
-    ? { label: "Post Payment", color: "success" }
-    : { label: "Submit Count", color: "info" };
+    ? { label: "Post Payments", color: "success", route: (id) => `/eod-collection/${id}/post-payments` }
+    : { label: "Accept Cash", color: "info", route: (id) => `/eod-collection/${id}/verify-cash` };
 }
 
 export default function EodCashCountPage() {
@@ -208,7 +208,7 @@ export default function EodCashCountPage() {
                                 size="small"
                                 variant="contained"
                                 color={rowAction(c).color}
-                                onClick={() => navigate(`/cashier-intake/${c.id}`)}
+                                onClick={() => navigate(rowAction(c).route(c.id))}
                               >
                                 {rowAction(c).label}
                               </Button>
