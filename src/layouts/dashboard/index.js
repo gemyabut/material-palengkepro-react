@@ -53,10 +53,6 @@ function pendingKey(destinationType) {
   return destinationType === "LGU_TREASURY" ? "LGU_TREASURY_PENDING" : "BANK_PENDING";
 }
 
-function treasuryKey(destinationType) {
-  return destinationType === "LGU_TREASURY" ? "LGU_TREASURY" : "BANK";
-}
-
 // Wraps ComplexStatisticsCard (no onClick support of its own) with
 // click-through to the full Cash Position page.
 function ClickableStatCard({ onClick, ...cardProps }) {
@@ -274,12 +270,10 @@ export default function Dashboard() {
   }
 
   // Derived cash-position bucket totals (Task #106) — computed once here so
-  // all 3 role branches below can reuse them.
+  // both role branches below can reuse them.
   const destinationType = cashPosition?.market?.destination_type ?? "BANK";
   const pocketTotal = bucketTotal(cashPosition?.COLLECTOR_POCKET);
-  const safeTotal = bucketTotal(cashPosition?.OPERATOR_SAFE);
   const pendingTotal = bucketTotal(cashPosition?.[pendingKey(destinationType)]);
-  const treasuryTotal = bucketTotal(cashPosition?.[treasuryKey(destinationType)]);
   const cashGrandTotal = cashPosition?.totals?.grand_total ?? 0;
   const cashInTransit = pocketTotal + pendingTotal;
   const goToCashPosition = () => navigate("/cash-position");
@@ -303,8 +297,9 @@ export default function Dashboard() {
         <Alert severity="error">{error}</Alert>
       ) : (
         <Grid container spacing={3}>
-          {/* Admin/Market Manager */}
-          {(role === "admin" || role === "market_manager") && (
+          {/* Admin/Market Manager/Finance Head — Task #106 update: finance_head
+              gets the identical cash-position card layout, not a separate widget */}
+          {(role === "admin" || role === "market_manager" || role === "finance_head") && (
             <>
               {/* Task #106 — cash position summary, click-through to /cash-position */}
               <Grid item xs={12} md={6}>
@@ -468,65 +463,6 @@ export default function Dashboard() {
               </Grid>
               <Grid item xs={12} md={6}>
                 <SectionOccupancyCard sections={stats.kpis?.occupancy_by_section} />
-              </Grid>
-            </>
-          )}
-
-          {/* Finance Head — Task #106: cash-position 4-bucket mini-widget only.
-              finance_head has no other dashboard content on this page today
-              (it fell through to the "Unknown Role" branch before this change);
-              out of scope here to build the rest of its dashboard. */}
-          {role === "finance_head" && (
-            <>
-              <Grid item xs={12} sm={6} md={3}>
-                <ClickableStatCard
-                  onClick={goToCashPosition}
-                  color="info"
-                  icon={<Icon fontSize="large">account_balance_wallet</Icon>}
-                  title="Collector Pockets"
-                  count={peso(pocketTotal)}
-                  percentage={{ color: "info", amount: "", label: "" }}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <ClickableStatCard
-                  onClick={goToCashPosition}
-                  color="success"
-                  icon={<Icon fontSize="large">lock</Icon>}
-                  title="Operator Safe"
-                  count={peso(safeTotal)}
-                  percentage={{ color: "success", amount: "", label: "" }}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <ClickableStatCard
-                  onClick={goToCashPosition}
-                  color="warning"
-                  icon={<Icon fontSize="large">hourglass_empty</Icon>}
-                  title="Pending"
-                  count={peso(pendingTotal)}
-                  percentage={{ color: "warning", amount: "", label: "" }}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <ClickableStatCard
-                  onClick={goToCashPosition}
-                  color="dark"
-                  icon={<Icon fontSize="large">account_balance</Icon>}
-                  title={destinationType === "LGU_TREASURY" ? "LGU Treasury" : "Bank"}
-                  count={peso(treasuryTotal)}
-                  percentage={{ color: "dark", amount: "", label: "" }}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <ClickableStatCard
-                  onClick={goToCashPosition}
-                  color="primary"
-                  icon={<Icon fontSize="large">account_balance</Icon>}
-                  title="Grand Total Cash"
-                  count={peso(cashGrandTotal)}
-                  percentage={{ color: "primary", amount: "", label: "across all accounts" }}
-                />
               </Grid>
             </>
           )}
