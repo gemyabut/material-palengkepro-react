@@ -12,7 +12,7 @@ const peso = (v) =>
   `₱${Number(v ?? 0).toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 export default function DigitalVerifySection({
-  icon, label, systemAmount, value, onChange, confirmed, onConfirmChange, confirmError,
+  icon, label, systemAmount, value, onChange, confirmed, onConfirmChange, confirmError, disabled,
 }) {
   const overrideVal = parseFloat(value) || 0;
   const systemVal   = parseFloat(systemAmount) || 0;
@@ -63,11 +63,14 @@ export default function DigitalVerifySection({
             onChange={(e) => onConfirmChange(e.target.checked)}
             size="small"
             color={confirmError ? "error" : "primary"}
+            disabled={disabled}
           />
         }
         label={
           <MDTypography variant="body2" color={confirmError ? "error" : "text"}>
-            I&apos;ve verified {label} receipts match
+            {disabled
+              ? `No ${label} today — nothing to verify`
+              : <>I&apos;ve verified {label} receipts match</>}
           </MDTypography>
         }
       />
@@ -89,5 +92,6 @@ DigitalVerifySection.propTypes = {
   confirmed: PropTypes.bool.isRequired,
   onConfirmChange: PropTypes.func.isRequired,
   confirmError: PropTypes.string,
+  disabled: PropTypes.bool,
 };
-DigitalVerifySection.defaultProps = { systemAmount: 0, confirmError: null };
+DigitalVerifySection.defaultProps = { systemAmount: 0, confirmError: null, disabled: false };

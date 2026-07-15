@@ -66,6 +66,13 @@ export default function AcceptPaymentsForm({ intake, onAccept, submitting }) {
     variance === 0    ? "success" :
     variance < 0      ? "error" : "info";
 
+  // Nothing to verify on a method with zero amount — auto-satisfy so the
+  // Lead isn't blocked clicking "verified" on methods that had no activity.
+  const gcashZero = gcash === 0;
+  const bankZero = bank === 0;
+  const gcashEffectiveConfirmed = gcashZero || gcashConfirmed;
+  const bankEffectiveConfirmed = bankZero || bankConfirmed;
+
   const clearErrors = () => setFieldErr({});
 
   const validate = () => {
@@ -75,10 +82,10 @@ export default function AcceptPaymentsForm({ intake, onAccept, submitting }) {
     } else if (parseFloat(actualCash) < 0) {
       errs.actualCash = "Amount cannot be negative.";
     }
-    if (!gcashConfirmed) {
+    if (!gcashEffectiveConfirmed) {
       errs.gcashConfirmed = "Please verify GCASH receipts before submitting.";
     }
-    if (!bankConfirmed) {
+    if (!bankEffectiveConfirmed) {
       errs.bankConfirmed = "Please verify bank deposit receipts before submitting.";
     }
     if (variance !== null && variance !== 0 && !varianceReason.trim()) {
@@ -165,9 +172,10 @@ export default function AcceptPaymentsForm({ intake, onAccept, submitting }) {
           systemAmount={intake?.total_gcash ?? 0}
           value={actualGcash}
           onChange={(v) => { setActualGcash(v); clearErrors(); }}
-          confirmed={gcashConfirmed}
+          confirmed={gcashEffectiveConfirmed}
           onConfirmChange={(v) => { setGcashConfirmed(v); clearErrors(); }}
           confirmError={fieldErr.gcashConfirmed}
+          disabled={gcashZero}
         />
 
         {/* ── Bank section ──────────────────────────────────────────────── */}
@@ -177,9 +185,10 @@ export default function AcceptPaymentsForm({ intake, onAccept, submitting }) {
           systemAmount={intake?.total_bank ?? 0}
           value={actualBank}
           onChange={(v) => { setActualBank(v); clearErrors(); }}
-          confirmed={bankConfirmed}
+          confirmed={bankEffectiveConfirmed}
           onConfirmChange={(v) => { setBankConfirmed(v); clearErrors(); }}
           confirmError={fieldErr.bankConfirmed}
+          disabled={bankZero}
         />
 
         {/* ── Grand total + variance ────────────────────────────────────── */}
