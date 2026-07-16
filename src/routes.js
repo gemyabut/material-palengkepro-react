@@ -43,6 +43,7 @@ import BankReconciliationPage from "layouts/bank-reconciliation";
 import CashAccountabilityPage from "layouts/cash-accountability";
 import MonthlyClosePage from "layouts/monthly-close";
 import CashExpensesPage from "layouts/cash-expenses";
+import RequestCashExpensePage from "layouts/cash-expenses/new";
 import TenantInquiry from "layouts/tenant-inquiry";
 import Subscription from "layouts/subscription";
 import Administration from "layouts/administration";
@@ -245,7 +246,7 @@ const routes = [
     icon: <Icon fontSize="small">balance</Icon>,
     route: "/cash-accountability",
     component: <CashAccountabilityPage />,
-    sidenavGroup: "Accounts Receivable",
+    sidenavGroup: "Treasury",
     // Per patch matrix: TOP_TIER + AR. ADM + LEA do NOT sign or manage close.
     allowedRoles: [ROLE.EXEC, ROLE.FIN, ROLE.MKT, ROLE.AR],
   },
@@ -266,10 +267,19 @@ const routes = [
     icon: <Icon fontSize="small">payments</Icon>,
     route: "/accounts-receivable/cash-expenses",
     component: <CashExpensesPage />,
-    sidenavGroup: "Accounts Receivable",
+    sidenavGroup: "Treasury",
     // All can view; Approve/Reject buttons are role-gated inside the page
     // (canApproveDeduction — EXEC/FIN/MKT only).
     allowedRoles: [ROLE.EXEC, ROLE.FIN, ROLE.MKT, ROLE.AR, ROLE.CSH],
+  },
+  {
+    // Reached via "+ New Request" on the Cash Expenses page, not a top-level
+    // sidenav entry (keeps sidenav lean per Unit 52 spec §7 Stage E).
+    type: "route",
+    name: "Request Cash Expense",
+    key: "cash-expenses-new",
+    route: "/accounts-receivable/cash-expenses/new",
+    component: <RequestCashExpensePage />,
   },
   {
     type: "collapse",

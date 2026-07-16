@@ -50,3 +50,12 @@ export const listDeductions = ({ status, market, date_from, date_to } = {}) => {
   if (date_to) params.date_to = date_to;
   return apiClient.get(`${DED_BASE}/`, { params }).then((r) => r.data);
 };
+
+// ---- Unit 52 Stage E — Request Cash Expense (batch-independent create) ----
+
+export const createCashExpense = (formData) =>
+  apiClient
+    .post(`${DED_BASE}/`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    })
+    .then((r) => r.data);

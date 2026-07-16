@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { jwtDecode } from "jwt-decode";
+import { useNavigate, useLocation } from "react-router-dom";
 import Alert from "@mui/material/Alert";
 import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
 import IconButton from "@mui/material/IconButton";
 import Stack from "@mui/material/Stack";
@@ -14,13 +16,14 @@ import TableRow from "@mui/material/TableRow";
 import Tabs from "@mui/material/Tabs";
 import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
+import AddIcon from "@mui/icons-material/Add";
 import CheckIcon from "@mui/icons-material/Check";
 import CloseIcon from "@mui/icons-material/Close";
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
-import { canApproveDeduction } from "utils/permissions";
+import { canApproveDeduction, canCreateDeduction } from "utils/permissions";
 import { listDeductions, approveDeduction, rejectDeduction } from "api/deductions";
 import { getMarket } from "api/markets";
 import useProfile from "layouts/profile/hooks/useProfile";
@@ -34,6 +37,12 @@ import useProfile from "layouts/profile/hooks/useProfile";
 // branching most of its render logic, so the row rendering here is new but
 // reuses the same approve/reject API calls + rejection-dialog UX pattern
 // already established in DeductionApprovalQueue.js.
+//
+// Stage E: the Approved tab can now include unioned CashDeduction
+// (allowance) rows alongside RemittanceBatchDeduction (expense) rows —
+// distinguished by `source`. Allowances have no pending/rejected state, so
+// they never appear on those tabs and never show Reject actions; the
+// backend already sorts the merged Approved-tab response by date desc.
 
 function getRole() {
   const t = localStorage.getItem("access_token") || sessionStorage.getItem("access_token");
@@ -62,6 +71,9 @@ const TABS = [
   { value: "APPROVED", label: "Approved" },
   { value: "REJECTED", label: "Rejected" },
 ];
+
+const SOURCE_LABEL = { EXPENSE: "Expense", ALLOWANCE: "Allowance" };
+const SOURCE_COLOR = { EXPENSE: "info", ALLOWANCE: "secondary" };
 
 function RejectDialog({ id, onClose, onDone }) {
   const [reason, setReason] = useState("");
@@ -120,7 +132,10 @@ function RejectDialog({ id, onClose, onDone }) {
 export default function CashExpensesPage() {
   const role = getRole();
   const canApprove = canApproveDeduction(role);
+  const canCreate = canCreateDeduction(role);
   const { userProfile, loading: profileLoading } = useProfile();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const [marketCode, setMarketCode] = useState("");
   const [dateFrom, setDateFrom] = useState(daysAgoStr(30));
@@ -132,6 +147,15 @@ export default function CashExpensesPage() {
   const [busy, setBusy] = useState(null);
   const [rejectingId, setRejectingId] = useState(null);
   const [actionErr, setActionErr] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(location.state?.successMessage || null);
+
+  useEffect(() => {
+    if (location.state?.successMessage) {
+      // Clear the router state so a refresh/back-nav doesn't re-show it.
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     const id = userProfile?.primary_market ?? userProfile?.primary_market_id;
@@ -198,9 +222,27 @@ export default function CashExpensesPage() {
     <DashboardLayout>
       <DashboardNavbar />
       <MDBox py={3}>
-        <MDTypography variant="h4" fontWeight="bold" mb={3}>
-          Cash Expenses
-        </MDTypography>
+        <MDBox display="flex" alignItems="center" justifyContent="space-between" mb={3}>
+          <MDTypography variant="h4" fontWeight="bold">
+            Cash Expenses
+          </MDTypography>
+          {canCreate && (
+            <Button
+              variant="contained"
+              color="info"
+              startIcon={<AddIcon />}
+              onClick={() => navigate("/accounts-receivable/cash-expenses/new")}
+            >
+              New Request
+            </Button>
+          )}
+        </MDBox>
+
+        {successMessage && (
+          <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccessMessage(null)}>
+            {successMessage}
+          </Alert>
+        )}
 
         {/* Filter bar */}
         <MDBox display="flex" gap={2} alignItems="center" flexWrap="wrap" mb={2}>
@@ -270,21 +312,32 @@ export default function CashExpensesPage() {
           <Table size="small">
             <TableHead>
               <TableRow sx={{ bgcolor: "#f5f5f5" }}>
-                {["Date", "Requester", "Recipient", "Category", "Amount", "Receipt", "Reason", ""].map(
-                  (h) => (
-                    <TableCell key={h} sx={{ fontWeight: 700, fontSize: "0.75rem" }}>
-                      {h}
-                    </TableCell>
-                  )
-                )}
+                {(tab === "APPROVED"
+                  ? ["Source", "Date", "Requester", "Recipient", "Category", "Amount", "Receipt", "Reason", ""]
+                  : ["Date", "Requester", "Recipient", "Category", "Amount", "Receipt", "Reason", ""]
+                ).map((h) => (
+                  <TableCell key={h} sx={{ fontWeight: 700, fontSize: "0.75rem" }}>
+                    {h}
+                  </TableCell>
+                ))}
               </TableRow>
             </TableHead>
             <TableBody>
               {items.map((d) => (
                 <React.Fragment key={d.id}>
                   <TableRow sx={{ verticalAlign: "top" }}>
+                    {tab === "APPROVED" && (
+                      <TableCell sx={{ fontSize: "0.8rem" }}>
+                        <Chip
+                          size="small"
+                          label={SOURCE_LABEL[d.source] || d.source}
+                          color={SOURCE_COLOR[d.source] || "default"}
+                          variant="outlined"
+                        />
+                      </TableCell>
+                    )}
                     <TableCell sx={{ fontSize: "0.8rem" }}>{d.date}</TableCell>
-                    <TableCell sx={{ fontSize: "0.8rem" }}>{d.created_by_username}</TableCell>
+                    <TableCell sx={{ fontSize: "0.8rem" }}>{d.created_by_username || "—"}</TableCell>
                     <TableCell sx={{ fontSize: "0.8rem" }}>
                       {d.recipient_name}
                       <MDTypography variant="caption" color="secondary" display="block">
@@ -320,7 +373,11 @@ export default function CashExpensesPage() {
                         <CircularProgress size={16} />
                       ) : (
                         canApprove &&
-                        d.status === "PENDING_APPROVAL" && (
+                        d.status === "PENDING_APPROVAL" &&
+                        // Defensive: Allowance rows never reach PENDING_APPROVAL
+                        // (no such state on CashDeduction), but guard explicitly
+                        // since they're pre-authorized and cannot be rejected.
+                        d.source !== "ALLOWANCE" && (
                           <>
                             <Tooltip title="Approve">
                               <IconButton

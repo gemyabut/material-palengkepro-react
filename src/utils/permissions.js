@@ -193,16 +193,17 @@ export const canViewSettings = (r) => has(r, TOP_TIER);
 export const canManageChargeTypes = (r) => has(r, TOP_TIER);
 
 /**
- * Cash Deduction workflow (DEC-046 / Unit 18).
- * canCreateDeduction: cashier + top-tier + admin_staff.
- *   Collector excluded (mobile-only Tier 1, Quirk #24).
+ * Cash Deduction workflow (DEC-046 / Unit 18, extended Unit 52).
+ * canCreateDeduction: cashier + accounts_receivable + top-tier.
+ *   Collector excluded (mobile-only Tier 1, Quirk #24). admin_staff excluded
+ *   (read-only visibility only — matches backend _DEDUCTION_CREATOR_ROLES).
  * canApproveDeduction: top-tier only (market_administrator, finance_head, executive).
  *   Cashier cannot self-approve — separation of duties.
  */
 const DEDUCTION_CREATOR_ROLES = [
   "cashier",
+  "accounts_receivable",
   "market_administrator",
-  "admin_staff",
   "finance_head",
   "executive",
 ];
