@@ -21,7 +21,6 @@ import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import { canViewBatches, canEditBatches, canConfirmBatches } from "utils/permissions";
 import { destinationLabel } from "utils/destinationLabels";
 import { getBatch, markDeposited, confirmBatch } from "api/remittanceBatches";
-import { listBatchDeductions } from "api/deductions";
 import BatchStatusChip from "./components/BatchStatusChip";
 import MarkDepositedModal from "./components/MarkDepositedModal";
 import ConfirmDepositModal from "./components/ConfirmDepositModal";
@@ -76,16 +75,7 @@ export default function DepositBatchDetailPage() {
   const [depositOpen, setDepositOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [actioning, setActioning] = useState(false);
-  const [deductions, setDeductions] = useState(null);
   const [deductionOpen, setDeductionOpen] = useState(false);
-
-  const loadDeductions = useCallback(async (batchId) => {
-    try {
-      setDeductions(await listBatchDeductions(batchId));
-    } catch {
-      /* non-blocking */
-    }
-  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -93,13 +83,12 @@ export default function DepositBatchDetailPage() {
     try {
       const b = await getBatch(id);
       setBatch(b);
-      loadDeductions(id);
     } catch (e) {
       setError(e?.response?.status === 404 ? "Batch not found." : "Failed to load batch.");
     } finally {
       setLoading(false);
     }
-  }, [id, loadDeductions]);
+  }, [id]);
 
   useEffect(() => {
     load();
@@ -416,11 +405,11 @@ export default function DepositBatchDetailPage() {
         )}
 
         <DeductionList
-          deductions={deductions}
+          deductions={batch?.deductions}
           batchId={id}
           role={role}
           onOpenCreate={() => setDeductionOpen(true)}
-          onRefresh={() => loadDeductions(id)}
+          onRefresh={load}
         />
 
         {/* Action buttons */}
@@ -446,12 +435,12 @@ export default function DepositBatchDetailPage() {
           open={deductionOpen}
           batchId={id}
           pendingCount={
-            (deductions?.items || []).filter((d) => d.status === "PENDING_APPROVAL").length
+            (batch?.deductions?.items || []).filter((d) => d.status === "PENDING_APPROVAL").length
           }
           onClose={() => setDeductionOpen(false)}
           onCreated={() => {
             setDeductionOpen(false);
-            loadDeductions(id);
+            load();
           }}
         />
       )}
