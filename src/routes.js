@@ -42,6 +42,7 @@ import DailyVerificationPage from "layouts/daily-verification";
 import BankReconciliationPage from "layouts/bank-reconciliation";
 import CashAccountabilityPage from "layouts/cash-accountability";
 import MonthlyClosePage from "layouts/monthly-close";
+import CashExpensesPage from "layouts/cash-expenses";
 import TenantInquiry from "layouts/tenant-inquiry";
 import Subscription from "layouts/subscription";
 import Administration from "layouts/administration";
@@ -257,6 +258,19 @@ const routes = [
     component: <MonthlyClosePage />,
     signerRole: true,
   },
+  // Unit 52 — Cash Expenses (batch-independent deduction approval workflow)
+  {
+    type: "collapse",
+    name: "Cash Expenses",
+    key: "cash-expenses",
+    icon: <Icon fontSize="small">payments</Icon>,
+    route: "/accounts-receivable/cash-expenses",
+    component: <CashExpensesPage />,
+    sidenavGroup: "Accounts Receivable",
+    // All can view; Approve/Reject buttons are role-gated inside the page
+    // (canApproveDeduction — EXEC/FIN/MKT only).
+    allowedRoles: [ROLE.EXEC, ROLE.FIN, ROLE.MKT, ROLE.AR, ROLE.CSH],
+  },
   {
     type: "collapse",
     name: "Bank Reconciliation",
@@ -264,7 +278,7 @@ const routes = [
     icon: <Icon fontSize="small">account_balance</Icon>,
     route: "/bank-reconciliation",
     component: <BankReconciliationPage />,
-    sidenavGroup: "Accounts Receivable",
+    sidenavGroup: "Treasury",
     allowedRoles: [ROLE.EXEC, ROLE.FIN, ROLE.MKT, ROLE.ADM, ROLE.LEA, ROLE.AR],
   },
 
