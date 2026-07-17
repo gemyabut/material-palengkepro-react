@@ -252,7 +252,26 @@ export default function DepositBatchDetailPage() {
               <MDTypography variant="h6" mb={1}>
                 Totals
               </MDTypography>
-              <LV label="Total" value={peso((Number(batch.total_to_bank) || 0) + (Number(batch.total_to_lgu) || 0))} />
+              <LV
+                label="Gross Collections"
+                value={peso((Number(batch.total_to_bank) || 0) + (Number(batch.total_to_lgu) || 0))}
+              />
+              {/* Unit 52 Stage G: net-of-deductions breakdown. ₱0 still renders —
+                  confirms to the operator that no allowances applied here, same
+                  as how Items/Notes always show rather than hiding on empty. */}
+              <LV
+                label="Approved Deductions"
+                value={`−${peso(batch.total_deductions_approved)}`}
+              />
+              <Divider sx={{ my: 1 }} />
+              <MDBox mb={1}>
+                <MDTypography variant="caption" color="secondary" fontWeight="medium">
+                  Net to Deposit
+                </MDTypography>
+                <MDTypography variant="body1" fontWeight="bold" color="success.main">
+                  {peso(batch.net_to_deposit)}
+                </MDTypography>
+              </MDBox>
               <LV label="Items" value={`${batch.item_count || (batch.items || []).length}`} />
               {batch.notes && <LV label="Notes" value={batch.notes} />}
             </Paper>
