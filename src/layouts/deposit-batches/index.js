@@ -143,7 +143,7 @@ export default function DepositBatchListPage() {
                   <TableCell>Destination</TableCell>
                   <TableCell>Bank / LGU Office</TableCell>
                   <TableCell>Status</TableCell>
-                  <TableCell align="right">Total</TableCell>
+                  <TableCell align="right">Net to Deposit</TableCell>
                   <TableCell align="right">Items</TableCell>
                   <TableCell>Deposit Date</TableCell>
                   <TableCell>Confirmed</TableCell>
@@ -178,7 +178,7 @@ export default function DepositBatchListPage() {
                       <TableCell>
                         <BatchStatusChip status={b.status} />
                       </TableCell>
-                      <TableCell align="right">{peso((Number(b.total_to_bank) || 0) + (Number(b.total_to_lgu) || 0))}</TableCell>
+                      <TableCell align="right">{peso(b.net_to_deposit)}</TableCell>
                       <TableCell align="right">{b.item_count}</TableCell>
                       <TableCell>{b.deposit_date || "—"}</TableCell>
                       <TableCell>
