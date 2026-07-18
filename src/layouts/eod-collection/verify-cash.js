@@ -9,9 +9,10 @@ import MDTypography from "components/MDTypography";
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import Footer from "examples/Footer";
-import { canVerifyCashCount } from "utils/permissions";
+import { canAcceptPayments } from "utils/permissions";
 import { getEodCount, submitEodCount } from "api/cashierIntakes";
 import { verifyCashCount } from "api/cashierIntakeReview";
+import { useAuth } from "context/AuthContext";
 import AcceptPaymentsForm from "./components/AcceptPaymentsForm";
 
 function getRole() {
@@ -36,6 +37,8 @@ function getRole() {
 // step 1 stops the chain — step 2 never runs on an escalated intake.
 export default function CashVerificationPage() {
   const role = getRole();
+  const { userProfile } = useAuth();
+  const isStaff = userProfile?.is_staff || false;
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -55,7 +58,7 @@ export default function CashVerificationPage() {
     load().finally(() => setLoading(false));
   }, [load]);
 
-  if (!canVerifyCashCount(role)) return <Navigate to="/eod-collection" replace />;
+  if (!canAcceptPayments(role, isStaff)) return <Navigate to="/eod-collection" replace />;
 
   const handleAccept = async (payload) => {
     setSubmitting(true);
