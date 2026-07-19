@@ -8,6 +8,7 @@ import CircularProgress from "@mui/material/CircularProgress";
 import Alert from "@mui/material/Alert";
 import Grid from "@mui/material/Grid";
 import Icon from "@mui/material/Icon";
+import TextField from "@mui/material/TextField";
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
@@ -39,6 +40,10 @@ function fmtAsOf(iso) {
 
 const peso = (v) => `₱${Number(v ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
 
+function todayStr() {
+  return new Date().toISOString().slice(0, 10);
+}
+
 function getAccountTypes(destinationType) {
   const isLGU = destinationType === "LGU_TREASURY";
   return [
@@ -58,6 +63,7 @@ export default function CashPositionDashboard() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [marketCode, setMarketCode] = useState("");
+  const [date, setDate] = useState(todayStr());
 
   useEffect(() => {
     const id = userProfile?.primary_market ?? userProfile?.primary_market_id;
@@ -70,7 +76,7 @@ export default function CashPositionDashboard() {
     setLoading(true);
     setError(null);
     try {
-      setData(await getCashPosition(marketCode));
+      setData(await getCashPosition(marketCode, date));
     } catch (e) {
       setError(
         e?.response?.data?.error ||
@@ -81,11 +87,19 @@ export default function CashPositionDashboard() {
     } finally {
       setLoading(false);
     }
-  }, [marketCode, profileLoading]);
+  }, [marketCode, date, profileLoading]);
 
+  // Auto-load once the profile resolves a default market — subsequent
+  // reloads (market/date edits) go through the explicit Load button, same
+  // as Daily Verification, so typing in the market field doesn't fire a
+  // request per keystroke.
+  const initialLoadRef = React.useRef(false);
   React.useEffect(() => {
-    if (allowed) fetchData();
-  }, [fetchData, allowed]);
+    if (allowed && marketCode && !initialLoadRef.current) {
+      initialLoadRef.current = true;
+      fetchData();
+    }
+  }, [allowed, marketCode, fetchData]);
 
   if (!allowed) return <Navigate to="/dashboard" replace />;
 
@@ -116,23 +130,43 @@ export default function CashPositionDashboard() {
               </MDTypography>
             )}
           </MDBox>
-          <MDBox display="flex" alignItems="center" gap={2} flexWrap="wrap">
-            {data?.as_of && (
-              <MDTypography variant="caption" color="secondary">
-                As of: <strong>{fmtAsOf(data.as_of)}</strong>
-              </MDTypography>
-            )}
-            <Button
-              variant="outlined"
-              color="dark"
-              size="small"
-              startIcon={<Icon>refresh</Icon>}
-              onClick={fetchData}
-              disabled={loading}
-            >
-              Refresh
-            </Button>
-          </MDBox>
+          {data?.as_of && (
+            <MDTypography variant="caption" color="secondary">
+              As of: <strong>{fmtAsOf(data.as_of)}</strong>
+            </MDTypography>
+          )}
+        </MDBox>
+
+        {/* Filter bar */}
+        <MDBox display="flex" gap={2} alignItems="center" flexWrap="wrap" mb={3}>
+          <TextField
+            label="Market Code"
+            value={marketCode}
+            onChange={(e) => setMarketCode(e.target.value.toUpperCase())}
+            size="small"
+            sx={{ width: 160 }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") fetchData();
+            }}
+          />
+          <TextField
+            label="Date"
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            size="small"
+            InputLabelProps={{ shrink: true }}
+            sx={{ width: 180 }}
+          />
+          <Button
+            variant="contained"
+            color="info"
+            startIcon={<Icon>refresh</Icon>}
+            onClick={fetchData}
+            disabled={loading}
+          >
+            {loading ? <CircularProgress size={16} color="inherit" /> : "Load"}
+          </Button>
         </MDBox>
 
         {error && (

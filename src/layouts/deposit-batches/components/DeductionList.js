@@ -38,6 +38,13 @@ const STATUS_LABEL = {
   REJECTED: "Rejected",
 };
 
+// Unit 52 Stage F Q1: source discriminator between Unit 18 workflow
+// expenses (RemittanceBatchDeduction) and Unit 47 pre-authorized
+// allowances (CashDeduction), unioned into this same list by the backend.
+// Matches the chip convention on cash-expenses/index.js's Approved tab.
+const SOURCE_LABEL = { EXPENSE: "Expense", ALLOWANCE: "Allowance" };
+const SOURCE_COLOR = { EXPENSE: "info", ALLOWANCE: "secondary" };
+
 function RejectDialog({ deductionId, onClose, onDone }) {
   const [reason, setReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -199,12 +206,20 @@ export default function DeductionList({ deductions, batchId, role, onOpenCreate,
                     {peso(d.amount)}
                   </TableCell>
                   <TableCell>
-                    <Chip
-                      size="small"
-                      label={STATUS_LABEL[d.status] || d.status}
-                      color={STATUS_COLOR[d.status] || "default"}
-                      variant="outlined"
-                    />
+                    <Stack direction="row" spacing={0.5} flexWrap="wrap">
+                      <Chip
+                        size="small"
+                        label={SOURCE_LABEL[d.source] || d.source}
+                        color={SOURCE_COLOR[d.source] || "default"}
+                        variant="outlined"
+                      />
+                      <Chip
+                        size="small"
+                        label={STATUS_LABEL[d.status] || d.status}
+                        color={STATUS_COLOR[d.status] || "default"}
+                        variant="outlined"
+                      />
+                    </Stack>
                   </TableCell>
                   <TableCell sx={{ fontSize: "0.75rem" }}>
                     {d.created_by_username}
@@ -220,7 +235,11 @@ export default function DeductionList({ deductions, batchId, role, onOpenCreate,
                       <CircularProgress size={16} />
                     ) : (
                       <>
-                        {canApprove && d.status === "PENDING_APPROVAL" && (
+                        {/* Allowance rows are pre-authorized CashDeduction records with
+                            no RBD workflow — their `id` is a CashDeduction pk, not an RBD
+                            pk, so none of these actions (which call /api/deductions/<id>/...
+                            against RemittanceBatchDeduction) are valid for them. */}
+                        {canApprove && d.status === "PENDING_APPROVAL" && d.source !== "ALLOWANCE" && (
                           <>
                             <Tooltip title="Approve">
                               <IconButton
@@ -242,7 +261,7 @@ export default function DeductionList({ deductions, batchId, role, onOpenCreate,
                             </Tooltip>
                           </>
                         )}
-                        {canApprove && d.status === "APPROVED" && (
+                        {canApprove && d.status === "APPROVED" && d.source !== "ALLOWANCE" && (
                           <Tooltip title="Void (reverse approval)">
                             <IconButton
                               size="small"
@@ -253,7 +272,7 @@ export default function DeductionList({ deductions, batchId, role, onOpenCreate,
                             </IconButton>
                           </Tooltip>
                         )}
-                        {d.status === "PENDING_APPROVAL" && (
+                        {d.status === "PENDING_APPROVAL" && d.source !== "ALLOWANCE" && (
                           <Tooltip title="Delete">
                             <IconButton
                               size="small"

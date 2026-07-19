@@ -193,16 +193,17 @@ export const canViewSettings = (r) => has(r, TOP_TIER);
 export const canManageChargeTypes = (r) => has(r, TOP_TIER);
 
 /**
- * Cash Deduction workflow (DEC-046 / Unit 18).
- * canCreateDeduction: cashier + top-tier + admin_staff.
- *   Collector excluded (mobile-only Tier 1, Quirk #24).
+ * Cash Deduction workflow (DEC-046 / Unit 18, extended Unit 52).
+ * canCreateDeduction: cashier + accounts_receivable + top-tier.
+ *   Collector excluded (mobile-only Tier 1, Quirk #24). admin_staff excluded
+ *   (read-only visibility only — matches backend _DEDUCTION_CREATOR_ROLES).
  * canApproveDeduction: top-tier only (market_administrator, finance_head, executive).
  *   Cashier cannot self-approve — separation of duties.
  */
 const DEDUCTION_CREATOR_ROLES = [
   "cashier",
+  "accounts_receivable",
   "market_administrator",
-  "admin_staff",
   "finance_head",
   "executive",
 ];
@@ -279,3 +280,22 @@ export const canManageMasterData = (r, isStaff) => isStaff || isTopTier(r);
 export const canManageExpenseCategories = (r) => isTopTier(r);
 export const canSignMonthlyClose = (r) =>
   has(r, ["executive", "finance_head", "market_administrator", "accounts_receivable"]);
+
+/**
+ * Cashier Intake Phase D review workflow (Unit 21.5 F1b).
+ * Mirrors backend IsCashierVerifier / IsPaymentFlagger — cashier verifies
+ * cash counts, A/R flags/corrects/approves. Separation of duties: neither
+ * role can do the other's action.
+ */
+export const canVerifyCashCount = (r) => has(r, ["cashier"]);
+export const canFlagPayment = (r) => has(r, ["accounts_receivable"]);
+export const canApproveIntake = (r) => has(r, ["accounts_receivable"]);
+export const canCorrectFlaggedPayment = (r) => has(r, ["accounts_receivable"]);
+
+/**
+ * EOD Collection list Actions column button visibility (Unit 21.5 F1b-9).
+ * Cashier sees only Accept Payments, A/R sees only Post Payments; Owner
+ * (executive) sees whichever the row's state calls for. Staff bypass sees both.
+ */
+export const canAcceptPayments = (r, isStaff) => isStaff || has(r, ["cashier", "executive"]);
+export const canPostPayments = (r, isStaff) => isStaff || has(r, ["accounts_receivable", "executive"]);

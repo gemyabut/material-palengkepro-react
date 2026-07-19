@@ -39,3 +39,23 @@ export const listPendingDeductions = (marketCode) => {
   const params = marketCode ? { market: marketCode } : {};
   return apiClient.get(`${DED_BASE}/pending/`, { params }).then((r) => r.data);
 };
+
+// ---- Unit 52 Stage C — flat list w/ status + date range (batch-independent aware) ----
+
+export const listDeductions = ({ status, market, date_from, date_to } = {}) => {
+  const params = {};
+  if (status) params.status = status;
+  if (market) params.market = market;
+  if (date_from) params.date_from = date_from;
+  if (date_to) params.date_to = date_to;
+  return apiClient.get(`${DED_BASE}/`, { params }).then((r) => r.data);
+};
+
+// ---- Unit 52 Stage E — Request Cash Expense (batch-independent create) ----
+
+export const createCashExpense = (formData) =>
+  apiClient
+    .post(`${DED_BASE}/`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    })
+    .then((r) => r.data);

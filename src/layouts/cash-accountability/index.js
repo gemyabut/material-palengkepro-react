@@ -17,6 +17,8 @@ import { canViewCashAccountability } from "utils/permissions";
 import { getCashAccountabilityDashboard } from "api/cashAccountability";
 import { getMarket } from "api/markets";
 import useProfile from "layouts/profile/hooks/useProfile";
+import UnderARReviewTile from "./components/UnderARReviewTile";
+import BottleneckAlertCard from "./components/BottleneckAlertCard";
 
 function getRole() {
   const t = localStorage.getItem("access_token") || sessionStorage.getItem("access_token");
@@ -111,7 +113,9 @@ export default function CashAccountabilityPage() {
   const pc = data?.period_close;
   const isLocked = data?.is_locked ?? false;
   const isFresh = data?.fresh ?? true;
-  const alerts = data?.alerts ?? [];
+  const allAlerts = data?.alerts ?? [];
+  const bottleneckAlert = allAlerts.find((a) => a.kind === "PHASE_D_BOTTLENECK");
+  const alerts = allAlerts.filter((a) => a.kind !== "PHASE_D_BOTTLENECK");
   const batchSummary = data?.live_batches_summary ?? {};
   const dedSummary = data?.live_deductions_summary ?? {};
 
@@ -254,9 +258,13 @@ export default function CashAccountabilityPage() {
                       </MDTypography>
                     </MDBox>
                   ))}
+                  <UnderARReviewTile invariant={inv} />
                 </MDBox>
               )}
             </Paper>
+
+            {/* ── Phase D bottleneck alert (Unit 21.5 F1b-3) ─────────────── */}
+            <BottleneckAlertCard alert={bottleneckAlert} />
 
             {/* ── Alerts panel ────────────────────────────────────────── */}
             {alerts.length > 0 && (

@@ -34,10 +34,16 @@ import CreateDepositBatchPage from "layouts/deposit-batches/create";
 import DeductionApprovalQueue from "layouts/deposit-batches/components/DeductionApprovalQueue";
 import EodCashCountPage from "layouts/eod-collection";
 import SubmitEodCountPage from "layouts/eod-collection/submit";
+import CashVerificationPage from "layouts/eod-collection/verify-cash";
+import PostPaymentsPage from "layouts/eod-collection/post-payments";
+import CashierIntakeDetailPage from "layouts/cashier-intake/detail";
+import PaymentDetailPage from "layouts/payments/detail";
 import DailyVerificationPage from "layouts/daily-verification";
 import BankReconciliationPage from "layouts/bank-reconciliation";
 import CashAccountabilityPage from "layouts/cash-accountability";
 import MonthlyClosePage from "layouts/monthly-close";
+import CashExpensesPage from "layouts/cash-expenses";
+import RequestCashExpensePage from "layouts/cash-expenses/new";
 import TenantInquiry from "layouts/tenant-inquiry";
 import Subscription from "layouts/subscription";
 import Administration from "layouts/administration";
@@ -240,7 +246,7 @@ const routes = [
     icon: <Icon fontSize="small">balance</Icon>,
     route: "/cash-accountability",
     component: <CashAccountabilityPage />,
-    sidenavGroup: "Accounts Receivable",
+    sidenavGroup: "Treasury",
     // Per patch matrix: TOP_TIER + AR. ADM + LEA do NOT sign or manage close.
     allowedRoles: [ROLE.EXEC, ROLE.FIN, ROLE.MKT, ROLE.AR],
   },
@@ -253,6 +259,28 @@ const routes = [
     component: <MonthlyClosePage />,
     signerRole: true,
   },
+  // Unit 52 — Cash Expenses (batch-independent deduction approval workflow)
+  {
+    type: "collapse",
+    name: "Cash Expenses",
+    key: "cash-expenses",
+    icon: <Icon fontSize="small">payments</Icon>,
+    route: "/accounts-receivable/cash-expenses",
+    component: <CashExpensesPage />,
+    sidenavGroup: "Treasury",
+    // All can view; Approve/Reject buttons are role-gated inside the page
+    // (canApproveDeduction — EXEC/FIN/MKT only).
+    allowedRoles: [ROLE.EXEC, ROLE.FIN, ROLE.MKT, ROLE.AR, ROLE.CSH],
+  },
+  {
+    // Reached via "+ New Request" on the Cash Expenses page, not a top-level
+    // sidenav entry (keeps sidenav lean per Unit 52 spec §7 Stage E).
+    type: "route",
+    name: "Request Cash Expense",
+    key: "cash-expenses-new",
+    route: "/accounts-receivable/cash-expenses/new",
+    component: <RequestCashExpensePage />,
+  },
   {
     type: "collapse",
     name: "Bank Reconciliation",
@@ -260,7 +288,7 @@ const routes = [
     icon: <Icon fontSize="small">account_balance</Icon>,
     route: "/bank-reconciliation",
     component: <BankReconciliationPage />,
-    sidenavGroup: "Accounts Receivable",
+    sidenavGroup: "Treasury",
     allowedRoles: [ROLE.EXEC, ROLE.FIN, ROLE.MKT, ROLE.ADM, ROLE.LEA, ROLE.AR],
   },
 
@@ -316,6 +344,34 @@ const routes = [
     key: "eod-collection-submit",
     route: "/eod-collection/:id/submit",
     component: <SubmitEodCountPage />,
+  },
+  {
+    type: "route",
+    name: "Cash Verification",
+    key: "eod-collection-verify-cash",
+    route: "/eod-collection/:id/verify-cash",
+    component: <CashVerificationPage />,
+  },
+  {
+    type: "route",
+    name: "Post Payments",
+    key: "eod-collection-post-payments",
+    route: "/eod-collection/:id/post-payments",
+    component: <PostPaymentsPage />,
+  },
+  {
+    type: "route",
+    name: "Cashier Intake Detail",
+    key: "cashier-intake-detail",
+    route: "/cashier-intake/:id",
+    component: <CashierIntakeDetailPage />,
+  },
+  {
+    type: "route",
+    name: "Payment Detail",
+    key: "payment-detail",
+    route: "/payments/:id",
+    component: <PaymentDetailPage />,
   },
   // Backwards-compat: old /eod-cash-count URLs redirect to new path
   {
