@@ -121,14 +121,17 @@ const routes = [
   },
   {
     type: "collapse",
-    name: "Data Import",
+    name: "Spreadsheet Upload",
     key: "spreadsheet-upload",
     icon: <Icon fontSize="small">table_view</Icon>,
     route: "/spreadsheet-upload",
     component: <SpreadsheetUpload />,
     sidenavGroup: null,
-    // Per patch matrix: ✓ for EXEC, FIN, MKT, ADM, LEA, AR, CSH — AP excluded
-    allowedRoles: [ROLE.EXEC, ROLE.FIN, ROLE.MKT, ROLE.ADM, ROLE.LEA, ROLE.AR, ROLE.CSH],
+    // Per patch matrix: ✓ for EXEC, FIN, MKT, ADM, LEA, AR, CSH.
+    // Unit 51 Stage F: AP added — SPREADSHEET_DOMAIN_ROLES now has an
+    // "expense" entry AP can upload to; excluding AP here would hide the
+    // sidenav link from the only role that entry is really for.
+    allowedRoles: [ROLE.EXEC, ROLE.FIN, ROLE.MKT, ROLE.ADM, ROLE.LEA, ROLE.AR, ROLE.CSH, ROLE.AP],
   },
   // Unit 27 F3: Upload Center retired — consolidated onto Spreadsheet Upload.
 
@@ -238,6 +241,11 @@ const routes = [
     sidenavGroup: "Accounts Receivable",
     allowedRoles: [ROLE.EXEC, ROLE.FIN, ROLE.MKT, ROLE.ADM, ROLE.LEA, ROLE.AR],
   },
+  // =========================================================================
+  // Treasury (sidenavGroup: "Treasury" — Cash Accountability, Cash Expenses,
+  // Bank Reconciliation; kept here for file proximity to the AR entries they
+  // once shared a section with, but they render under the Treasury header)
+  // =========================================================================
   // Unit 22 — Cash Accountability (DEC-051)
   {
     type: "collapse",

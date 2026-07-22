@@ -148,6 +148,9 @@ const SPREADSHEET_DOMAIN_ROLES = {
   cashier_intake: ["executive", ...MARKET_ADMIN, "finance_head", "accounting_staff"],
   remittance_batch: ["executive", ...MARKET_ADMIN, "finance_head", "accounting_staff"],
   opening_balance: ["executive", "finance_head", "market_administrator"],
+  // Unit 51 Stage F — mirrors backend DOMAIN_ALLOWED_ROLES['expense'] exactly
+  // (csv_import/permissions.py) — admin_staff via MARKET_ADMIN, plus accounts_payable.
+  expense: ["executive", ...MARKET_ADMIN, "finance_head", "accounts_payable"],
 };
 
 export const SPREADSHEET_UPLOAD_DOMAINS = Object.keys(SPREADSHEET_DOMAIN_ROLES);
@@ -163,9 +166,6 @@ export const canUseSpreadsheetUpload = (r) => spreadsheetUploadDomains(r).length
 // D4: top-tier sees all import jobs; others see own (requires actor field on ImportJob).
 export const canSeeAllImportJobs = (r) =>
   has(r, ["market_administrator", "finance_head", "executive"]);
-
-// GRACE mode: Finance Mgr / Market Admin only for historical import (DEC-043).
-export const canUseGraceMode = (r) => has(r, ["market_administrator", "finance_head"]);
 
 /**
  * Invoice Generation (Unit 37 / DEC-TBD).

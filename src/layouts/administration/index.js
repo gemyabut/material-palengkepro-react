@@ -19,8 +19,9 @@ import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 
-import { canOnboard, canManageStaff } from "utils/permissions";
+import { canOnboard, canManageStaff, canUseSpreadsheetUpload } from "utils/permissions";
 import { onboardCompany, createStaff } from "./api/administration";
+import TemplatesSection from "./components/TemplatesSection";
 
 function getRole() {
   const t = localStorage.getItem("access_token") || sessionStorage.getItem("access_token");
@@ -163,6 +164,7 @@ export default function Administration() {
   const role = getRole();
   const showOnboard = canOnboard(role);
   const showStaff = canManageStaff(role);
+  const showTemplates = canUseSpreadsheetUpload(role);
 
   return (
     <DashboardLayout>
@@ -171,7 +173,7 @@ export default function Administration() {
         <MDTypography variant="h4" mb={2}>
           Administration
         </MDTypography>
-        {!showOnboard && !showStaff ? (
+        {!showOnboard && !showStaff && !showTemplates ? (
           <Alert severity="warning">You don&apos;t have access to administration.</Alert>
         ) : (
           <Grid container spacing={3} alignItems="flex-start">
@@ -183,6 +185,11 @@ export default function Administration() {
             {showStaff && (
               <Grid item xs={12} md={6}>
                 <StaffCard />
+              </Grid>
+            )}
+            {showTemplates && (
+              <Grid item xs={12} md={6}>
+                <TemplatesSection />
               </Grid>
             )}
           </Grid>
