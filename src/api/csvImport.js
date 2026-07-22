@@ -1,21 +1,89 @@
 import apiClient from "api/axios";
 
-export async function uploadWorkbook(
-  file,
-  { dryRun = false, domain, mode = "upsert", graceMode = false, attachment } = {}
-) {
-  // Unit 27 F4: optional attachment (deposit-slip scan) applies to every row in the upload.
+// Unit 51 Stage F — the 3 download helpers below all previously ignored the
+// server's actual Content-Disposition filename, synthesizing their own
+// client-side name instead (e.g. downloadResultsWorkbook hardcoded
+// `import_${jobId}_results.xlsx`, silently discarding the date-stamped name
+// the backend generates). Now used everywhere a filename fallback is needed.
+function extractFilenameFromResponse(response, fallback) {
+  const disposition = response.headers?.["content-disposition"] || "";
+  const match = disposition.match(/filename="([^"]+)"/);
+  return match ? match[1] : fallback;
+}
+
+// Unit 51 Stage F — read-only preview: validates every row, never commits,
+// never creates an ImportJob (csv_import Stage C.2).
+export async function inspectWorkbook(file) {
   const form = new FormData();
   form.append("file", file);
-  if (domain) form.append("domain", domain);
-  if (mode) form.append("mode", mode);
-  if (graceMode) form.append("grace_mode", "true");
-  if (attachment) form.append("attachment", attachment);
-  const url = `/imports/workbook/${dryRun ? "?dry_run=true" : ""}`;
-  const { data } = await apiClient.post(url, form, {
+  const { data } = await apiClient.post("/csv-import/inspect/", form, {
     headers: { "Content-Type": "multipart/form-data" },
   });
   return data;
+}
+
+// Unit 51 Stage F — commits a workbook. perSheetActions is a plain object
+// {domain: "upsert"|"create"|"skip-existing"|"skip"}, reshaped here into the
+// backend's {domain: {action: ...}} contract (csv_import Stage D).
+export async function commitWorkbook(
+  file,
+  { perSheetActions, saveMode = "commit", approverId, attachment } = {}
+) {
+  const form = new FormData();
+  form.append("file", file);
+  if (perSheetActions && Object.keys(perSheetActions).length) {
+    const shaped = {};
+    Object.entries(perSheetActions).forEach(([domain, action]) => {
+      shaped[domain] = { action };
+    });
+    form.append("per_sheet_actions", JSON.stringify(shaped));
+  }
+  if (saveMode) form.append("save_mode", saveMode);
+  if (approverId) form.append("approver_id", approverId);
+  if (attachment) form.append("attachment", attachment);
+  const { data } = await apiClient.post("/imports/workbook/", form, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return data;
+}
+
+// Unit 51 Stage E — downloads the original workbook annotated with a
+// "PalengkePro Results" sheet. Only available for .xlsx-sourced jobs.
+export async function downloadResultsWorkbook(jobId) {
+  const res = await apiClient.get(`/csv-import/jobs/${jobId}/results-workbook/`, {
+    responseType: "blob",
+  });
+  const url = window.URL.createObjectURL(res.data);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = extractFilenameFromResponse(res, `import_${jobId}_results.xlsx`);
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(url);
+}
+
+// Unit 51 Track A — JSON inventory of per-domain upload templates.
+export async function listTemplates() {
+  const { data } = await apiClient.get("/csv-import/templates/");
+  return data;
+}
+
+// Unit 51 Track A — downloads one domain's primary upload template. filename
+// comes from the listTemplates() entry the caller already has in hand
+// (matches the server's actual catalog filename, e.g. "25_CASHIER_INTAKE_Upload.xlsx").
+export async function downloadDomainTemplate(domain, filename) {
+  const res = await apiClient.get(`/csv-import/templates/${domain}/`, {
+    responseType: "blob",
+  });
+  const url = window.URL.createObjectURL(res.data);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = extractFilenameFromResponse(res, filename || `${domain}_template.xlsx`);
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(url);
 }
 
 export async function getImportJobs({ page = 1, page_size = 50 } = {}) {
@@ -39,7 +107,7 @@ export async function downloadMasterTemplate(scope = "full") {
   const url = window.URL.createObjectURL(res.data);
   const a = document.createElement("a");
   a.href = url;
-  a.download = MASTER_SCOPES[scope] || MASTER_SCOPES.full;
+  a.download = extractFilenameFromResponse(res, MASTER_SCOPES[scope] || MASTER_SCOPES.full);
   document.body.appendChild(a);
   a.click();
   a.remove();
