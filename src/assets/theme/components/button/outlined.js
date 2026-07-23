@@ -20,7 +20,7 @@ import typography from "assets/theme/base/typography";
 // Material Dashboard 2 React Helper Functions
 import pxToRem from "assets/theme/functions/pxToRem";
 
-const { transparent, light, info, secondary } = colors;
+const { transparent, light, dark, info, secondary, success, warning, error } = colors;
 const { size } = typography;
 
 const outlined = {
@@ -63,6 +63,7 @@ const outlined = {
   primary: {
     backgroundColor: transparent.main,
     borderColor: info.main,
+    color: info.main,
 
     "&:hover": {
       backgroundColor: transparent.main,
@@ -72,6 +73,67 @@ const outlined = {
   secondary: {
     backgroundColor: transparent.main,
     borderColor: secondary.main,
+    color: secondary.main,
+
+    "&:hover": {
+      backgroundColor: transparent.main,
+    },
+  },
+
+  info: {
+    backgroundColor: transparent.main,
+    borderColor: info.main,
+    color: info.main,
+
+    "&:hover": {
+      backgroundColor: transparent.main,
+    },
+  },
+
+  success: {
+    backgroundColor: transparent.main,
+    borderColor: success.main,
+    color: success.main,
+
+    "&:hover": {
+      backgroundColor: transparent.main,
+    },
+  },
+
+  warning: {
+    backgroundColor: transparent.main,
+    borderColor: warning.main,
+    color: warning.main,
+
+    "&:hover": {
+      backgroundColor: transparent.main,
+    },
+  },
+
+  error: {
+    backgroundColor: transparent.main,
+    borderColor: error.main,
+    color: error.main,
+
+    "&:hover": {
+      backgroundColor: transparent.main,
+    },
+  },
+
+  light: {
+    backgroundColor: transparent.main,
+    borderColor: light.main,
+    color: light.main,
+
+    "&:hover": {
+      backgroundColor: transparent.main,
+    },
+  },
+
+  dark: {
+    backgroundColor: transparent.main,
+    borderColor: dark.main,
+    color: dark.main,
 
     "&:hover": {
       backgroundColor: transparent.main,
