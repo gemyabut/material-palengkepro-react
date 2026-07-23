@@ -490,7 +490,10 @@ const routes = [
     route: "/administration",
     component: <Administration />,
     sidenavGroup: "Admin",
-    allowedRoles: [...TOP_TIER, "system_administrator"],  // UAT patch: Octal onboards clients here
+    // Task #121: Owner (executive) delegates admin/staff management to
+    // Market Admin — executive excluded here. finance_head + market_administrator
+    // + system_administrator (Octal onboarding) keep access.
+    allowedRoles: [ROLE.FIN, ROLE.MKT, "system_administrator"],
   },
   {
     type: "collapse",
