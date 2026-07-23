@@ -1,5 +1,9 @@
 import PropTypes from "prop-types";
 import { Alert, Button, Stack, Table, TableBody, TableCell, TableHead, TableRow } from "@mui/material";
+import DownloadIcon from "@mui/icons-material/Download";
+import ReplayIcon from "@mui/icons-material/Replay";
+import UploadFileIcon from "@mui/icons-material/UploadFile";
+import HistoryIcon from "@mui/icons-material/History";
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 import { downloadResultsWorkbook } from "api/csvImport";
@@ -83,17 +87,23 @@ function ResultsScreen({ result, sourceWasXlsx, onTryAgain, onUploadAnother, onV
 
       <Stack direction="row" spacing={2} flexWrap="wrap">
         {canDownload && (
-          <Button variant="contained" color="info" onClick={handleDownload}>
+          <Button
+            variant="contained"
+            color="info"
+            size="large"
+            startIcon={<DownloadIcon />}
+            onClick={handleDownload}
+          >
             Download results workbook
           </Button>
         )}
-        <Button variant="outlined" color="dark" onClick={onTryAgain}>
+        <Button variant="outlined" color="info" startIcon={<ReplayIcon />} onClick={onTryAgain}>
           Try Again
         </Button>
-        <Button variant="outlined" color="info" onClick={onUploadAnother}>
+        <Button variant="outlined" color="info" startIcon={<UploadFileIcon />} onClick={onUploadAnother}>
           Upload another file
         </Button>
-        <Button variant="text" color="secondary" onClick={onViewHistory}>
+        <Button variant="text" color="info" startIcon={<HistoryIcon />} onClick={onViewHistory}>
           View upload history
         </Button>
       </Stack>

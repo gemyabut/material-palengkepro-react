@@ -141,7 +141,7 @@ export default function DepositBatchListPage() {
                   <TableCell>ID</TableCell>
                   <TableCell>Date</TableCell>
                   <TableCell>Destination</TableCell>
-                  <TableCell>Bank / LGU Office</TableCell>
+                  <TableCell>Deposit Reference</TableCell>
                   <TableCell>Status</TableCell>
                   <TableCell align="right">Net to Deposit</TableCell>
                   <TableCell align="right">Items</TableCell>
@@ -172,8 +172,11 @@ export default function DepositBatchListPage() {
                         <DestinationChip destinationType={b.destination_type} />
                       </TableCell>
                       <TableCell>
-                        {b.bank_name}
-                        {b.bank_account_last4 ? ` ••••${b.bank_account_last4}` : ""}
+                        {b.destination_type === "LGU_TREASURY"
+                          ? (b.lgu_or_number || "—")
+                          : (b.bank_name
+                              ? `${b.bank_name}${b.bank_account_last4 ? " (…" + b.bank_account_last4 + ")" : ""}`
+                              : "—")}
                       </TableCell>
                       <TableCell>
                         <BatchStatusChip status={b.status} />

@@ -203,7 +203,7 @@ function LeasesPage() {
       <DashboardNavbar userProfile={userProfile} />
       <MDBox sx={{ p: 2 }}>
         <MDTypography variant="h4" mb={2}>
-          Leases Management
+          Leases
         </MDTypography>
 
         {/* Lease Summary Widget */}

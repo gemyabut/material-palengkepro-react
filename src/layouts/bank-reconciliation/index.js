@@ -85,7 +85,6 @@ export default function BankReconciliationPage() {
 
   const canConfirm = canConfirmBatches(role);
   const destinationType = data?.market?.destination_type ?? "BANK";
-  const pageTitle = destinationLabel(destinationType, "pageTitle");
 
   const handleConfirm = async (refValue) => {
     setConfirming(true);
@@ -126,7 +125,7 @@ export default function BankReconciliationPage() {
           gap={2}
         >
           <MDTypography variant="h4" fontWeight="bold">
-            {pageTitle}
+            Remittances
           </MDTypography>
           <MDBox display="flex" gap={2} alignItems="center" flexWrap="wrap" className="no-print">
             <TextField

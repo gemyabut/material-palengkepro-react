@@ -1,5 +1,6 @@
 import PropTypes from "prop-types";
 import { Button, Card, CardContent, FormControl, FormControlLabel, Radio, RadioGroup, TextField } from "@mui/material";
+import SaveIcon from "@mui/icons-material/Save";
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 
@@ -41,7 +42,14 @@ function SavePanel({ saveMode, onSaveModeChange, approverId, onApproverIdChange,
         )}
 
         <MDBox mt={2}>
-          <Button variant="contained" color="success" onClick={onSave} disabled={disabled}>
+          <Button
+            variant="contained"
+            color="success"
+            size="large"
+            startIcon={<SaveIcon />}
+            onClick={onSave}
+            disabled={disabled}
+          >
             {saving ? "Saving..." : "Save"}
           </Button>
         </MDBox>

@@ -152,7 +152,7 @@ export default function RequestCashExpensePage() {
     if (file) fd.append("receipt_image", file);
     try {
       await createCashExpense(fd);
-      navigate("/accounts-receivable/cash-expenses", {
+      navigate("/cash-expenses", {
         state: { successMessage: "Cash expense request submitted for approval." },
       });
     } catch (err) {
@@ -325,7 +325,7 @@ export default function RequestCashExpensePage() {
             >
               {submitting ? <CircularProgress size={18} sx={{ color: "white" }} /> : "Submit Request"}
             </Button>
-            <Button onClick={() => navigate("/accounts-receivable/cash-expenses")} disabled={submitting}>
+            <Button onClick={() => navigate("/cash-expenses")} disabled={submitting}>
               Cancel
             </Button>
           </MDBox>

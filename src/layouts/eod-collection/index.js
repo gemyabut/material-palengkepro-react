@@ -5,6 +5,8 @@ import Alert from "@mui/material/Alert";
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
+import PostAddIcon from "@mui/icons-material/PostAdd";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import FormControl from "@mui/material/FormControl";
 import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
@@ -61,11 +63,21 @@ function rowAction(c, role, isStaff) {
   if (c.status === "POSTED" || c.status === "LOCKED") return null;
   if (c.cashier_verified) {
     return canPostPayments(role, isStaff)
-      ? { label: "Post Payments", color: "success", route: (id) => `/eod-collection/${id}/post-payments` }
+      ? {
+          label: "Post Payments",
+          color: "info",
+          icon: <PostAddIcon />,
+          route: (id) => `/eod-collection/${id}/post-payments`,
+        }
       : null;
   }
   return canAcceptPayments(role, isStaff)
-    ? { label: "Accept Payments", color: "info", route: (id) => `/eod-collection/${id}/verify-cash` }
+    ? {
+        label: "Accept Payments",
+        color: "info",
+        icon: <CheckCircleIcon />,
+        route: (id) => `/eod-collection/${id}/verify-cash`,
+      }
     : null;
 }
 
@@ -115,7 +127,7 @@ export default function EodCashCountPage() {
           gap={2}
         >
           <MDTypography variant="h4" fontWeight="bold">
-            EOD Collections
+            End of Day Collections
           </MDTypography>
           <FormControl size="small" sx={{ minWidth: 200 }}>
             <InputLabel>Status</InputLabel>
@@ -206,28 +218,28 @@ export default function EodCashCountPage() {
                           )}
                         </MDBox>
                       </TableCell>
-                      <TableCell>
-                        <MDBox display="flex" gap={1} alignItems="center">
-                          {(() => {
-                            const action = rowAction(c, role, isStaff);
-                            if (!action) return <Chip {...rowStatusLabel(c)} size="small" />;
+                      <TableCell align="center">
+                        {(() => {
+                          const action = rowAction(c, role, isStaff);
+                          if (!action) {
                             return (
-                              <>
-                                {c.cashier_verified && (
-                                  <Chip label="Submitted" color="info" size="small" />
-                                )}
-                                <Button
-                                  size="small"
-                                  variant="contained"
-                                  color={action.color}
-                                  onClick={() => navigate(action.route(c.id))}
-                                >
-                                  {action.label}
-                                </Button>
-                              </>
+                              <MDTypography variant="body2" color="secondary">
+                                —
+                              </MDTypography>
                             );
-                          })()}
-                        </MDBox>
+                          }
+                          return (
+                            <Button
+                              size="small"
+                              variant="contained"
+                              color={action.color}
+                              startIcon={action.icon}
+                              onClick={() => navigate(action.route(c.id))}
+                            >
+                              {action.label}
+                            </Button>
+                          );
+                        })()}
                       </TableCell>
                     </TableRow>
                   );

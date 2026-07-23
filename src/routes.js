@@ -243,8 +243,9 @@ const routes = [
   },
   // =========================================================================
   // Treasury (sidenavGroup: "Treasury" — Cash Accountability, Cash Expenses,
-  // Bank Reconciliation; kept here for file proximity to the AR entries they
-  // once shared a section with, but they render under the Treasury header)
+  // Remittances (formerly "Bank Reconciliation" — Task #122 rename); kept
+  // here for file proximity to the AR entries they once shared a section
+  // with, but they render under the Treasury header)
   // =========================================================================
   // Unit 22 — Cash Accountability (DEC-051)
   {
@@ -273,7 +274,7 @@ const routes = [
     name: "Cash Expenses",
     key: "cash-expenses",
     icon: <Icon fontSize="small">payments</Icon>,
-    route: "/accounts-receivable/cash-expenses",
+    route: "/cash-expenses",
     component: <CashExpensesPage />,
     sidenavGroup: "Treasury",
     // All can view; Approve/Reject buttons are role-gated inside the page
@@ -286,12 +287,12 @@ const routes = [
     type: "route",
     name: "Request Cash Expense",
     key: "cash-expenses-new",
-    route: "/accounts-receivable/cash-expenses/new",
+    route: "/cash-expenses/new",
     component: <RequestCashExpensePage />,
   },
   {
     type: "collapse",
-    name: "Bank Reconciliation",
+    name: "Remittances",
     key: "bank-reconciliation",
     icon: <Icon fontSize="small">account_balance</Icon>,
     route: "/bank-reconciliation",
@@ -337,7 +338,7 @@ const routes = [
   },
   {
     type: "collapse",
-    name: "EOD Collection",
+    name: "End of Day Collections",
     key: "eod-collection",
     icon: <Icon fontSize="small">schedule</Icon>,
     route: "/eod-collection",
