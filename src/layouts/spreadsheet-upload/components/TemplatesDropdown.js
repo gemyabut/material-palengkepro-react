@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button, Menu, MenuItem, Divider } from "@mui/material";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
+import DownloadIcon from "@mui/icons-material/Download";
 import { listTemplates, downloadDomainTemplate, downloadMasterTemplate } from "api/csvImport";
 
 // Unit 51 Stage F — "Need a template?" access point. Lives above FileDropzone
@@ -35,7 +36,14 @@ function TemplatesDropdown() {
 
   return (
     <>
-      <Button variant="outlined" color="info" size="small" endIcon={<ArrowDropDownIcon />} onClick={openMenu}>
+      <Button
+        variant="contained"
+        color="info"
+        size="small"
+        startIcon={<DownloadIcon />}
+        endIcon={<ArrowDropDownIcon />}
+        onClick={openMenu}
+      >
         Need a template?
       </Button>
       <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={closeMenu}>

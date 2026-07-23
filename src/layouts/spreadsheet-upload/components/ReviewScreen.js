@@ -16,6 +16,7 @@ import {
   TableHead,
   TableRow,
 } from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 
@@ -112,7 +113,14 @@ function SheetCard({ sheet, action, onActionChange, attachment, onAttachmentChan
               />
             </Button>
             {attachment && (
-              <Button size="small" onClick={() => onAttachmentChange(null)} sx={{ ml: 1 }}>
+              <Button
+                variant="text"
+                color="error"
+                size="small"
+                startIcon={<CloseIcon />}
+                onClick={() => onAttachmentChange(null)}
+                sx={{ ml: 1 }}
+              >
                 Remove
               </Button>
             )}

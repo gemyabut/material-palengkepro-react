@@ -161,7 +161,7 @@ export default function DailyVerificationPage() {
       <DashboardNavbar />
       <MDBox py={3}>
         <MDTypography variant="h4" fontWeight="bold" mb={3}>
-          Daily Collection Verification
+          Daily Verification
         </MDTypography>
 
         {/* Filter bar */}

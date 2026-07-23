@@ -46,7 +46,9 @@ function LV({ label, value }) {
       <MDTypography variant="caption" color="secondary" fontWeight="medium">
         {label}
       </MDTypography>
-      <MDTypography variant="body2">{value ?? "—"}</MDTypography>
+      <MDTypography variant="body2">
+        {value === null || value === undefined || value === "" ? "—" : value}
+      </MDTypography>
     </MDBox>
   );
 }
@@ -204,9 +206,14 @@ export default function DepositBatchDetailPage() {
                   <LV label="Type" value={batch.batch_type} />
                 </Grid>
                 {isLGU ? (
-                  <Grid item xs={6}>
-                    <LV label="LGU Office" value={batch.bank_name} />
-                  </Grid>
+                  <>
+                    <Grid item xs={6}>
+                      <LV label="LGU Office" value={batch.bank_name} />
+                    </Grid>
+                    <Grid item xs={6}>
+                      <LV label="LGU OR Number" value={batch.lgu_or_number} />
+                    </Grid>
+                  </>
                 ) : (
                   <>
                     <Grid item xs={6}>
@@ -226,23 +233,20 @@ export default function DepositBatchDetailPage() {
                 <Grid item xs={6}>
                   <LV label="Reference" value={batch.reference} />
                 </Grid>
+                {batch.status === "CONFIRMED" && !isLGU && (
+                  <Grid item xs={6}>
+                    <LV label="Bank Reference #" value={batch.bank_confirmation_ref} />
+                  </Grid>
+                )}
                 {batch.status === "CONFIRMED" && (
-                  <>
-                    <Grid item xs={6}>
-                      <LV
-                        label={destinationLabel(dest, "refLabel")}
-                        value={isLGU ? batch.lgu_or_number : batch.bank_confirmation_ref}
-                      />
-                    </Grid>
-                    <Grid item xs={6}>
-                      <LV
-                        label="Confirmed at"
-                        value={
-                          batch.confirmed_at ? new Date(batch.confirmed_at).toLocaleString() : "—"
-                        }
-                      />
-                    </Grid>
-                  </>
+                  <Grid item xs={6}>
+                    <LV
+                      label="Confirmed at"
+                      value={
+                        batch.confirmed_at ? new Date(batch.confirmed_at).toLocaleString() : "—"
+                      }
+                    />
+                  </Grid>
                 )}
               </Grid>
             </Paper>

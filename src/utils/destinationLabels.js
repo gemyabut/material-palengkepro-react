@@ -5,7 +5,6 @@ export const DESTINATION_LABELS = {
     refField:        "bank_confirmation_ref",
     refLabel:        "Bank Reference #",
     proofLabel:      "Deposit Slip",
-    pageTitle:       "Bank Reconciliation",
     destinationName: "Bank",
   },
   LGU_TREASURY: {
@@ -14,7 +13,6 @@ export const DESTINATION_LABELS = {
     refField:        "lgu_or_number",
     refLabel:        "LGU Official Receipt #",
     proofLabel:      "LGU Receipt",
-    pageTitle:       "LGU Remittance",
     destinationName: "LGU Treasury Office",
   },
 };

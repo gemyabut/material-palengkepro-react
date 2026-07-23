@@ -231,7 +231,7 @@ export default function CashExpensesPage() {
               variant="contained"
               color="info"
               startIcon={<AddIcon />}
-              onClick={() => navigate("/accounts-receivable/cash-expenses/new")}
+              onClick={() => navigate("/cash-expenses/new")}
             >
               New Request
             </Button>
