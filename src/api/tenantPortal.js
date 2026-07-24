@@ -62,6 +62,10 @@ export const tenantPortalApi = {
   /** D6: SOA PDF download */
   soaPdf: (periodStart, periodEnd) => apiFetchBlob(`/soa/pdf/${soaQs(periodStart, periodEnd)}`),
 
+  /** Task #115 item 2: emails the SOA PDF to the tenant's email_address on file */
+  emailSoaPdf: (periodStart, periodEnd) =>
+    apiFetch(`/soa/pdf/email/${soaQs(periodStart, periodEnd)}`, { method: "POST" }),
+
   payments: (page = 1, pageSize = 20) =>
     apiFetch(`/payments/?page=${page}&page_size=${pageSize}`),
 

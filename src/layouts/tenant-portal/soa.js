@@ -10,10 +10,11 @@ import { useNavigate } from "react-router-dom";
 import {
   Box, Card, CardContent, Typography, Alert, CircularProgress,
   Table, TableHead, TableBody, TableRow, TableCell, Stack,
-  Button, TextField, Chip,
+  Button, TextField, Chip, Tooltip,
 } from "@mui/material";
 import DownloadIcon from "@mui/icons-material/Download";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import EmailIcon from "@mui/icons-material/Email";
 
 import PortalLayout from "./PortalLayout";
 import { tenantPortalApi, downloadBlob } from "api/tenantPortal";
@@ -38,12 +39,15 @@ export default function TenantSOA() {
   const [data, setData]               = useState(null);
   const [loading, setLoading]         = useState(true);
   const [pdfLoading, setPdfLoading]   = useState(false);
+  const [emailLoading, setEmailLoading] = useState(false);
+  const [emailSuccess, setEmailSuccess] = useState(null);
   const [error, setError]             = useState(null);
 
   const load = useCallback(async (start, end) => {
     if (!getTenantToken()) { navigate("/tenant/login", { replace: true }); return; }
     setLoading(true);
     setError(null);
+    setEmailSuccess(null);
     try {
       const resp = await tenantPortalApi.soa(start, end);
       setData(resp);
@@ -71,8 +75,23 @@ export default function TenantSOA() {
     }
   };
 
+  const handleEmailSoa = async () => {
+    setEmailLoading(true);
+    setError(null);
+    setEmailSuccess(null);
+    try {
+      const resp = await tenantPortalApi.emailSoaPdf(periodStart, periodEnd);
+      setEmailSuccess(`Statement emailed to ${resp.sent_to}.`);
+    } catch (err) {
+      setError("Email failed: " + (err.message || "unknown error"));
+    } finally {
+      setEmailLoading(false);
+    }
+  };
+
   const invoices = data?.invoices || [];
   const summary  = data?.summary || {};
+  const tenantEmail = data?.tenant_email;
 
   return (
     <PortalLayout>
@@ -93,6 +112,19 @@ export default function TenantSOA() {
           >
             Download PDF
           </Button>
+          <Tooltip title={tenantEmail ? "" : "Add email to your profile first"}>
+            <span>
+              <Button
+                variant="outlined"
+                startIcon={emailLoading ? <CircularProgress size={16} sx={{ color: "#1a237e" }} /> : <EmailIcon />}
+                onClick={handleEmailSoa}
+                disabled={emailLoading || loading || !tenantEmail}
+                sx={{ borderColor: "#1a237e", color: "#1a237e", whiteSpace: "nowrap" }}
+              >
+                Email to me
+              </Button>
+            </span>
+          </Tooltip>
         </Stack>
 
         {/* Period selector */}
@@ -126,6 +158,7 @@ export default function TenantSOA() {
 
         {loading && <Box display="flex" justifyContent="center" py={4}><CircularProgress /></Box>}
         {error && <Alert severity="error">{error}</Alert>}
+        {emailSuccess && <Alert severity="success">{emailSuccess}</Alert>}
 
         {/* Summary row */}
         {data && !loading && (
