@@ -18,7 +18,7 @@ import EmailIcon from "@mui/icons-material/Email";
 
 import PortalLayout from "./PortalLayout";
 import { tenantPortalApi, downloadBlob } from "api/tenantPortal";
-import { getTenantToken } from "utils/tenantPortalAuth";
+import { getTenantToken, clearTenantSession } from "utils/tenantPortalAuth";
 
 const peso = (v) => `₱${Number(v ?? 0).toLocaleString("en-PH", { minimumFractionDigits: 2 })}`;
 
@@ -52,8 +52,10 @@ export default function TenantSOA() {
       const resp = await tenantPortalApi.soa(start, end);
       setData(resp);
     } catch (err) {
-      if (err.status === 401 || err.status === 403) navigate("/tenant/login", { replace: true });
-      else setError(err.message || "Failed to load statement.");
+      if (err.status === 401 || err.status === 403) {
+        clearTenantSession();
+        navigate("/tenant/login", { replace: true });
+      } else setError(err.message || "Failed to load statement.");
     } finally {
       setLoading(false);
     }

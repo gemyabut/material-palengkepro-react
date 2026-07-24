@@ -18,7 +18,7 @@ import ListAltIcon from "@mui/icons-material/ListAlt";
 
 import PortalLayout from "./PortalLayout";
 import { tenantPortalApi } from "api/tenantPortal";
-import { getTenantToken } from "utils/tenantPortalAuth";
+import { getTenantToken, clearTenantSession } from "utils/tenantPortalAuth";
 
 const peso = (v) => `₱${Number(v ?? 0).toLocaleString("en-PH", { minimumFractionDigits: 2 })}`;
 
@@ -37,6 +37,7 @@ export default function TenantDashboard() {
       setData(resp);
     } catch (err) {
       if (err.status === 401 || err.status === 403) {
+        clearTenantSession();
         navigate("/tenant/login", { replace: true });
       } else {
         setError(err.message || "Failed to load dashboard.");
