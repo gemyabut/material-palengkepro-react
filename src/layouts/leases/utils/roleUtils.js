@@ -73,7 +73,7 @@ export const canBulk = (input) => {
 
 export const canEdit = (input) => {
   const role = getRoleString(input);
-  return ["market_administrator", "admin_staff", "leasing_officer", "market_manager"].includes(role);
+  return ["market_administrator", "admin_staff", "leasing_officer", "market_manager", "executive"].includes(role);
 };
 
 export const isMarketMaster = (input) => {

@@ -47,3 +47,37 @@ export async function requestTenantUpdate(tenantId, payload) {
   const { data } = await apiClient.post(`/tenants/${tenantId}/request-update/`, payload);
   return data;
 }
+
+// Task #115 — Documents & Verification (staff-side upload/verify; real axios,
+// not mock-backed — matches Logs functions above)
+export async function uploadTenantDocument(tenantId, file) {
+  debugLog("API:uploadTenantDocument", tenantId);
+  const form = new FormData();
+  form.append("uploaded_documents", file);
+  const { data } = await apiClient.patch(`/tenants/${tenantId}/`, form, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return data;
+}
+
+export async function uploadTenantPhotograph(tenantId, file) {
+  debugLog("API:uploadTenantPhotograph", tenantId);
+  const form = new FormData();
+  form.append("photograph", file);
+  const { data } = await apiClient.patch(`/tenants/${tenantId}/`, form, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return data;
+}
+
+export async function updateVerificationNotes(tenantId, verification_notes) {
+  debugLog("API:updateVerificationNotes", tenantId);
+  const { data } = await apiClient.patch(`/tenants/${tenantId}/`, { verification_notes });
+  return data;
+}
+
+export async function setVerificationStatus(tenantId, verification_status) {
+  debugLog("API:setVerificationStatus", { tenantId, verification_status });
+  const { data } = await apiClient.patch(`/tenants/${tenantId}/`, { verification_status });
+  return data;
+}

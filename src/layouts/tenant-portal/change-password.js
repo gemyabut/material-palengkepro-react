@@ -15,6 +15,7 @@ import {
 import { useMaterialUIController, setLayout } from "context";
 import { tenantPortalApi } from "api/tenantPortal";
 import { getTenantToken, getTenantSession, setTenantSession, clearTenantSession } from "utils/tenantPortalAuth";
+import MarketAdminContactCard from "./components/MarketAdminContactCard";
 
 export default function TenantChangePassword() {
   const [, dispatch] = useMaterialUIController();
@@ -25,11 +26,19 @@ export default function TenantChangePassword() {
   const [confirmPwd, setConfirmPwd] = useState("");
   const [loading, setLoading]       = useState(false);
   const [error, setError]           = useState(null);
+  const [adminContact, setAdminContact] = useState(null);
 
   useEffect(() => {
     setLayout(dispatch, "page");
     if (!getTenantToken()) navigate("/tenant/login", { replace: true });
   }, [dispatch, navigate]);
+
+  useEffect(() => {
+    tenantPortalApi
+      .marketAdminContact()
+      .then((resp) => setAdminContact(resp.contact))
+      .catch(() => setAdminContact(null)); // silent — convenience info, not critical path
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -145,6 +154,8 @@ export default function TenantChangePassword() {
               Cancel and sign out
             </Button>
           </Box>
+
+          <MarketAdminContactCard contact={adminContact} />
         </CardContent>
       </Card>
     </Box>

@@ -15,10 +15,11 @@ import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 import StorefrontIcon from "@mui/icons-material/Storefront";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import ListAltIcon from "@mui/icons-material/ListAlt";
+import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
 
 import PortalLayout from "./PortalLayout";
 import { tenantPortalApi } from "api/tenantPortal";
-import { getTenantToken } from "utils/tenantPortalAuth";
+import { getTenantToken, clearTenantSession } from "utils/tenantPortalAuth";
 
 const peso = (v) => `₱${Number(v ?? 0).toLocaleString("en-PH", { minimumFractionDigits: 2 })}`;
 
@@ -37,6 +38,7 @@ export default function TenantDashboard() {
       setData(resp);
     } catch (err) {
       if (err.status === 401 || err.status === 403) {
+        clearTenantSession();
         navigate("/tenant/login", { replace: true });
       } else {
         setError(err.message || "Failed to load dashboard.");
@@ -105,6 +107,18 @@ export default function TenantDashboard() {
                 sx={{ py: 2.5, fontSize: "1rem", borderColor: "#1a237e", color: "#1a237e" }}
               >
                 Payment History
+              </Button>
+            </Grid>
+            <Grid item xs={12}>
+              <Button
+                fullWidth
+                variant="outlined"
+                size="large"
+                startIcon={<PhotoCameraIcon />}
+                onClick={() => navigate("/tenant/documents")}
+                sx={{ py: 2.5, fontSize: "1rem", borderColor: "#1a237e", color: "#1a237e" }}
+              >
+                Upload Document
               </Button>
             </Grid>
           </Grid>

@@ -17,7 +17,7 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 
 import PortalLayout from "./PortalLayout";
 import { tenantPortalApi, downloadBlob } from "api/tenantPortal";
-import { getTenantToken } from "utils/tenantPortalAuth";
+import { getTenantToken, clearTenantSession } from "utils/tenantPortalAuth";
 
 const peso = (v) => `₱${Number(v ?? 0).toLocaleString("en-PH", { minimumFractionDigits: 2 })}`;
 
@@ -40,8 +40,10 @@ export default function TenantPayments() {
       const resp = await tenantPortalApi.payments(p, 20);
       setData(resp);
     } catch (err) {
-      if (err.status === 401 || err.status === 403) navigate("/tenant/login", { replace: true });
-      else setError(err.message || "Failed to load payment history.");
+      if (err.status === 401 || err.status === 403) {
+        clearTenantSession();
+        navigate("/tenant/login", { replace: true });
+      } else setError(err.message || "Failed to load payment history.");
     } finally {
       setLoading(false);
     }

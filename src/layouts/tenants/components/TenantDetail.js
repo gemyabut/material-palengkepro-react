@@ -4,15 +4,24 @@ import { useNavigate } from "react-router-dom";
 import PropTypes from "prop-types";
 import {
   Avatar, Box, Button, Card, CardContent, CardHeader,
-  Chip, CircularProgress, Collapse, Divider, Grid,
+  Chip, CircularProgress, Collapse, Dialog, DialogActions, DialogContent,
+  DialogContentText, DialogTitle, Divider, Grid,
   Stack, Table, TableBody, TableCell, TableHead, TableRow,
-  Typography, Alert,
+  TextField, Typography, Alert,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import UndoIcon from "@mui/icons-material/Undo";
+import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import SaveIcon from "@mui/icons-material/Save";
+import MDButton from "components/MDButton";
 
 import { canEdit } from "../../leases/utils/roleUtils";
-import { getTenantLeases, getTenantLeaseholderRights, getTenantInvoices, getTenantPayments } from "../api/tenants";
+import {
+  getTenantLeases, getTenantLeaseholderRights, getTenantInvoices, getTenantPayments,
+  uploadTenantDocument, uploadTenantPhotograph, updateVerificationNotes, setVerificationStatus,
+} from "../api/tenants";
 
 // ── Chip colour maps ──────────────────────────────────────────────────────────
 const STATUS_CHIP = {
@@ -25,7 +34,6 @@ const VERIFICATION_CHIP = {
   VERIFIED:   { label: "Verified",   color: "success" },
   PENDING:    { label: "Pending",    color: "warning" },
   UNVERIFIED: { label: "Unverified", color: "default" },
-  REJECTED:   { label: "Rejected",   color: "error"   },
 };
 const INVOICE_STATUS_CHIP = {
   PAID:    { label: "Paid",    color: "success" },
@@ -68,6 +76,103 @@ export default function TenantDetail({ tenant, user, onEdit, onRequestUpdate, sh
   const [error, setError] = useState(null);
   const [pastExpanded, setPastExpanded] = useState(false);
 
+  // ── Task #115: Documents & Verification (staff-side upload/verify) ────────
+  const [docOverrides, setDocOverrides] = useState({});
+  const [notesDraft, setNotesDraft] = useState(tenant?.verification_notes || "");
+  const [uploadingDoc, setUploadingDoc] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [savingNotes, setSavingNotes] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [docActionError, setDocActionError] = useState(null);
+  const [unverifyDialogOpen, setUnverifyDialogOpen] = useState(false);
+
+  useEffect(() => {
+    setDocOverrides({});
+    setNotesDraft(tenant?.verification_notes || "");
+  }, [tenant?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const effectiveTenant = { ...tenant, ...docOverrides };
+
+  const handleUploadDocument = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // allow re-selecting the same file next time
+    if (!file) return;
+    setDocActionError(null);
+    setUploadingDoc(true);
+    try {
+      const updated = await uploadTenantDocument(tenant.id, file);
+      setDocOverrides((prev) => ({ ...prev, uploaded_documents: updated.uploaded_documents }));
+    } catch (err) {
+      setDocActionError(err?.response?.data?.detail || "Failed to upload document.");
+    } finally {
+      setUploadingDoc(false);
+    }
+  };
+
+  const handleUploadPhotograph = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setDocActionError(null);
+    setUploadingPhoto(true);
+    try {
+      const updated = await uploadTenantPhotograph(tenant.id, file);
+      setDocOverrides((prev) => ({ ...prev, photograph: updated.photograph }));
+    } catch (err) {
+      setDocActionError(err?.response?.data?.detail || "Failed to upload photograph.");
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
+  const handleSaveNotes = async () => {
+    setDocActionError(null);
+    setSavingNotes(true);
+    try {
+      const updated = await updateVerificationNotes(tenant.id, notesDraft);
+      setDocOverrides((prev) => ({ ...prev, verification_notes: updated.verification_notes }));
+    } catch (err) {
+      setDocActionError(err?.response?.data?.detail || "Failed to save verification notes.");
+    } finally {
+      setSavingNotes(false);
+    }
+  };
+
+  const handleMarkVerified = async () => {
+    setDocActionError(null);
+    setVerifying(true);
+    try {
+      const updated = await setVerificationStatus(tenant.id, "VERIFIED");
+      setDocOverrides((prev) => ({
+        ...prev,
+        verification_status: updated.verification_status,
+        date_verified: updated.date_verified,
+      }));
+    } catch (err) {
+      setDocActionError(err?.response?.data?.detail || "Failed to mark tenant verified.");
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  const handleConfirmUnverify = async () => {
+    setDocActionError(null);
+    setVerifying(true);
+    try {
+      const updated = await setVerificationStatus(tenant.id, "UNVERIFIED");
+      setDocOverrides((prev) => ({
+        ...prev,
+        verification_status: updated.verification_status,
+        date_verified: updated.date_verified,
+      }));
+    } catch (err) {
+      setDocActionError(err?.response?.data?.detail || "Failed to unverify tenant.");
+    } finally {
+      setVerifying(false);
+      setUnverifyDialogOpen(false);
+    }
+  };
+
   const loadSubResources = (id) => {
     setLoading(true);
     setError(null);
@@ -104,7 +209,7 @@ export default function TenantDetail({ tenant, user, onEdit, onRequestUpdate, sh
 
   const editable = canEdit(user);
   const statusMeta = STATUS_CHIP[tenant.status] || { label: tenant.status, color: "default" };
-  const verMeta = VERIFICATION_CHIP[tenant.verification_status] || { label: tenant.verification_status, color: "default" };
+  const verMeta = VERIFICATION_CHIP[effectiveTenant.verification_status] || { label: effectiveTenant.verification_status, color: "default" };
   const activeLeases = leases.filter((l) => l.status === "ACTIVE");
   const pastLeases = leases.filter((l) => l.status !== "ACTIVE");
   const leaseMap = Object.fromEntries(leases.map((l) => [l.id, l]));
@@ -117,10 +222,10 @@ export default function TenantDetail({ tenant, user, onEdit, onRequestUpdate, sh
           <Grid container spacing={2} alignItems="flex-start">
             {/* Photo / Avatar */}
             <Grid item xs={12} sm="auto">
-              {tenant.photograph ? (
+              {effectiveTenant.photograph ? (
                 <Box
                   component="img"
-                  src={tenant.photograph}
+                  src={effectiveTenant.photograph}
                   alt={tenant.full_name}
                   sx={{ width: 96, height: 96, borderRadius: 2, objectFit: "cover" }}
                 />
@@ -178,15 +283,151 @@ export default function TenantDetail({ tenant, user, onEdit, onRequestUpdate, sh
             <Grid item xs={2} sm={1}><KV label="Contact Phone" value={tenant.contact_phone_number} /></Grid>
             <Grid item xs={2} sm={1}><KV label="Government ID" value={tenant.government_id} /></Grid>
             <Grid item xs={2} sm={1}><KV label="Barangay Permit" value={tenant.barangay_permit_number} /></Grid>
-            {tenant.verification_status === "VERIFIED" && (
-              <Grid item xs={2} sm={1}><KV label="Date Verified" value={tenant.date_verified} /></Grid>
+            {effectiveTenant.verification_status === "VERIFIED" && (
+              <Grid item xs={2} sm={1}><KV label="Date Verified" value={effectiveTenant.date_verified} /></Grid>
             )}
-            {tenant.verification_notes && (
-              <Grid item xs={2}><KV label="Verification Notes" value={tenant.verification_notes} /></Grid>
+          </Grid>
+
+          <Divider sx={{ my: 2 }} />
+
+          {/* ── Documents & Verification (Task #115) ─────────────────────── */}
+          <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+            Documents &amp; Verification
+          </Typography>
+
+          {docActionError && (
+            <Alert severity="error" sx={{ mb: 2 }} onClose={() => setDocActionError(null)}>
+              {docActionError}
+            </Alert>
+          )}
+
+          <Grid container spacing={2} alignItems="flex-start">
+            <Grid item xs={12} sm={6}>
+              <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
+                Uploaded Document
+              </Typography>
+              {effectiveTenant.uploaded_documents ? (
+                <Typography variant="body2" sx={{ mb: 1 }}>
+                  <a href={effectiveTenant.uploaded_documents} target="_blank" rel="noreferrer">
+                    View current document
+                  </a>
+                </Typography>
+              ) : (
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                  None uploaded.
+                </Typography>
+              )}
+              {editable && (
+                <MDButton
+                  variant="contained"
+                  color="info"
+                  component="label"
+                  startIcon={<CloudUploadIcon />}
+                  disabled={uploadingDoc}
+                >
+                  {uploadingDoc ? "Uploading…" : effectiveTenant.uploaded_documents ? "Replace Document" : "Upload Document"}
+                  <input hidden type="file" onChange={handleUploadDocument} />
+                </MDButton>
+              )}
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
+                Photograph
+              </Typography>
+              {editable && (
+                <MDButton
+                  variant="contained"
+                  color="info"
+                  component="label"
+                  startIcon={<CloudUploadIcon />}
+                  disabled={uploadingPhoto}
+                >
+                  {uploadingPhoto ? "Uploading…" : effectiveTenant.photograph ? "Replace Photograph" : "Upload Photograph"}
+                  <input hidden type="file" accept="image/*" onChange={handleUploadPhotograph} />
+                </MDButton>
+              )}
+            </Grid>
+
+            <Grid item xs={12}>
+              <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
+                Verification Notes
+              </Typography>
+              {editable ? (
+                <>
+                  <TextField
+                    fullWidth
+                    multiline
+                    minRows={2}
+                    size="small"
+                    value={notesDraft}
+                    onChange={(e) => setNotesDraft(e.target.value)}
+                    sx={{ mb: 1 }}
+                  />
+                  <MDButton
+                    variant="contained"
+                    color="info"
+                    startIcon={<SaveIcon />}
+                    onClick={handleSaveNotes}
+                    disabled={savingNotes || notesDraft === (effectiveTenant.verification_notes || "")}
+                  >
+                    {savingNotes ? "Saving…" : "Save Notes"}
+                  </MDButton>
+                </>
+              ) : (
+                <Typography variant="body2" color={effectiveTenant.verification_notes ? "text.primary" : "text.secondary"}>
+                  {effectiveTenant.verification_notes || "No notes on record."}
+                </Typography>
+              )}
+            </Grid>
+
+            {editable && (
+              <Grid item xs={12}>
+                <Stack direction="row" spacing={1}>
+                  {effectiveTenant.verification_status !== "VERIFIED" ? (
+                    <MDButton
+                      variant="contained"
+                      color="success"
+                      startIcon={<CheckCircleIcon />}
+                      onClick={handleMarkVerified}
+                      disabled={verifying}
+                    >
+                      Mark Verified
+                    </MDButton>
+                  ) : (
+                    <MDButton
+                      variant="outlined"
+                      color="warning"
+                      startIcon={<UndoIcon />}
+                      onClick={() => setUnverifyDialogOpen(true)}
+                      disabled={verifying}
+                    >
+                      Unverify
+                    </MDButton>
+                  )}
+                </Stack>
+              </Grid>
             )}
           </Grid>
         </CardContent>
       </Card>
+
+      {/* ── Unverify confirmation dialog (Task #115) ───────────────────── */}
+      <Dialog open={unverifyDialogOpen} onClose={() => setUnverifyDialogOpen(false)}>
+        <DialogTitle>Unverify this tenant?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            This will revert their status from VERIFIED to UNVERIFIED.
+            date_verified will be preserved for audit trail.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setUnverifyDialogOpen(false)} disabled={verifying}>Cancel</Button>
+          <Button color="error" variant="contained" onClick={handleConfirmUnverify} disabled={verifying}>
+            {verifying ? "Unverifying…" : "Unverify"}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* ── Error / Loading for sub-resources ──────────────────────────── */}
       {loading && (

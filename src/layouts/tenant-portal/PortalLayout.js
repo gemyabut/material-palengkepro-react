@@ -6,7 +6,7 @@
  * - D4: 5-minute idle auto-logout via useIdleAutoLogout
  * - Touch-friendly: large fonts, generous padding, no dense operator chrome
  */
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import PropTypes from "prop-types";
 import { Box, AppBar, Toolbar, Typography, Button, Divider } from "@mui/material";
@@ -14,15 +14,25 @@ import LogoutIcon from "@mui/icons-material/Logout";
 
 import { useMaterialUIController, setLayout } from "context";
 import { clearTenantSession, getTenantSession, useIdleAutoLogout } from "utils/tenantPortalAuth";
+import { tenantPortalApi } from "api/tenantPortal";
+import MarketAdminContactCard from "./components/MarketAdminContactCard";
 
 export default function PortalLayout({ children }) {
   const [, dispatch] = useMaterialUIController();
   const navigate = useNavigate();
   const { tenantName, tenantIdCode } = getTenantSession();
+  const [adminContact, setAdminContact] = useState(null);
 
   useEffect(() => {
     setLayout(dispatch, "page");
   }, [dispatch]);
+
+  useEffect(() => {
+    tenantPortalApi
+      .marketAdminContact()
+      .then((resp) => setAdminContact(resp.contact))
+      .catch(() => setAdminContact(null)); // silent — convenience info, not critical path
+  }, []);
 
   const handleLogout = useCallback(() => {
     clearTenantSession();
@@ -65,6 +75,7 @@ export default function PortalLayout({ children }) {
         <Typography variant="caption" color="text.disabled">
           Session auto-expires after 5 minutes of inactivity.
         </Typography>
+        <MarketAdminContactCard contact={adminContact} />
       </Box>
     </Box>
   );

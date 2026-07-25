@@ -10,14 +10,16 @@ import { useNavigate } from "react-router-dom";
 import {
   Box, Card, CardContent, Typography, Alert, CircularProgress,
   Table, TableHead, TableBody, TableRow, TableCell, Stack,
-  Button, TextField, Chip,
+  Button, TextField, Chip, Tooltip,
 } from "@mui/material";
 import DownloadIcon from "@mui/icons-material/Download";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import EmailIcon from "@mui/icons-material/Email";
 
 import PortalLayout from "./PortalLayout";
+import InvoiceDetailModal from "./components/InvoiceDetailModal";
 import { tenantPortalApi, downloadBlob } from "api/tenantPortal";
-import { getTenantToken } from "utils/tenantPortalAuth";
+import { getTenantToken, clearTenantSession } from "utils/tenantPortalAuth";
 
 const peso = (v) => `₱${Number(v ?? 0).toLocaleString("en-PH", { minimumFractionDigits: 2 })}`;
 
@@ -38,18 +40,28 @@ export default function TenantSOA() {
   const [data, setData]               = useState(null);
   const [loading, setLoading]         = useState(true);
   const [pdfLoading, setPdfLoading]   = useState(false);
+  const [emailLoading, setEmailLoading] = useState(false);
+  const [emailSuccess, setEmailSuccess] = useState(null);
   const [error, setError]             = useState(null);
+
+  const [modalOpen, setModalOpen]       = useState(false);
+  const [invoiceDetail, setInvoiceDetail] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError]     = useState(null);
 
   const load = useCallback(async (start, end) => {
     if (!getTenantToken()) { navigate("/tenant/login", { replace: true }); return; }
     setLoading(true);
     setError(null);
+    setEmailSuccess(null);
     try {
       const resp = await tenantPortalApi.soa(start, end);
       setData(resp);
     } catch (err) {
-      if (err.status === 401 || err.status === 403) navigate("/tenant/login", { replace: true });
-      else setError(err.message || "Failed to load statement.");
+      if (err.status === 401 || err.status === 403) {
+        clearTenantSession();
+        navigate("/tenant/login", { replace: true });
+      } else setError(err.message || "Failed to load statement.");
     } finally {
       setLoading(false);
     }
@@ -71,8 +83,45 @@ export default function TenantSOA() {
     }
   };
 
+  const handleEmailSoa = async () => {
+    setEmailLoading(true);
+    setError(null);
+    setEmailSuccess(null);
+    try {
+      const resp = await tenantPortalApi.emailSoaPdf(periodStart, periodEnd);
+      setEmailSuccess(`Statement emailed to ${resp.sent_to}.`);
+    } catch (err) {
+      setError("Email failed: " + (err.message || "unknown error"));
+    } finally {
+      setEmailLoading(false);
+    }
+  };
+
+  const handleRowClick = async (invoiceId) => {
+    setModalOpen(true);
+    setDetailLoading(true);
+    setDetailError(null);
+    setInvoiceDetail(null);
+    try {
+      const resp = await tenantPortalApi.invoiceDetail(invoiceId);
+      setInvoiceDetail(resp);
+    } catch (err) {
+      if (err.status === 401 || err.status === 403) {
+        clearTenantSession();
+        navigate("/tenant/login", { replace: true });
+      } else {
+        setDetailError(err.message || "Failed to load invoice detail.");
+      }
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+
+  const handleCloseModal = () => setModalOpen(false);
+
   const invoices = data?.invoices || [];
   const summary  = data?.summary || {};
+  const tenantEmail = data?.tenant_email;
 
   return (
     <PortalLayout>
@@ -93,6 +142,19 @@ export default function TenantSOA() {
           >
             Download PDF
           </Button>
+          <Tooltip title={tenantEmail ? "" : "Add email to your profile first"}>
+            <span>
+              <Button
+                variant="outlined"
+                startIcon={emailLoading ? <CircularProgress size={16} sx={{ color: "#1a237e" }} /> : <EmailIcon />}
+                onClick={handleEmailSoa}
+                disabled={emailLoading || loading || !tenantEmail}
+                sx={{ borderColor: "#1a237e", color: "#1a237e", whiteSpace: "nowrap" }}
+              >
+                Email to me
+              </Button>
+            </span>
+          </Tooltip>
         </Stack>
 
         {/* Period selector */}
@@ -126,6 +188,7 @@ export default function TenantSOA() {
 
         {loading && <Box display="flex" justifyContent="center" py={4}><CircularProgress /></Box>}
         {error && <Alert severity="error">{error}</Alert>}
+        {emailSuccess && <Alert severity="success">{emailSuccess}</Alert>}
 
         {/* Summary row */}
         {data && !loading && (
@@ -167,7 +230,15 @@ export default function TenantSOA() {
                   </TableHead>
                   <TableBody>
                     {invoices.map((inv, i) => (
-                      <TableRow key={i} sx={{ bgcolor: i % 2 === 1 ? "#f8f9ff" : "white" }}>
+                      <TableRow
+                        key={i}
+                        onClick={() => handleRowClick(inv.invoice_id)}
+                        sx={{
+                          bgcolor: i % 2 === 1 ? "#f8f9ff" : "white",
+                          cursor: "pointer",
+                          "&:hover": { bgcolor: "#e8eaf6" },
+                        }}
+                      >
                         <TableCell sx={{ fontFamily: "monospace", fontSize: "0.8rem" }}>{inv.invoice_number}</TableCell>
                         <TableCell sx={{ whiteSpace: "nowrap" }}>
                           {inv.period_start} – {inv.period_end}
@@ -194,6 +265,14 @@ export default function TenantSOA() {
           </Card>
         )}
       </Stack>
+
+      <InvoiceDetailModal
+        open={modalOpen}
+        onClose={handleCloseModal}
+        invoice={invoiceDetail}
+        loading={detailLoading}
+        error={detailError}
+      />
     </PortalLayout>
   );
 }
