@@ -37,6 +37,20 @@ async function apiFetchBlob(path) {
   return { blob: await res.blob(), headers: res.headers };
 }
 
+// No Content-Type here — the browser sets multipart/form-data with the
+// correct boundary itself when body is a FormData instance. apiFetch's
+// hardcoded "application/json" header would corrupt a multipart request.
+async function apiFetchMultipart(path, { method = "POST", body } = {}) {
+  const res = await fetch(`${BASE}/tenant${path}`, { method, body, headers: authHeaders() });
+  if (!res.ok) {
+    const respBody = await res.json().catch(() => ({}));
+    const err = new Error(respBody.detail || respBody.error || `HTTP ${res.status}`);
+    err.status = res.status;
+    throw err;
+  }
+  return res.json();
+}
+
 function soaQs(periodStart, periodEnd) {
   if (!periodStart) return "";
   return `?period_start=${encodeURIComponent(periodStart)}&period_end=${encodeURIComponent(periodEnd)}`;
@@ -56,11 +70,37 @@ export const tenantPortalApi = {
 
   dashboard: () => apiFetch("/dashboard/"),
 
+  /** Task #115 item 4: first active market_administrator's contact info */
+  marketAdminContact: () => apiFetch("/market-admin-contact/"),
+
   /** D5: default last 12 months if no params */
   soa: (periodStart, periodEnd) => apiFetch(`/soa/${soaQs(periodStart, periodEnd)}`),
 
   /** D6: SOA PDF download */
   soaPdf: (periodStart, periodEnd) => apiFetchBlob(`/soa/pdf/${soaQs(periodStart, periodEnd)}`),
+
+  /** Task #115 item 7: single invoice detail — lines + payment applications */
+  invoiceDetail: (invoiceId) => apiFetch(`/invoices/${invoiceId}/`),
+
+  /** Task #115 item 5: current document-on-file status (pre-capture display) */
+  documentStatus: () => apiFetch("/document-upload/"),
+
+  /** Task #115 item 5: tenant uploads/replaces their own document (kiosk camera capture) */
+  uploadDocument: (file) => {
+    const form = new FormData();
+    form.append("uploaded_documents", file);
+    return apiFetchMultipart("/document-upload/", { method: "PATCH", body: form });
+  },
+
+  /** Task #115 item 5 extension: current photograph-on-file status (pre-capture display) */
+  photographStatus: () => apiFetch("/photograph-upload/"),
+
+  /** Task #115 item 5 extension: tenant uploads/replaces their own photograph (kiosk camera capture) */
+  uploadPhotograph: (file) => {
+    const form = new FormData();
+    form.append("photograph", file);
+    return apiFetchMultipart("/photograph-upload/", { method: "PATCH", body: form });
+  },
 
   /** Task #115 item 2: emails the SOA PDF to the tenant's email_address on file */
   emailSoaPdf: (periodStart, periodEnd) =>

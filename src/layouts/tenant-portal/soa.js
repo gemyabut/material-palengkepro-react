@@ -17,6 +17,7 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import EmailIcon from "@mui/icons-material/Email";
 
 import PortalLayout from "./PortalLayout";
+import InvoiceDetailModal from "./components/InvoiceDetailModal";
 import { tenantPortalApi, downloadBlob } from "api/tenantPortal";
 import { getTenantToken, clearTenantSession } from "utils/tenantPortalAuth";
 
@@ -42,6 +43,11 @@ export default function TenantSOA() {
   const [emailLoading, setEmailLoading] = useState(false);
   const [emailSuccess, setEmailSuccess] = useState(null);
   const [error, setError]             = useState(null);
+
+  const [modalOpen, setModalOpen]       = useState(false);
+  const [invoiceDetail, setInvoiceDetail] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError]     = useState(null);
 
   const load = useCallback(async (start, end) => {
     if (!getTenantToken()) { navigate("/tenant/login", { replace: true }); return; }
@@ -90,6 +96,28 @@ export default function TenantSOA() {
       setEmailLoading(false);
     }
   };
+
+  const handleRowClick = async (invoiceId) => {
+    setModalOpen(true);
+    setDetailLoading(true);
+    setDetailError(null);
+    setInvoiceDetail(null);
+    try {
+      const resp = await tenantPortalApi.invoiceDetail(invoiceId);
+      setInvoiceDetail(resp);
+    } catch (err) {
+      if (err.status === 401 || err.status === 403) {
+        clearTenantSession();
+        navigate("/tenant/login", { replace: true });
+      } else {
+        setDetailError(err.message || "Failed to load invoice detail.");
+      }
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+
+  const handleCloseModal = () => setModalOpen(false);
 
   const invoices = data?.invoices || [];
   const summary  = data?.summary || {};
@@ -202,7 +230,15 @@ export default function TenantSOA() {
                   </TableHead>
                   <TableBody>
                     {invoices.map((inv, i) => (
-                      <TableRow key={i} sx={{ bgcolor: i % 2 === 1 ? "#f8f9ff" : "white" }}>
+                      <TableRow
+                        key={i}
+                        onClick={() => handleRowClick(inv.invoice_id)}
+                        sx={{
+                          bgcolor: i % 2 === 1 ? "#f8f9ff" : "white",
+                          cursor: "pointer",
+                          "&:hover": { bgcolor: "#e8eaf6" },
+                        }}
+                      >
                         <TableCell sx={{ fontFamily: "monospace", fontSize: "0.8rem" }}>{inv.invoice_number}</TableCell>
                         <TableCell sx={{ whiteSpace: "nowrap" }}>
                           {inv.period_start} – {inv.period_end}
@@ -229,6 +265,14 @@ export default function TenantSOA() {
           </Card>
         )}
       </Stack>
+
+      <InvoiceDetailModal
+        open={modalOpen}
+        onClose={handleCloseModal}
+        invoice={invoiceDetail}
+        loading={detailLoading}
+        error={detailError}
+      />
     </PortalLayout>
   );
 }

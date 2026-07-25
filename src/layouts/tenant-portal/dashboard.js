@@ -15,6 +15,7 @@ import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 import StorefrontIcon from "@mui/icons-material/Storefront";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import ListAltIcon from "@mui/icons-material/ListAlt";
+import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
 
 import PortalLayout from "./PortalLayout";
 import { tenantPortalApi } from "api/tenantPortal";
@@ -106,6 +107,18 @@ export default function TenantDashboard() {
                 sx={{ py: 2.5, fontSize: "1rem", borderColor: "#1a237e", color: "#1a237e" }}
               >
                 Payment History
+              </Button>
+            </Grid>
+            <Grid item xs={12}>
+              <Button
+                fullWidth
+                variant="outlined"
+                size="large"
+                startIcon={<PhotoCameraIcon />}
+                onClick={() => navigate("/tenant/documents")}
+                sx={{ py: 2.5, fontSize: "1rem", borderColor: "#1a237e", color: "#1a237e" }}
+              >
+                Upload Document
               </Button>
             </Grid>
           </Grid>

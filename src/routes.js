@@ -55,6 +55,7 @@ import TenantChangePassword from "layouts/tenant-portal/change-password";
 import TenantDashboard from "layouts/tenant-portal/dashboard";
 import TenantSOA from "layouts/tenant-portal/soa";
 import TenantPayments from "layouts/tenant-portal/payments";
+import TenantDocumentUpload from "layouts/tenant-portal/document-upload";
 import Profile from "layouts/profile";
 import ChangePassword from "layouts/profile/change-password";
 import Preferences from "layouts/preferences";
@@ -659,6 +660,13 @@ const routes = [
     key: "tenant-payments",
     route: "/tenant/payments",
     component: <TenantPayments />,
+  },
+  {
+    type: "route",
+    name: "Tenant Document Upload",
+    key: "tenant-documents",
+    route: "/tenant/documents",
+    component: <TenantDocumentUpload />,
   },
 ];
 
