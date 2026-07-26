@@ -19,7 +19,9 @@ import axios from "axios";
 import { useAuth } from "context/AuthContext";
 import { debugLog } from "layouts/stalls/utils/debug";
 
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8000/api";
+const API_URL =
+  process.env.REACT_APP_API_URL ||
+  `${window.location.protocol}//${window.location.hostname}:8000/api`;
 
 function SignIn() {
   const [credentials, setCredentials] = useState({ username: "", password: "" });

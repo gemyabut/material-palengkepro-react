@@ -38,7 +38,9 @@ function getRole() {
 
 const peso = (v) => `₱${Number(v ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
 
-const MEDIA_BASE = process.env.REACT_APP_API_BASE_URL || "http://localhost:8000";
+const MEDIA_BASE =
+  process.env.REACT_APP_API_BASE_URL ||
+  `${window.location.protocol}//${window.location.hostname}:8000`;
 
 function LV({ label, value }) {
   return (

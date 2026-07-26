@@ -6,7 +6,9 @@
  *
  * All authenticated calls attach the tenant_access_token from localStorage.
  */
-const BASE = process.env.REACT_APP_API_URL || "http://localhost:8000/api";
+const BASE =
+  process.env.REACT_APP_API_URL ||
+  `${window.location.protocol}//${window.location.hostname}:8000/api`;
 
 function authHeaders() {
   const token = localStorage.getItem("tenant_access_token");

@@ -9,7 +9,9 @@ import Box from "@mui/material/Box";
 import Alert from "@mui/material/Alert";
 import axios from "axios";
 
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8000/api";
+const API_URL =
+  process.env.REACT_APP_API_URL ||
+  `${window.location.protocol}//${window.location.hostname}:8000/api`;
 
 function PasswordResetConfirm() {
   const { uidb64, token } = useParams();

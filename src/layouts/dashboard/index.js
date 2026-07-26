@@ -38,7 +38,9 @@ import { getMarket } from "api/markets";
 import useProfile from "layouts/profile/hooks/useProfile";
 import APPlaceholder from "./APPlaceholder";
 
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8000/api";
+const API_URL =
+  process.env.REACT_APP_API_URL ||
+  `${window.location.protocol}//${window.location.hostname}:8000/api`;
 
 const peso = (v) => `₱${Number(v ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
 
