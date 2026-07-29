@@ -29,6 +29,8 @@ function getLabel(choices, value) {
   return found ? found.label : value;
 }
 
+const peso = (v) => `₱${Number(v ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+
 const LeaseTable = ({
   leases = [],
   loading = false,
@@ -87,6 +89,8 @@ const LeaseTable = ({
             <TableCell>Tenant</TableCell>
             <TableCell>Stall</TableCell>
             <TableCell>Type</TableCell>
+            <TableCell align="right">Rent Amount</TableCell>
+            <TableCell align="right">Annual Rights</TableCell>
             <TableCell>Start</TableCell>
             <TableCell>End</TableCell>
             <TableCell>Status</TableCell>
@@ -101,6 +105,15 @@ const LeaseTable = ({
               <TableCell>{lease.stall?.stall_number || ""}</TableCell>
               <TableCell>
                 {lease.leaseTypeLabel || getLabel(LEASE_TYPE_CHOICES, lease.lease_type)}
+              </TableCell>
+              <TableCell align="right">{peso(lease.lease_amount)}</TableCell>
+              <TableCell
+                align="right"
+                sx={{
+                  color: Number(lease.annual_rights_fee || 0) === 0 ? "text.secondary" : undefined,
+                }}
+              >
+                {peso(lease.annual_rights_fee || 0)}
               </TableCell>
               <TableCell>{lease.start_date}</TableCell>
               <TableCell>{lease.end_date}</TableCell>
@@ -154,7 +167,7 @@ const LeaseTable = ({
         <TableFooter>
           {onPageChange && (
             <TableRow>
-              <TableCell colSpan={8}>
+              <TableCell colSpan={10}>
                 <TablePagination
                   rowsPerPageOptions={[limit]}
                   count={total}

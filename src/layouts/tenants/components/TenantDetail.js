@@ -3,11 +3,31 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import PropTypes from "prop-types";
 import {
-  Avatar, Box, Button, Card, CardContent, CardHeader,
-  Chip, CircularProgress, Collapse, Dialog, DialogActions, DialogContent,
-  DialogContentText, DialogTitle, Divider, Grid,
-  Stack, Table, TableBody, TableCell, TableHead, TableRow,
-  TextField, Typography, Alert,
+  Avatar,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  Chip,
+  CircularProgress,
+  Collapse,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  Divider,
+  Grid,
+  Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  TextField,
+  Typography,
+  Alert,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
@@ -19,32 +39,43 @@ import MDButton from "components/MDButton";
 
 import { canEdit } from "../../leases/utils/roleUtils";
 import {
-  getTenantLeases, getTenantLeaseholderRights, getTenantInvoices, getTenantPayments,
-  uploadTenantDocument, uploadTenantPhotograph, updateVerificationNotes, setVerificationStatus,
+  getTenantLeases,
+  getTenantLeaseholderRights,
+  getTenantInvoices,
+  getTenantPayments,
+  uploadTenantDocument,
+  uploadTenantPhotograph,
+  updateVerificationNotes,
+  setVerificationStatus,
 } from "../api/tenants";
 
 // ── Chip colour maps ──────────────────────────────────────────────────────────
 const STATUS_CHIP = {
-  ACTIVE:      { label: "Active",      color: "success" },
-  INACTIVE:    { label: "Inactive",    color: "default" },
-  DELINQUENT:  { label: "Delinquent",  color: "warning" },
-  BLACKLISTED: { label: "Blacklisted", color: "error"   },
+  ACTIVE: { label: "Active", color: "success" },
+  INACTIVE: { label: "Inactive", color: "default" },
+  DELINQUENT: { label: "Delinquent", color: "warning" },
+  BLACKLISTED: { label: "Blacklisted", color: "error" },
 };
 const VERIFICATION_CHIP = {
-  VERIFIED:   { label: "Verified",   color: "success" },
-  PENDING:    { label: "Pending",    color: "warning" },
+  VERIFIED: { label: "Verified", color: "success" },
+  PENDING: { label: "Pending", color: "warning" },
   UNVERIFIED: { label: "Unverified", color: "default" },
 };
 const INVOICE_STATUS_CHIP = {
-  PAID:    { label: "Paid",    color: "success" },
+  PAID: { label: "Paid", color: "success" },
   PARTIAL: { label: "Partial", color: "warning" },
-  OPEN:    { label: "Unpaid",  color: "error"   },
-  VOID:    { label: "Void",    color: "default" },
+  OPEN: { label: "Unpaid", color: "error" },
+  VOID: { label: "Void", color: "default" },
 };
 const METHOD_LABEL = {
-  CASH: "Cash", GCASH: "GCash", BANK: "Bank Transfer",
-  BANK_TRANSFER: "Bank Transfer", CHEQUE: "Cheque", CHECK: "Cheque",
-  MAYA: "Maya", OTHER: "Other",
+  CASH: "Cash",
+  GCASH: "GCash",
+  BANK: "Bank Transfer",
+  BANK_TRANSFER: "Bank Transfer",
+  CHEQUE: "Cheque",
+  CHECK: "Cheque",
+  MAYA: "Maya",
+  OTHER: "Other",
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -52,14 +83,49 @@ function fmt(val) {
   const n = parseFloat(val ?? 0);
   return `₱${n.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
+
+// Neither date-fns nor dayjs is installed in this project — native
+// Date.toLocaleDateString covers "MMM yyyy" without a new dependency (same
+// pattern as D.1/D.3/D.4/D.5). Appending T00:00:00 (no Z) parses the ISO
+// date as local time, avoiding an off-by-one-day shift in negative-UTC-
+// offset timezones.
+function formatPeriod(periodStart) {
+  if (!periodStart) return "—";
+  const d = new Date(`${periodStart}T00:00:00`);
+  return d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+}
+
+// M1 (UNIT_53 Phase D.1/D.3/D.5/D.6) — canonical SOA order is already
+// applied server-side; this just abbreviates for the chip.
+const TYPE_ABBREV = {
+  RENT: "RENT",
+  RIGHTS: "RIGHTS",
+  ELECTRICITY: "ELEC",
+  WATER: "WATER",
+  OTHER: "OTHER",
+};
+
+function typeChipLabel(linesSummary) {
+  if (!linesSummary || linesSummary.length === 0) return "—";
+  return linesSummary.map((code) => TYPE_ABBREV[code] || code).join("+");
+}
+
 function initials(name) {
-  return (name || "?").split(" ").map((n) => n[0]).filter(Boolean).slice(0, 2).join("").toUpperCase();
+  return (name || "?")
+    .split(" ")
+    .map((n) => n[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 }
 function KV({ label, value }) {
   if (value == null || value === "") return null;
   return (
     <Box>
-      <Typography variant="caption" color="text.secondary" display="block">{label}</Typography>
+      <Typography variant="caption" color="text.secondary" display="block">
+        {label}
+      </Typography>
       <Typography variant="body2">{value}</Typography>
     </Box>
   );
@@ -209,7 +275,10 @@ export default function TenantDetail({ tenant, user, onEdit, onRequestUpdate, sh
 
   const editable = canEdit(user);
   const statusMeta = STATUS_CHIP[tenant.status] || { label: tenant.status, color: "default" };
-  const verMeta = VERIFICATION_CHIP[effectiveTenant.verification_status] || { label: effectiveTenant.verification_status, color: "default" };
+  const verMeta = VERIFICATION_CHIP[effectiveTenant.verification_status] || {
+    label: effectiveTenant.verification_status,
+    color: "default",
+  };
   const activeLeases = leases.filter((l) => l.status === "ACTIVE");
   const pastLeases = leases.filter((l) => l.status !== "ACTIVE");
   const leaseMap = Object.fromEntries(leases.map((l) => [l.id, l]));
@@ -241,9 +310,13 @@ export default function TenantDetail({ tenant, user, onEdit, onRequestUpdate, sh
               <Typography variant="body2" fontFamily="monospace" color="text.secondary">
                 {tenant.tenant_id || "—"}
               </Typography>
-              <Typography variant="h5" fontWeight="bold">{tenant.full_name}</Typography>
+              <Typography variant="h5" fontWeight="bold">
+                {tenant.full_name}
+              </Typography>
               {tenant.business_name && tenant.business_name !== tenant.full_name && (
-                <Typography variant="subtitle1" color="text.secondary">{tenant.business_name}</Typography>
+                <Typography variant="subtitle1" color="text.secondary">
+                  {tenant.business_name}
+                </Typography>
               )}
               <Stack direction="row" spacing={1} mt={1}>
                 <Chip size="small" label={statusMeta.label} color={statusMeta.color} />
@@ -256,15 +329,28 @@ export default function TenantDetail({ tenant, user, onEdit, onRequestUpdate, sh
               <Grid item xs={12} sm="auto">
                 <Stack direction="row" spacing={1} flexWrap="wrap">
                   {editable && showEdit && (
-                    <Button size="small" variant="outlined" onClick={() => onEdit?.(tenant.id)}>Edit</Button>
+                    <Button size="small" variant="outlined" onClick={() => onEdit?.(tenant.id)}>
+                      Edit
+                    </Button>
                   )}
                   {editable && showEdit && (
-                    <Button size="small" variant="outlined" color="error"
-                      onClick={() => onEdit?.(tenant.id, "deactivate")}>Deactivate</Button>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      color="error"
+                      onClick={() => onEdit?.(tenant.id, "deactivate")}
+                    >
+                      Deactivate
+                    </Button>
                   )}
                   {user?.role === "tenant" && (
-                    <Button size="small" variant="contained"
-                      onClick={() => onRequestUpdate?.(tenant.id)}>Request Update</Button>
+                    <Button
+                      size="small"
+                      variant="contained"
+                      onClick={() => onRequestUpdate?.(tenant.id)}
+                    >
+                      Request Update
+                    </Button>
                   )}
                 </Stack>
               </Grid>
@@ -275,16 +361,34 @@ export default function TenantDetail({ tenant, user, onEdit, onRequestUpdate, sh
 
           {/* Key/value grid */}
           <Grid container spacing={2} columns={2}>
-            <Grid item xs={2} sm={1}><KV label="Address" value={tenant.address} /></Grid>
-            <Grid item xs={2} sm={1}><KV label="Barangay" value={tenant.barangay} /></Grid>
-            <Grid item xs={2} sm={1}><KV label="Mobile" value={tenant.mobile_phone} /></Grid>
-            <Grid item xs={2} sm={1}><KV label="Email" value={tenant.email_address} /></Grid>
-            <Grid item xs={2} sm={1}><KV label="Contact Person" value={tenant.contact_person} /></Grid>
-            <Grid item xs={2} sm={1}><KV label="Contact Phone" value={tenant.contact_phone_number} /></Grid>
-            <Grid item xs={2} sm={1}><KV label="Government ID" value={tenant.government_id} /></Grid>
-            <Grid item xs={2} sm={1}><KV label="Barangay Permit" value={tenant.barangay_permit_number} /></Grid>
+            <Grid item xs={2} sm={1}>
+              <KV label="Address" value={tenant.address} />
+            </Grid>
+            <Grid item xs={2} sm={1}>
+              <KV label="Barangay" value={tenant.barangay} />
+            </Grid>
+            <Grid item xs={2} sm={1}>
+              <KV label="Mobile" value={tenant.mobile_phone} />
+            </Grid>
+            <Grid item xs={2} sm={1}>
+              <KV label="Email" value={tenant.email_address} />
+            </Grid>
+            <Grid item xs={2} sm={1}>
+              <KV label="Contact Person" value={tenant.contact_person} />
+            </Grid>
+            <Grid item xs={2} sm={1}>
+              <KV label="Contact Phone" value={tenant.contact_phone_number} />
+            </Grid>
+            <Grid item xs={2} sm={1}>
+              <KV label="Government ID" value={tenant.government_id} />
+            </Grid>
+            <Grid item xs={2} sm={1}>
+              <KV label="Barangay Permit" value={tenant.barangay_permit_number} />
+            </Grid>
             {effectiveTenant.verification_status === "VERIFIED" && (
-              <Grid item xs={2} sm={1}><KV label="Date Verified" value={effectiveTenant.date_verified} /></Grid>
+              <Grid item xs={2} sm={1}>
+                <KV label="Date Verified" value={effectiveTenant.date_verified} />
+              </Grid>
             )}
           </Grid>
 
@@ -325,7 +429,11 @@ export default function TenantDetail({ tenant, user, onEdit, onRequestUpdate, sh
                   startIcon={<CloudUploadIcon />}
                   disabled={uploadingDoc}
                 >
-                  {uploadingDoc ? "Uploading…" : effectiveTenant.uploaded_documents ? "Replace Document" : "Upload Document"}
+                  {uploadingDoc
+                    ? "Uploading…"
+                    : effectiveTenant.uploaded_documents
+                    ? "Replace Document"
+                    : "Upload Document"}
                   <input hidden type="file" onChange={handleUploadDocument} />
                 </MDButton>
               )}
@@ -343,7 +451,11 @@ export default function TenantDetail({ tenant, user, onEdit, onRequestUpdate, sh
                   startIcon={<CloudUploadIcon />}
                   disabled={uploadingPhoto}
                 >
-                  {uploadingPhoto ? "Uploading…" : effectiveTenant.photograph ? "Replace Photograph" : "Upload Photograph"}
+                  {uploadingPhoto
+                    ? "Uploading…"
+                    : effectiveTenant.photograph
+                    ? "Replace Photograph"
+                    : "Upload Photograph"}
                   <input hidden type="file" accept="image/*" onChange={handleUploadPhotograph} />
                 </MDButton>
               )}
@@ -369,13 +481,18 @@ export default function TenantDetail({ tenant, user, onEdit, onRequestUpdate, sh
                     color="info"
                     startIcon={<SaveIcon />}
                     onClick={handleSaveNotes}
-                    disabled={savingNotes || notesDraft === (effectiveTenant.verification_notes || "")}
+                    disabled={
+                      savingNotes || notesDraft === (effectiveTenant.verification_notes || "")
+                    }
                   >
                     {savingNotes ? "Saving…" : "Save Notes"}
                   </MDButton>
                 </>
               ) : (
-                <Typography variant="body2" color={effectiveTenant.verification_notes ? "text.primary" : "text.secondary"}>
+                <Typography
+                  variant="body2"
+                  color={effectiveTenant.verification_notes ? "text.primary" : "text.secondary"}
+                >
                   {effectiveTenant.verification_notes || "No notes on record."}
                 </Typography>
               )}
@@ -417,13 +534,20 @@ export default function TenantDetail({ tenant, user, onEdit, onRequestUpdate, sh
         <DialogTitle>Unverify this tenant?</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            This will revert their status from VERIFIED to UNVERIFIED.
-            date_verified will be preserved for audit trail.
+            This will revert their status from VERIFIED to UNVERIFIED. date_verified will be
+            preserved for audit trail.
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setUnverifyDialogOpen(false)} disabled={verifying}>Cancel</Button>
-          <Button color="error" variant="contained" onClick={handleConfirmUnverify} disabled={verifying}>
+          <Button onClick={() => setUnverifyDialogOpen(false)} disabled={verifying}>
+            Cancel
+          </Button>
+          <Button
+            color="error"
+            variant="contained"
+            onClick={handleConfirmUnverify}
+            disabled={verifying}
+          >
             {verifying ? "Unverifying…" : "Unverify"}
           </Button>
         </DialogActions>
@@ -436,9 +560,16 @@ export default function TenantDetail({ tenant, user, onEdit, onRequestUpdate, sh
         </Box>
       )}
       {error && !loading && (
-        <Alert severity="error" action={
-          <Button size="small" onClick={() => loadSubResources(tenant.id)}>Retry</Button>
-        }>{error}</Alert>
+        <Alert
+          severity="error"
+          action={
+            <Button size="small" onClick={() => loadSubResources(tenant.id)}>
+              Retry
+            </Button>
+          }
+        >
+          {error}
+        </Alert>
       )}
 
       {!loading && !error && (
@@ -457,7 +588,9 @@ export default function TenantDetail({ tenant, user, onEdit, onRequestUpdate, sh
             />
             <CardContent sx={{ pt: 0 }}>
               {leases.length === 0 ? (
-                <Typography color="text.secondary" variant="body2">No leases on record for this tenant.</Typography>
+                <Typography color="text.secondary" variant="body2">
+                  No leases on record for this tenant.
+                </Typography>
               ) : (
                 <>
                   {activeLeases.length > 0 && (
@@ -492,7 +625,9 @@ export default function TenantDetail({ tenant, user, onEdit, onRequestUpdate, sh
                     <TableHead>
                       <TableRow>
                         {["Stall #", "Market", "Since", "Reason", "From", "Current"].map((h) => (
-                          <TableCell key={h} sx={{ fontWeight: "bold", whiteSpace: "nowrap" }}>{h}</TableCell>
+                          <TableCell key={h} sx={{ fontWeight: "bold", whiteSpace: "nowrap" }}>
+                            {h}
+                          </TableCell>
                         ))}
                       </TableRow>
                     </TableHead>
@@ -501,7 +636,10 @@ export default function TenantDetail({ tenant, user, onEdit, onRequestUpdate, sh
                         // Latest record per stall = current holder
                         const latestPerStall = {};
                         rights.forEach((r) => {
-                          if (!latestPerStall[r.stall] || r.transfer_date > latestPerStall[r.stall].transfer_date) {
+                          if (
+                            !latestPerStall[r.stall] ||
+                            r.transfer_date > latestPerStall[r.stall].transfer_date
+                          ) {
                             latestPerStall[r.stall] = r;
                           }
                         });
@@ -542,7 +680,9 @@ export default function TenantDetail({ tenant, user, onEdit, onRequestUpdate, sh
               <Grid item xs={6} sm={3} key={label}>
                 <Card>
                   <CardContent sx={{ textAlign: "center", py: 2 }}>
-                    <Typography variant="caption" color="text.secondary" display="block">{label}</Typography>
+                    <Typography variant="caption" color="text.secondary" display="block">
+                      {label}
+                    </Typography>
                     <Typography
                       variant="h6"
                       fontWeight="bold"
@@ -556,25 +696,64 @@ export default function TenantDetail({ tenant, user, onEdit, onRequestUpdate, sh
             ))}
           </Grid>
 
+          {/* ── Charge-type balance breakdown + View Full SOA (M1 Q3+C1, Phase D.6) —
+              empty sections (₱0.00) still render per the lock. ─────────────── */}
+          {tenant.sections && (
+            <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+              {tenant.sections.map((section) => (
+                <Chip
+                  key={section.charge_type_code}
+                  size="small"
+                  color={Number(section.balance) > 0 ? "warning" : "default"}
+                  label={`${section.charge_type_label} ${fmt(section.balance)}`}
+                />
+              ))}
+              <Button
+                size="small"
+                variant="outlined"
+                color="info"
+                onClick={() => navigate(`/soa?tenant_id=${tenant.id}`)}
+              >
+                View Full SOA
+              </Button>
+            </Stack>
+          )}
+
           {/* ── Section 4: Recent Invoices ──────────────────────────────── */}
           <Card>
             <CardHeader title="Recent Invoices" />
             <CardContent sx={{ pt: 0 }}>
               {invoices.length === 0 ? (
-                <Typography color="text.secondary" variant="body2">No invoices on record.</Typography>
+                <Typography color="text.secondary" variant="body2">
+                  No invoices on record.
+                </Typography>
               ) : (
                 <>
                   <Table size="small">
                     <TableHead>
                       <TableRow>
-                        {["Invoice #", "Period", "Total", "Paid", "Balance", "Due Date", "Status"].map((h) => (
-                          <TableCell key={h} sx={{ fontWeight: "bold", whiteSpace: "nowrap" }}>{h}</TableCell>
+                        {[
+                          "Invoice #",
+                          "Period",
+                          "Type",
+                          "Total",
+                          "Paid",
+                          "Balance",
+                          "Due Date",
+                          "Status",
+                        ].map((h) => (
+                          <TableCell key={h} sx={{ fontWeight: "bold", whiteSpace: "nowrap" }}>
+                            {h}
+                          </TableCell>
                         ))}
                       </TableRow>
                     </TableHead>
                     <TableBody>
                       {invoices.map((inv) => {
-                        const meta = INVOICE_STATUS_CHIP[inv.status] || { label: inv.status, color: "default" };
+                        const meta = INVOICE_STATUS_CHIP[inv.status] || {
+                          label: inv.status,
+                          color: "default",
+                        };
                         return (
                           <TableRow
                             key={inv.id}
@@ -582,17 +761,36 @@ export default function TenantDetail({ tenant, user, onEdit, onRequestUpdate, sh
                             sx={{ cursor: "pointer" }}
                             onClick={() => navigate(`/invoices/${inv.id}`)}
                           >
-                            <TableCell sx={{ fontFamily: "monospace" }}>{inv.invoice_number || `#${inv.id}`}</TableCell>
-                            <TableCell sx={{ whiteSpace: "nowrap" }}>{inv.period_start} – {inv.period_end}</TableCell>
+                            <TableCell sx={{ fontFamily: "monospace" }}>
+                              {inv.invoice_number || `#${inv.id}`}
+                            </TableCell>
+                            <TableCell sx={{ whiteSpace: "nowrap" }}>
+                              {formatPeriod(inv.period_start)}
+                            </TableCell>
+                            <TableCell>
+                              <Chip
+                                label={typeChipLabel(inv.lines_summary)}
+                                size="small"
+                                color="default"
+                                variant="outlined"
+                              />
+                            </TableCell>
                             <TableCell>{fmt(inv.total)}</TableCell>
                             <TableCell>{fmt(inv.paid)}</TableCell>
                             <TableCell
-                              sx={{ color: parseFloat(inv.balance ?? 0) > 0 ? "error.main" : "inherit", fontWeight: parseFloat(inv.balance ?? 0) > 0 ? "bold" : "normal" }}
+                              sx={{
+                                color: parseFloat(inv.balance ?? 0) > 0 ? "error.main" : "inherit",
+                                fontWeight: parseFloat(inv.balance ?? 0) > 0 ? "bold" : "normal",
+                              }}
                             >
                               {fmt(inv.balance)}
                             </TableCell>
-                            <TableCell sx={{ whiteSpace: "nowrap" }}>{inv.due_date || "—"}</TableCell>
-                            <TableCell><Chip size="small" label={meta.label} color={meta.color} /></TableCell>
+                            <TableCell sx={{ whiteSpace: "nowrap" }}>
+                              {inv.due_date || "—"}
+                            </TableCell>
+                            <TableCell>
+                              <Chip size="small" label={meta.label} color={meta.color} />
+                            </TableCell>
                           </TableRow>
                         );
                       })}
@@ -600,7 +798,10 @@ export default function TenantDetail({ tenant, user, onEdit, onRequestUpdate, sh
                   </Table>
                   {invoices.length === 10 && (
                     <Box mt={1} textAlign="right">
-                      <Button size="small" onClick={() => navigate(`/invoices?tenant=${tenant.id}`)}>
+                      <Button
+                        size="small"
+                        onClick={() => navigate(`/invoices?tenant=${tenant.id}`)}
+                      >
                         View all invoices →
                       </Button>
                     </Box>
@@ -615,13 +816,17 @@ export default function TenantDetail({ tenant, user, onEdit, onRequestUpdate, sh
             <CardHeader title="Recent Payments" />
             <CardContent sx={{ pt: 0 }}>
               {payments.length === 0 ? (
-                <Typography color="text.secondary" variant="body2">No payments on record.</Typography>
+                <Typography color="text.secondary" variant="body2">
+                  No payments on record.
+                </Typography>
               ) : (
                 <Table size="small">
                   <TableHead>
                     <TableRow>
                       {["Date", "Amount", "Method", "Receipt #", "Stall"].map((h) => (
-                        <TableCell key={h} sx={{ fontWeight: "bold", whiteSpace: "nowrap" }}>{h}</TableCell>
+                        <TableCell key={h} sx={{ fontWeight: "bold", whiteSpace: "nowrap" }}>
+                          {h}
+                        </TableCell>
                       ))}
                     </TableRow>
                   </TableHead>
@@ -634,7 +839,9 @@ export default function TenantDetail({ tenant, user, onEdit, onRequestUpdate, sh
                           <TableCell sx={{ whiteSpace: "nowrap" }}>{pay.payment_date}</TableCell>
                           <TableCell>{fmt(pay.amount)}</TableCell>
                           <TableCell>{METHOD_LABEL[pay.method] || pay.method}</TableCell>
-                          <TableCell sx={{ fontFamily: "monospace" }}>{pay.receipt_number || "—"}</TableCell>
+                          <TableCell sx={{ fontFamily: "monospace" }}>
+                            {pay.receipt_number || "—"}
+                          </TableCell>
                           <TableCell>{stall?.stall_number || `Lease #${pay.lease}`}</TableCell>
                         </TableRow>
                       );
@@ -656,10 +863,18 @@ function LeaseTable({ leases, showTerminated }) {
     <Table size="small">
       <TableHead>
         <TableRow>
-          {["Stall #", "Zone", "Type", "Start – End", "Rate", "Schedule",
-            ...(showTerminated ? ["Status"] : [])
+          {[
+            "Stall #",
+            "Zone",
+            "Type",
+            "Start – End",
+            "Rate",
+            "Schedule",
+            ...(showTerminated ? ["Status"] : []),
           ].map((h) => (
-            <TableCell key={h} sx={{ fontWeight: "bold", whiteSpace: "nowrap" }}>{h}</TableCell>
+            <TableCell key={h} sx={{ fontWeight: "bold", whiteSpace: "nowrap" }}>
+              {h}
+            </TableCell>
           ))}
         </TableRow>
       </TableHead>
@@ -669,7 +884,9 @@ function LeaseTable({ leases, showTerminated }) {
             <TableCell>{l.stall?.stall_number || "—"}</TableCell>
             <TableCell>{l.stall?.zone || "—"}</TableCell>
             <TableCell>{l.lease_type}</TableCell>
-            <TableCell sx={{ whiteSpace: "nowrap" }}>{l.start_date} – {l.end_date}</TableCell>
+            <TableCell sx={{ whiteSpace: "nowrap" }}>
+              {l.start_date} – {l.end_date}
+            </TableCell>
             <TableCell>{fmt(l.lease_amount)}</TableCell>
             <TableCell>{l.payment_schedule}</TableCell>
             {showTerminated && <TableCell>{l.status}</TableCell>}
@@ -704,6 +921,15 @@ TenantDetail.propTypes = {
     lease_duration_average: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     active_lease_count: PropTypes.number,
     outstanding_balance: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    sections: PropTypes.arrayOf(
+      PropTypes.shape({
+        charge_type_code: PropTypes.string,
+        charge_type_label: PropTypes.string,
+        balance: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+        total_charged: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+        total_paid: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+      })
+    ),
   }),
   user: PropTypes.object,
   showEdit: PropTypes.bool,

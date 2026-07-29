@@ -29,17 +29,17 @@ import { getStallLeases, getStallLeaseholderRights } from "../api/stalls";
 
 // ── Chip colour maps ──────────────────────────────────────────────────────────
 const STATUS_COLOR = {
-  AVAILABLE:   "success",
-  OCCUPIED:    "primary",
-  REPURPOSED:  "secondary",
+  AVAILABLE: "success",
+  OCCUPIED: "primary",
+  REPURPOSED: "secondary",
   MAINTENANCE: "warning",
-  INACTIVE:    "default",
+  INACTIVE: "default",
 };
 const LEASE_STATUS_COLOR = {
-  ACTIVE:      "success",
-  PENDING:     "warning",
-  EXPIRED:     "default",
-  TERMINATED:  "error",
+  ACTIVE: "success",
+  PENDING: "warning",
+  EXPIRED: "default",
+  TERMINATED: "error",
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -52,7 +52,9 @@ function KV({ label, value }) {
   if (value == null || value === "") return null;
   return (
     <Box>
-      <Typography variant="caption" color="text.secondary" display="block">{label}</Typography>
+      <Typography variant="caption" color="text.secondary" display="block">
+        {label}
+      </Typography>
       <Typography variant="body2">{value}</Typography>
     </Box>
   );
@@ -64,7 +66,11 @@ function Section({ title, children, defaultOpen = true }) {
   return (
     <Card variant="outlined" sx={{ mb: 2 }}>
       <CardHeader
-        title={<Typography variant="subtitle1" fontWeight="bold">{title}</Typography>}
+        title={
+          <Typography variant="subtitle1" fontWeight="bold">
+            {title}
+          </Typography>
+        }
         action={
           <Button size="small" onClick={() => setOpen((v) => !v)}>
             {open ? <ExpandLessIcon /> : <ExpandMoreIcon />}
@@ -87,10 +93,10 @@ Section.propTypes = {
 // ── Main component ────────────────────────────────────────────────────────────
 export default function StallDetail({ stall, onEdit, showEdit = true }) {
   const navigate = useNavigate();
-  const [leases, setLeases]   = useState([]);
-  const [rights, setRights]   = useState([]);
+  const [leases, setLeases] = useState([]);
+  const [rights, setRights] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError]     = useState(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     if (!stall?.id) return;
@@ -114,7 +120,9 @@ export default function StallDetail({ stall, onEdit, showEdit = true }) {
       {/* Header row */}
       <Stack direction="row" justifyContent="space-between" alignItems="flex-start" mb={2}>
         <Box>
-          <Typography variant="h5" fontWeight="bold">{stall.stall_number}</Typography>
+          <Typography variant="h5" fontWeight="bold">
+            {stall.stall_number}
+          </Typography>
           <Typography variant="body2" color="text.secondary">
             {stall.market_name || `Market #${stall.market}`}
           </Typography>
@@ -126,25 +134,49 @@ export default function StallDetail({ stall, onEdit, showEdit = true }) {
             size="medium"
           />
           {showEdit && onEdit && (
-            <Button variant="outlined" size="small" onClick={onEdit}>Edit</Button>
+            <Button variant="outlined" size="small" onClick={onEdit}>
+              Edit
+            </Button>
           )}
         </Stack>
       </Stack>
 
-      {error && <Alert severity="warning" sx={{ mb: 2 }}>{error}</Alert>}
+      {error && (
+        <Alert severity="warning" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
 
       {/* Section 1 — Stall details */}
       <Section title="1. Stall Info">
         <Grid container spacing={2}>
-          <Grid item xs={6} sm={4}><KV label="Stall number" value={stall.stall_number} /></Grid>
-          <Grid item xs={6} sm={4}><KV label="Commerce type" value={stall.commerce_type?.replace(/_/g, " ")} /></Grid>
-          <Grid item xs={6} sm={4}><KV label="Lease model" value={stall.lease_model} /></Grid>
-          <Grid item xs={6} sm={4}><KV label="Zone" value={stall.zone || "—"} /></Grid>
-          <Grid item xs={6} sm={4}><KV label="Section" value={stall.section || "—"} /></Grid>
-          <Grid item xs={6} sm={4}><KV label="Classification" value={stall.classification || "—"} /></Grid>
-          <Grid item xs={6} sm={4}><KV label="Size (sqm)" value={stall.size_sqm ? `${stall.size_sqm} sqm` : "—"} /></Grid>
-          <Grid item xs={6} sm={4}><KV label="Current rate" value={stall.current_rate ? fmt(stall.current_rate) : "—"} /></Grid>
-          <Grid item xs={6} sm={4}><KV label="Status" value={stall.status} /></Grid>
+          <Grid item xs={6} sm={4}>
+            <KV label="Stall number" value={stall.stall_number} />
+          </Grid>
+          <Grid item xs={6} sm={4}>
+            <KV label="Commerce type" value={stall.commerce_type?.replace(/_/g, " ")} />
+          </Grid>
+          <Grid item xs={6} sm={4}>
+            <KV label="Lease model" value={stall.lease_model} />
+          </Grid>
+          <Grid item xs={6} sm={4}>
+            <KV label="Zone" value={stall.zone || "—"} />
+          </Grid>
+          <Grid item xs={6} sm={4}>
+            <KV label="Section" value={stall.section || "—"} />
+          </Grid>
+          <Grid item xs={6} sm={4}>
+            <KV label="Classification" value={stall.classification || "—"} />
+          </Grid>
+          <Grid item xs={6} sm={4}>
+            <KV label="Size (sqm)" value={stall.size_sqm ? `${stall.size_sqm} sqm` : "—"} />
+          </Grid>
+          <Grid item xs={6} sm={4}>
+            <KV label="Current rate" value={stall.current_rate ? fmt(stall.current_rate) : "—"} />
+          </Grid>
+          <Grid item xs={6} sm={4}>
+            <KV label="Status" value={stall.status} />
+          </Grid>
         </Grid>
       </Section>
 
@@ -153,23 +185,37 @@ export default function StallDetail({ stall, onEdit, showEdit = true }) {
         {activeLease ? (
           <Grid container spacing={2}>
             <Grid item xs={6} sm={4}>
-              <KV label="Tenant" value={stall.current_tenant_name || activeLease.tenant?.full_name || "—"} />
+              <KV
+                label="Tenant"
+                value={stall.current_tenant_name || activeLease.tenant?.full_name || "—"}
+              />
             </Grid>
             <Grid item xs={6} sm={4}>
-              <KV label="Tenant ID" value={stall.current_tenant_id_str || activeLease.tenant?.tenant_id || "—"} />
+              <KV
+                label="Tenant ID"
+                value={stall.current_tenant_id_str || activeLease.tenant?.tenant_id || "—"}
+              />
             </Grid>
             <Grid item xs={6} sm={4}>
               <KV label="Lease ID" value={activeLease.id} />
             </Grid>
             <Grid item xs={6} sm={4}>
-              <KV label="Lease end" value={stall.current_lease_end_date || activeLease.end_date || "—"} />
+              <KV
+                label="Lease end"
+                value={stall.current_lease_end_date || activeLease.end_date || "—"}
+              />
             </Grid>
             <Grid item xs={6} sm={4}>
-              <KV label="Monthly rate" value={stall.current_lease_rate ? fmt(stall.current_lease_rate) : "—"} />
+              <KV
+                label="Monthly rate"
+                value={stall.current_lease_rate ? fmt(stall.current_lease_rate) : "—"}
+              />
             </Grid>
             <Grid item xs={6} sm={4}>
               <Box>
-                <Typography variant="caption" color="text.secondary" display="block">Outstanding balance</Typography>
+                <Typography variant="caption" color="text.secondary" display="block">
+                  Outstanding balance
+                </Typography>
                 <Typography
                   variant="body2"
                   color={parseFloat(stall.outstanding_balance) > 0 ? "error" : "text.primary"}
@@ -179,20 +225,48 @@ export default function StallDetail({ stall, onEdit, showEdit = true }) {
                 </Typography>
               </Box>
             </Grid>
+            {/* Charge-type balance breakdown (M1 Q3+C1, Phase D.6) — empty
+                sections (₱0.00) still render per the lock. */}
+            {stall.sections && (
+              <Grid item xs={12}>
+                <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+                  {stall.sections.map((section) => (
+                    <Chip
+                      key={section.charge_type_code}
+                      size="small"
+                      color={Number(section.balance) > 0 ? "warning" : "default"}
+                      label={`${section.charge_type_label} ${fmt(section.balance)}`}
+                    />
+                  ))}
+                </Stack>
+              </Grid>
+            )}
             {activeLease.tenant?.id && (
               <Grid item xs={12}>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  onClick={() => navigate(`/tenants/${activeLease.tenant.id}`)}
-                >
-                  View Tenant Profile
-                </Button>
+                <Stack direction="row" spacing={1}>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={() => navigate(`/tenants/${activeLease.tenant.id}`)}
+                  >
+                    View Tenant Profile
+                  </Button>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    color="info"
+                    onClick={() => navigate(`/soa?tenant_id=${activeLease.tenant.id}`)}
+                  >
+                    View Full SOA
+                  </Button>
+                </Stack>
               </Grid>
             )}
           </Grid>
         ) : (
-          <Typography variant="body2" color="text.secondary">No active lease — stall is vacant.</Typography>
+          <Typography variant="body2" color="text.secondary">
+            No active lease — stall is vacant.
+          </Typography>
         )}
       </Section>
 
@@ -201,7 +275,9 @@ export default function StallDetail({ stall, onEdit, showEdit = true }) {
         {loading ? (
           <CircularProgress size={20} />
         ) : leases.length === 0 ? (
-          <Typography variant="body2" color="text.secondary">No leases found.</Typography>
+          <Typography variant="body2" color="text.secondary">
+            No leases found.
+          </Typography>
         ) : (
           <Table size="small">
             <TableHead>
@@ -216,14 +292,23 @@ export default function StallDetail({ stall, onEdit, showEdit = true }) {
             </TableHead>
             <TableBody>
               {leases.map((l) => (
-                <TableRow key={l.id} hover sx={{ cursor: "pointer" }} onClick={() => navigate(`/leases/${l.id}`)}>
+                <TableRow
+                  key={l.id}
+                  hover
+                  sx={{ cursor: "pointer" }}
+                  onClick={() => navigate(`/leases/${l.id}`)}
+                >
                   <TableCell>{l.id}</TableCell>
                   <TableCell>{l.tenant?.full_name || "—"}</TableCell>
                   <TableCell>{l.start_date}</TableCell>
                   <TableCell>{l.end_date}</TableCell>
                   <TableCell>{l.lease_amount ? fmt(l.lease_amount) : "—"}</TableCell>
                   <TableCell>
-                    <Chip label={l.status} color={LEASE_STATUS_COLOR[l.status] || "default"} size="small" />
+                    <Chip
+                      label={l.status}
+                      color={LEASE_STATUS_COLOR[l.status] || "default"}
+                      size="small"
+                    />
                   </TableCell>
                 </TableRow>
               ))}
@@ -237,7 +322,9 @@ export default function StallDetail({ stall, onEdit, showEdit = true }) {
         {loading ? (
           <CircularProgress size={20} />
         ) : rights.length === 0 ? (
-          <Typography variant="body2" color="text.secondary">No rights transfers recorded.</Typography>
+          <Typography variant="body2" color="text.secondary">
+            No rights transfers recorded.
+          </Typography>
         ) : (
           <Table size="small">
             <TableHead>
@@ -267,11 +354,24 @@ export default function StallDetail({ stall, onEdit, showEdit = true }) {
       {/* Section 5 — Physical notes */}
       <Section title="5. Physical Notes" defaultOpen={false}>
         <Grid container spacing={2}>
-          <Grid item xs={12} sm={6}><KV label="Route / Selling path" value={stall.route || "—"} /></Grid>
-          <Grid item xs={12} sm={6}><KV label="Maintenance notes" value={stall.maintenance_notes || "—"} /></Grid>
-          <Grid item xs={12}><KV label="Remarks" value={stall.remarks || "—"} /></Grid>
-          <Grid item xs={6} sm={4}><KV label="Created" value={stall.created_at ? stall.created_at.slice(0, 10) : "—"} /></Grid>
-          <Grid item xs={6} sm={4}><KV label="Last updated" value={stall.updated_at ? stall.updated_at.slice(0, 10) : "—"} /></Grid>
+          <Grid item xs={12} sm={6}>
+            <KV label="Route / Selling path" value={stall.route || "—"} />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <KV label="Maintenance notes" value={stall.maintenance_notes || "—"} />
+          </Grid>
+          <Grid item xs={12}>
+            <KV label="Remarks" value={stall.remarks || "—"} />
+          </Grid>
+          <Grid item xs={6} sm={4}>
+            <KV label="Created" value={stall.created_at ? stall.created_at.slice(0, 10) : "—"} />
+          </Grid>
+          <Grid item xs={6} sm={4}>
+            <KV
+              label="Last updated"
+              value={stall.updated_at ? stall.updated_at.slice(0, 10) : "—"}
+            />
+          </Grid>
         </Grid>
       </Section>
     </Box>
