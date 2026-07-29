@@ -5,7 +5,7 @@ import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
-import { Button, Snackbar, Pagination } from "@mui/material";
+import { Button, Snackbar, Pagination, Card, CardContent } from "@mui/material";
 import CircularProgress from "@mui/material/CircularProgress";
 import InvoiceTable from "./components/InvoiceTable";
 import InvoiceFilters from "./components/InvoiceFilters";
@@ -28,6 +28,7 @@ function InvoicesPage() {
     const f = {};
     if (filters.tenant_name) f.tenant_name = filters.tenant_name;
     if (filters.status) f.status = filters.status;
+    if (filters.charge_type) f.charge_type = filters.charge_type;
     if (filters.period_start) f.period_start = filters.period_start;
     if (filters.period_end) f.period_end = filters.period_end;
     if (userProfile?.market?.id) f.market = userProfile.market.id;
@@ -72,7 +73,7 @@ function InvoicesPage() {
   const handlePageChange = (_, value) => setPage(value);
 
   const marketName = userProfile?.market?.name || "";
-  const marketId   = userProfile?.primary_market || null;
+  const marketId = userProfile?.primary_market || null;
   const showGenerateBtn = canGenerateInvoices(userProfile.role);
 
   const handleGenerateSuccess = () => {
@@ -81,51 +82,76 @@ function InvoicesPage() {
   };
 
   const handleRetrySuccess = (result) => {
-    setSnackbar({ open: true, message: `Retry complete — ${result.applied ?? 0} payment(s) applied.` });
+    setSnackbar({
+      open: true,
+      message: `Retry complete — ${result.applied ?? 0} payment(s) applied.`,
+    });
   };
 
   return (
     <DashboardLayout>
       <DashboardNavbar userProfile={userProfile} />
       <MDBox sx={{ p: 2 }}>
-        <MDBox display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-          <MDTypography variant="h4">
-            Invoices{marketName ? ` — ${marketName}` : ""}
-          </MDTypography>
-          {showGenerateBtn && (
-            <MDBox display="flex" gap={1}>
-              <Button
-                variant="outlined"
-                color="primary"
-                onClick={() => setRetryDialogOpen(true)}
+        <MDTypography variant="h4" mb={2}>
+          Invoices{marketName ? ` — ${marketName}` : ""}
+        </MDTypography>
+
+        {showGenerateBtn && (
+          <Card sx={{ mb: 3 }}>
+            <CardContent>
+              <MDTypography variant="h6">Invoice Generation</MDTypography>
+              <MDTypography
+                variant="button"
+                color="text"
+                fontWeight="regular"
+                display="block"
+                mb={2}
               >
-                Retry Unapplied Payments
-              </Button>
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={() => setGenerateDialogOpen(true)}
-              >
-                Generate Monthly Invoices
-              </Button>
+                Auto-generate Rent + Rights invoices monthly, or retry unapplied payments when
+                invoices update.
+              </MDTypography>
+              <MDBox display="flex" gap={1} mb={2}>
+                <Button variant="outlined" color="primary" onClick={() => setRetryDialogOpen(true)}>
+                  Retry Unapplied Payments
+                </Button>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={() => setGenerateDialogOpen(true)}
+                >
+                  Generate Rent + Rights Invoices
+                </Button>
+              </MDBox>
+              <MDTypography variant="caption" color="text" fontStyle="italic">
+                💡 For Electricity, Water, and Others charges, use the Monthly Invoice Upload
+                template via the Spreadsheet Upload page.
+              </MDTypography>
+            </CardContent>
+          </Card>
+        )}
+
+        <Card>
+          <CardContent>
+            <MDTypography variant="h6" mb={2}>
+              All Invoices
+            </MDTypography>
+
+            <MDBox mb={2}>
+              <InvoiceFilters filters={filters} onChange={handleFiltersChange} />
             </MDBox>
-          )}
-        </MDBox>
 
-        <MDBox mb={2}>
-          <InvoiceFilters filters={filters} onChange={handleFiltersChange} />
-        </MDBox>
+            <InvoiceTable invoices={invoices} loading={loading} />
 
-        <InvoiceTable invoices={invoices} loading={loading} />
-
-        <MDBox mt={2} display="flex" justifyContent="center">
-          <Pagination
-            count={Math.ceil(total / DEFAULT_LIMIT) || 1}
-            page={page}
-            onChange={handlePageChange}
-            color="primary"
-          />
-        </MDBox>
+            <MDBox mt={2} display="flex" justifyContent="center">
+              <Pagination
+                count={Math.ceil(total / DEFAULT_LIMIT) || 1}
+                page={page}
+                onChange={handlePageChange}
+                color="primary"
+              />
+            </MDBox>
+          </CardContent>
+        </Card>
       </MDBox>
 
       <Snackbar

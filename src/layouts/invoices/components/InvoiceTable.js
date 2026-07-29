@@ -19,6 +19,32 @@ const STATUS_COLOR = {
   VOID: "default",
 };
 
+// M1 (UNIT_53 Phase D.1) — canonical SOA order is already applied server-side
+// (InvoiceListSerializer.get_lines_summary); this just abbreviates for the chip.
+const TYPE_ABBREV = {
+  RENT: "RENT",
+  RIGHTS: "RIGHTS",
+  ELECTRICITY: "ELEC",
+  WATER: "WATER",
+  OTHER: "OTHER",
+};
+
+function typeChipLabel(linesSummary) {
+  if (!linesSummary || linesSummary.length === 0) return "—";
+  return linesSummary.map((code) => TYPE_ABBREV[code] || code).join("+");
+}
+
+// Neither date-fns nor dayjs is installed in this project (no date library is
+// used anywhere in the frontend) — native Date.toLocaleDateString covers the
+// "MMM yyyy" format without adding a new dependency. Appending T00:00:00 (no
+// Z) parses the ISO date as local time, avoiding an off-by-one-day shift in
+// negative-UTC-offset timezones.
+function formatPeriod(periodStart) {
+  if (!periodStart) return "—";
+  const d = new Date(`${periodStart}T00:00:00`);
+  return d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+}
+
 function InvoiceTable({ invoices, loading }) {
   const navigate = useNavigate();
 
@@ -48,6 +74,7 @@ function InvoiceTable({ invoices, loading }) {
             <TableCell>Invoice #</TableCell>
             <TableCell>Tenant</TableCell>
             <TableCell>Period</TableCell>
+            <TableCell>Type</TableCell>
             <TableCell align="right">Total</TableCell>
             <TableCell align="right">Paid</TableCell>
             <TableCell align="right">Balance</TableCell>
@@ -65,8 +92,14 @@ function InvoiceTable({ invoices, loading }) {
             >
               <TableCell>{inv.invoice_number || `#${inv.id}`}</TableCell>
               <TableCell>{inv.tenant_full_name}</TableCell>
+              <TableCell>{formatPeriod(inv.period_start)}</TableCell>
               <TableCell>
-                {inv.period_start} – {inv.period_end}
+                <Chip
+                  label={typeChipLabel(inv.lines_summary)}
+                  size="small"
+                  color="default"
+                  variant="outlined"
+                />
               </TableCell>
               <TableCell align="right">₱{inv.total}</TableCell>
               <TableCell align="right">₱{inv.paid}</TableCell>

@@ -25,15 +25,17 @@ function firstOfMonth() {
 function lastOfMonth() {
   const d = new Date();
   const last = new Date(d.getFullYear(), d.getMonth() + 1, 0);
-  return `${last.getFullYear()}-${String(last.getMonth() + 1).padStart(2, "0")}-${String(last.getDate()).padStart(2, "0")}`;
+  return `${last.getFullYear()}-${String(last.getMonth() + 1).padStart(2, "0")}-${String(
+    last.getDate()
+  ).padStart(2, "0")}`;
 }
 
 export default function GenerateInvoicesDialog({ open, onClose, onSuccess, marketId }) {
-  const [startDate, setStartDate]   = useState(firstOfMonth);
-  const [endDate, setEndDate]       = useState(lastOfMonth);
-  const [loading, setLoading]       = useState(false);
-  const [preview, setPreview]       = useState(null);
-  const [error, setError]           = useState(null);
+  const [startDate, setStartDate] = useState(firstOfMonth);
+  const [endDate, setEndDate] = useState(lastOfMonth);
+  const [loading, setLoading] = useState(false);
+  const [preview, setPreview] = useState(null);
+  const [error, setError] = useState(null);
   const [marketCode, setMarketCode] = useState("");
   const [marketName, setMarketName] = useState("");
 
@@ -82,9 +84,9 @@ export default function GenerateInvoicesDialog({ open, onClose, onSuccess, marke
     try {
       const result = await generateInvoices({
         market_code: marketCode,
-        start_date:  startDate,
-        end_date:    endDate,
-        dry_run:     true,
+        start_date: startDate,
+        end_date: endDate,
+        dry_run: true,
       });
       setPreview(result);
     } catch (err) {
@@ -100,9 +102,9 @@ export default function GenerateInvoicesDialog({ open, onClose, onSuccess, marke
     try {
       await generateInvoices({
         market_code: marketCode,
-        start_date:  startDate,
-        end_date:    endDate,
-        dry_run:     false,
+        start_date: startDate,
+        end_date: endDate,
+        dry_run: false,
       });
       resetState();
       onClose();
@@ -119,7 +121,7 @@ export default function GenerateInvoicesDialog({ open, onClose, onSuccess, marke
   return (
     <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
       <DialogTitle>
-        Generate Monthly Invoices
+        Generate Rent + Rights Monthly Invoices
         {marketLabel ? (
           <Typography variant="body2" color="text.secondary" component="span" sx={{ ml: 1 }}>
             — {marketLabel}
@@ -134,7 +136,10 @@ export default function GenerateInvoicesDialog({ open, onClose, onSuccess, marke
               label="Start Date"
               type="date"
               value={startDate}
-              onChange={(e) => { setStartDate(e.target.value); setPreview(null); }}
+              onChange={(e) => {
+                setStartDate(e.target.value);
+                setPreview(null);
+              }}
               fullWidth
               InputLabelProps={{ shrink: true }}
               disabled={loading}
@@ -145,7 +150,10 @@ export default function GenerateInvoicesDialog({ open, onClose, onSuccess, marke
               label="End Date"
               type="date"
               value={endDate}
-              onChange={(e) => { setEndDate(e.target.value); setPreview(null); }}
+              onChange={(e) => {
+                setEndDate(e.target.value);
+                setPreview(null);
+              }}
               fullWidth
               InputLabelProps={{ shrink: true }}
               disabled={loading}
@@ -156,7 +164,10 @@ export default function GenerateInvoicesDialog({ open, onClose, onSuccess, marke
               <TextField
                 label="Market Code"
                 value={marketCode}
-                onChange={(e) => { setMarketCode(e.target.value.toUpperCase()); setPreview(null); }}
+                onChange={(e) => {
+                  setMarketCode(e.target.value.toUpperCase());
+                  setPreview(null);
+                }}
                 fullWidth
                 helperText="e.g. GENTRI"
                 disabled={loading}
@@ -164,6 +175,16 @@ export default function GenerateInvoicesDialog({ open, onClose, onSuccess, marke
             </Grid>
           )}
         </Grid>
+
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{ display: "block", mt: 1.5, fontStyle: "italic" }}
+        >
+          This generates Rent + Rights invoice lines from lease amortization. For Electricity,
+          Water, and Others charges, use the Monthly Invoice Upload template via the Spreadsheet
+          Upload page.
+        </Typography>
 
         {loading && (
           <Box display="flex" justifyContent="center" mt={2}>
@@ -230,8 +251,8 @@ export default function GenerateInvoicesDialog({ open, onClose, onSuccess, marke
 }
 
 GenerateInvoicesDialog.propTypes = {
-  open:      PropTypes.bool.isRequired,
-  onClose:   PropTypes.func.isRequired,
+  open: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
   onSuccess: PropTypes.func,
-  marketId:  PropTypes.number,
+  marketId: PropTypes.number,
 };
