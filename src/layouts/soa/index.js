@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 
 import Alert from "@mui/material/Alert";
@@ -52,6 +53,7 @@ const firstOfMonth = todayStr.slice(0, 7) + "-01";
 
 export default function SoaPage() {
   const role = getRole();
+  const location = useLocation();
 
   const [tenant, setTenant] = useState(null); // { tenant_id, full_name }
   const [periodStart, setPeriodStart] = useState(firstOfMonth);
@@ -63,12 +65,12 @@ export default function SoaPage() {
 
   const canGenerate = !!tenant && !!periodStart && !!periodEnd && periodEnd >= periodStart;
 
-  async function handleGenerate() {
+  async function runGenerate(tenantId, ps, pe) {
     setError(null);
     setSoa(null);
     setLoading(true);
     try {
-      const result = await generateSOA(tenant.tenant_id, periodStart, periodEnd);
+      const result = await generateSOA(tenantId, ps, pe);
       setSoa(result);
     } catch (e) {
       setError(e?.response?.data?.error || e.message || "Failed to generate SOA.");
@@ -76,6 +78,24 @@ export default function SoaPage() {
       setLoading(false);
     }
   }
+
+  function handleGenerate() {
+    return runGenerate(tenant.tenant_id, periodStart, periodEnd);
+  }
+
+  // Auto-load tenant + generate if ?tenant_id= is present in URL (e.g.
+  // "View Full SOA" drill-down from Tenant Inquiry, D.5) — mirrors
+  // tenant-inquiry/index.js's own ?tenant_id= auto-open pattern.
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tid = params.get("tenant_id");
+    if (tid && /^\d+$/.test(tid)) {
+      const t = { tenant_id: Number(tid), full_name: "" };
+      setTenant(t);
+      runGenerate(t.tenant_id, firstOfMonth, todayStr);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.search]);
 
   async function handleDownloadCsv() {
     if (!soa?.id) return;

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import {
   Card,
@@ -41,10 +41,22 @@ function getRole() {
 
 const peso = (v) => `₱${Number(v ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
 
+// Neither date-fns nor dayjs is installed in this project — native
+// Date.toLocaleDateString covers "MMM yyyy" without a new dependency (same
+// pattern as D.1/D.3/D.4). Appending T00:00:00 (no Z) parses the ISO date
+// as local time, avoiding an off-by-one-day shift in negative-UTC-offset
+// timezones.
+function formatPeriod(periodStart) {
+  if (!periodStart) return "—";
+  const d = new Date(`${periodStart}T00:00:00`);
+  return d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+}
+
 export default function TenantInquiry() {
   const role = getRole();
   const allowed = canUseInquiry(role);
   const location = useLocation();
+  const navigate = useNavigate();
 
   const [q, setQ] = useState("");
   const [results, setResults] = useState([]);
@@ -158,15 +170,45 @@ export default function TenantInquiry() {
 
                     {/* Balance — finance roles only */}
                     {detail.can_see_balance && detail.balance ? (
-                      <Alert severity="info" sx={{ mb: 2 }}>
-                        Outstanding balance: <strong>{peso(detail.balance.outstanding)}</strong>
-                      </Alert>
+                      <Stack
+                        direction={{ xs: "column", sm: "row" }}
+                        spacing={1}
+                        alignItems={{ sm: "center" }}
+                        sx={{ mb: 1 }}
+                      >
+                        <Alert severity="info" sx={{ flex: 1 }}>
+                          Outstanding balance: <strong>{peso(detail.balance.outstanding)}</strong>
+                        </Alert>
+                        <Button
+                          variant="outlined"
+                          color="info"
+                          size="small"
+                          onClick={() => navigate(`/soa?tenant_id=${detail.tenant.id}`)}
+                        >
+                          View Full SOA
+                        </Button>
+                      </Stack>
                     ) : (
                       !detail.can_see_balance && (
                         <Alert severity="warning" sx={{ mb: 2 }}>
                           Balance / SOA hidden for your role.
                         </Alert>
                       )
+                    )}
+
+                    {/* 5-chip charge-type balance breakdown (M1 Q3+C1, Phase D.5) —
+                        empty sections (₱0.00) still render per the lock. */}
+                    {detail.can_see_balance && detail.sections && (
+                      <Stack direction="row" spacing={1} sx={{ mb: 2, flexWrap: "wrap" }}>
+                        {detail.sections.map((section) => (
+                          <Chip
+                            key={section.charge_type_code}
+                            size="small"
+                            color={Number(section.balance) > 0 ? "warning" : "default"}
+                            label={`${section.charge_type_label} ${peso(section.balance)}`}
+                          />
+                        ))}
+                      </Stack>
                     )}
 
                     <MDTypography variant="h6" mb={1}>
@@ -181,6 +223,7 @@ export default function TenantInquiry() {
                           <TableCell>End</TableCell>
                           <TableCell>Status</TableCell>
                           <TableCell align="right">Amount</TableCell>
+                          <TableCell align="right">Annual Rights</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
@@ -192,6 +235,7 @@ export default function TenantInquiry() {
                             <TableCell>{l.end_date}</TableCell>
                             <TableCell>{l.status}</TableCell>
                             <TableCell align="right">{peso(l.lease_amount)}</TableCell>
+                            <TableCell align="right">{peso(l.annual_rights_fee || 0)}</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
@@ -213,7 +257,7 @@ export default function TenantInquiry() {
                           <TableBody>
                             {detail.statements.map((s) => (
                               <TableRow key={s.id}>
-                                <TableCell>{`${s.period_start} → ${s.period_end}`}</TableCell>
+                                <TableCell>{formatPeriod(s.period_start)}</TableCell>
                                 <TableCell align="right">{peso(s.closing_balance)}</TableCell>
                               </TableRow>
                             ))}
