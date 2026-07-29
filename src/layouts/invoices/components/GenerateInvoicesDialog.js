@@ -10,29 +10,56 @@ import {
   DialogTitle,
   Divider,
   Grid,
-  TextField,
+  MenuItem,
+  Select,
   Typography,
+  TextField,
 } from "@mui/material";
 import PropTypes from "prop-types";
 import { generateInvoices } from "api/invoices";
 import { getMarket } from "api/markets";
 
-function firstOfMonth() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
+const MONTH_NAMES = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
+function currentMonth() {
+  return new Date().getMonth() + 1;
 }
 
-function lastOfMonth() {
-  const d = new Date();
-  const last = new Date(d.getFullYear(), d.getMonth() + 1, 0);
-  return `${last.getFullYear()}-${String(last.getMonth() + 1).padStart(2, "0")}-${String(
-    last.getDate()
-  ).padStart(2, "0")}`;
+function currentYear() {
+  return new Date().getFullYear();
+}
+
+// M1 (UNIT_53 Phase D.1 addendum) — invoice generation is always
+// monthly-scoped; @mui/x-date-pickers is not installed, so this uses plain
+// Selects (Option A) rather than adding a new dependency for one picker.
+function yearOptions() {
+  const y = currentYear();
+  return [y - 2, y - 1, y, y + 1, y + 2];
+}
+
+function monthRange(year, month) {
+  const start = `${year}-${String(month).padStart(2, "0")}-01`;
+  const lastDay = new Date(year, month, 0).getDate();
+  const end = `${year}-${String(month).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+  return { start, end };
 }
 
 export default function GenerateInvoicesDialog({ open, onClose, onSuccess, marketId }) {
-  const [startDate, setStartDate] = useState(firstOfMonth);
-  const [endDate, setEndDate] = useState(lastOfMonth);
+  const [month, setMonth] = useState(currentMonth);
+  const [year, setYear] = useState(currentYear);
   const [loading, setLoading] = useState(false);
   const [preview, setPreview] = useState(null);
   const [error, setError] = useState(null);
@@ -54,8 +81,8 @@ export default function GenerateInvoicesDialog({ open, onClose, onSuccess, marke
   }, [marketId]);
 
   const resetState = () => {
-    setStartDate(firstOfMonth());
-    setEndDate(lastOfMonth());
+    setMonth(currentMonth());
+    setYear(currentYear());
     setPreview(null);
     setError(null);
     setLoading(false);
@@ -82,10 +109,11 @@ export default function GenerateInvoicesDialog({ open, onClose, onSuccess, marke
     setPreview(null);
     setLoading(true);
     try {
+      const { start, end } = monthRange(year, month);
       const result = await generateInvoices({
         market_code: marketCode,
-        start_date: startDate,
-        end_date: endDate,
+        start_date: start,
+        end_date: end,
         dry_run: true,
       });
       setPreview(result);
@@ -100,10 +128,11 @@ export default function GenerateInvoicesDialog({ open, onClose, onSuccess, marke
     setError(null);
     setLoading(true);
     try {
+      const { start, end } = monthRange(year, month);
       await generateInvoices({
         market_code: marketCode,
-        start_date: startDate,
-        end_date: endDate,
+        start_date: start,
+        end_date: end,
         dry_run: false,
       });
       resetState();
@@ -117,6 +146,7 @@ export default function GenerateInvoicesDialog({ open, onClose, onSuccess, marke
   };
 
   const marketLabel = marketName ? `${marketName} (${marketCode})` : marketCode;
+  const monthYearLabel = `${MONTH_NAMES[month - 1]} ${year}`;
 
   return (
     <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
@@ -132,32 +162,42 @@ export default function GenerateInvoicesDialog({ open, onClose, onSuccess, marke
       <DialogContent>
         <Grid container spacing={2} sx={{ mt: 0.5 }}>
           <Grid item xs={12} sm={6}>
-            <TextField
-              label="Start Date"
-              type="date"
-              value={startDate}
+            <Select
+              value={month}
               onChange={(e) => {
-                setStartDate(e.target.value);
+                setMonth(e.target.value);
                 setPreview(null);
               }}
               fullWidth
-              InputLabelProps={{ shrink: true }}
               disabled={loading}
-            />
+              displayEmpty
+              renderValue={(v) => `Invoice Month: ${MONTH_NAMES[v - 1]}`}
+            >
+              {MONTH_NAMES.map((name, i) => (
+                <MenuItem key={name} value={i + 1}>
+                  {name}
+                </MenuItem>
+              ))}
+            </Select>
           </Grid>
           <Grid item xs={12} sm={6}>
-            <TextField
-              label="End Date"
-              type="date"
-              value={endDate}
+            <Select
+              value={year}
               onChange={(e) => {
-                setEndDate(e.target.value);
+                setYear(e.target.value);
                 setPreview(null);
               }}
               fullWidth
-              InputLabelProps={{ shrink: true }}
               disabled={loading}
-            />
+              displayEmpty
+              renderValue={(v) => `Year: ${v}`}
+            >
+              {yearOptions().map((y) => (
+                <MenuItem key={y} value={y}>
+                  {y}
+                </MenuItem>
+              ))}
+            </Select>
           </Grid>
           {!marketId && (
             <Grid item xs={12}>
@@ -201,8 +241,7 @@ export default function GenerateInvoicesDialog({ open, onClose, onSuccess, marke
         {preview && (
           <Box mt={2} p={2} sx={{ backgroundColor: "#f5f5f5", borderRadius: 1 }}>
             <Typography variant="subtitle2" gutterBottom>
-              Preview — {preview.window?.market_code}&nbsp;
-              {preview.window?.start_date} → {preview.window?.end_date}
+              Preview — {preview.window?.market_code} {monthYearLabel}
             </Typography>
             <Divider sx={{ mb: 1 }} />
             <Typography variant="body2">
