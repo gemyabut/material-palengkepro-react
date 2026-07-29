@@ -136,13 +136,21 @@ export default function TenantInquiry() {
             </Grid>
 
             <Grid item xs={12} md={8}>
-              {error && <Alert severity="error" sx={{ mb: 2 }}>{String(error)}</Alert>}
+              {error && (
+                <Alert severity="error" sx={{ mb: 2 }}>
+                  {String(error)}
+                </Alert>
+              )}
               {detail && (
                 <Card>
                   <CardContent>
                     <MDTypography variant="h5">{detail.tenant.full_name}</MDTypography>
                     <MDTypography variant="button" color="text" display="block" mb={1}>
-                      {[detail.tenant.business_name, detail.tenant.mobile_phone, detail.tenant.email_address]
+                      {[
+                        detail.tenant.business_name,
+                        detail.tenant.mobile_phone,
+                        detail.tenant.email_address,
+                      ]
                         .filter(Boolean)
                         .join(" · ")}
                     </MDTypography>
@@ -151,8 +159,7 @@ export default function TenantInquiry() {
                     {/* Balance — finance roles only */}
                     {detail.can_see_balance && detail.balance ? (
                       <Alert severity="info" sx={{ mb: 2 }}>
-                        Outstanding balance: <strong>{peso(detail.balance.outstanding)}</strong> (
-                        {detail.balance.note})
+                        Outstanding balance: <strong>{peso(detail.balance.outstanding)}</strong>
                       </Alert>
                     ) : (
                       !detail.can_see_balance && (
