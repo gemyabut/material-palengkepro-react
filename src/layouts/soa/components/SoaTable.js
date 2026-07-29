@@ -1,4 +1,5 @@
 import React from "react";
+import PropTypes from "prop-types";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -8,14 +9,40 @@ import Chip from "@mui/material/Chip";
 import MDTypography from "components/MDTypography";
 
 const STATUS_COLORS = {
-  PAID:    "success",
+  PAID: "success",
   PARTIAL: "warning",
-  OPEN:    "default",
-  VOID:    "error",
+  OPEN: "default",
+  VOID: "error",
 };
 
-const peso = (v) =>
-  `₱${Number(v ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+// M1 (UNIT_53 Phase D.3) — canonical SOA order is already applied
+// server-side (generate_statement's lines_summary); this just abbreviates
+// for the chip, same mapping as the Invoices page (D.1).
+const TYPE_ABBREV = {
+  RENT: "RENT",
+  RIGHTS: "RIGHTS",
+  ELECTRICITY: "ELEC",
+  WATER: "WATER",
+  OTHER: "OTHER",
+};
+
+function typeChipLabel(linesSummary) {
+  if (!linesSummary || linesSummary.length === 0) return "—";
+  return linesSummary.map((code) => TYPE_ABBREV[code] || code).join("+");
+}
+
+// Neither date-fns nor dayjs is installed in this project — native
+// Date.toLocaleDateString covers "MMM yyyy" without a new dependency (same
+// pattern as the Invoices page, D.1). Appending T00:00:00 (no Z) parses the
+// ISO date as local time, avoiding an off-by-one-day shift in
+// negative-UTC-offset timezones.
+function formatPeriod(periodStart) {
+  if (!periodStart) return "—";
+  const d = new Date(`${periodStart}T00:00:00`);
+  return d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+}
+
+const peso = (v) => `₱${Number(v ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
 
 function SoaTable({ invoices = [] }) {
   if (invoices.length === 0) {
@@ -32,6 +59,7 @@ function SoaTable({ invoices = [] }) {
         <TableRow sx={{ "& th": { fontWeight: 700, whiteSpace: "nowrap" } }}>
           <TableCell>Invoice #</TableCell>
           <TableCell>Period</TableCell>
+          <TableCell>Type</TableCell>
           <TableCell align="right">Charged</TableCell>
           <TableCell align="right">Paid</TableCell>
           <TableCell align="right">Balance</TableCell>
@@ -44,15 +72,18 @@ function SoaTable({ invoices = [] }) {
             <TableCell sx={{ fontFamily: "monospace", fontSize: "0.8rem" }}>
               {inv.invoice_number}
             </TableCell>
-            <TableCell sx={{ whiteSpace: "nowrap" }}>
-              {inv.period_start} → {inv.period_end}
+            <TableCell sx={{ whiteSpace: "nowrap" }}>{formatPeriod(inv.period_start)}</TableCell>
+            <TableCell>
+              <Chip
+                label={typeChipLabel(inv.lines_summary)}
+                size="small"
+                color="default"
+                variant="outlined"
+              />
             </TableCell>
             <TableCell align="right">{peso(inv.total)}</TableCell>
             <TableCell align="right">{peso(inv.paid)}</TableCell>
-            <TableCell
-              align="right"
-              sx={{ fontWeight: Number(inv.balance) > 0 ? 700 : 400 }}
-            >
+            <TableCell align="right" sx={{ fontWeight: Number(inv.balance) > 0 ? 700 : 400 }}>
               {peso(inv.balance)}
             </TableCell>
             <TableCell>
@@ -68,5 +99,21 @@ function SoaTable({ invoices = [] }) {
     </Table>
   );
 }
+
+SoaTable.propTypes = {
+  invoices: PropTypes.arrayOf(
+    PropTypes.shape({
+      invoice_id: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+      invoice_number: PropTypes.string,
+      period_start: PropTypes.string,
+      period_end: PropTypes.string,
+      lines_summary: PropTypes.arrayOf(PropTypes.string),
+      total: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+      paid: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+      balance: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+      status: PropTypes.string,
+    })
+  ),
+};
 
 export default SoaTable;
