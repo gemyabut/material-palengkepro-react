@@ -8,9 +8,21 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Box, Card, CardContent, Typography, Alert, CircularProgress,
-  Table, TableHead, TableBody, TableRow, TableCell, Stack,
-  Button, TextField, Chip, Tooltip,
+  Box,
+  Card,
+  CardContent,
+  Typography,
+  Alert,
+  CircularProgress,
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
+  Stack,
+  Button,
+  TextField,
+  Tooltip,
 } from "@mui/material";
 import DownloadIcon from "@mui/icons-material/Download";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
@@ -36,38 +48,46 @@ export default function TenantSOA() {
   const { start: defStart, end: defEnd } = defaultPeriod();
 
   const [periodStart, setPeriodStart] = useState(defStart);
-  const [periodEnd, setPeriodEnd]     = useState(defEnd);
-  const [data, setData]               = useState(null);
-  const [loading, setLoading]         = useState(true);
-  const [pdfLoading, setPdfLoading]   = useState(false);
+  const [periodEnd, setPeriodEnd] = useState(defEnd);
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [pdfLoading, setPdfLoading] = useState(false);
   const [emailLoading, setEmailLoading] = useState(false);
   const [emailSuccess, setEmailSuccess] = useState(null);
-  const [error, setError]             = useState(null);
+  const [error, setError] = useState(null);
 
-  const [modalOpen, setModalOpen]       = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
   const [invoiceDetail, setInvoiceDetail] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
-  const [detailError, setDetailError]     = useState(null);
+  const [detailError, setDetailError] = useState(null);
 
-  const load = useCallback(async (start, end) => {
-    if (!getTenantToken()) { navigate("/tenant/login", { replace: true }); return; }
-    setLoading(true);
-    setError(null);
-    setEmailSuccess(null);
-    try {
-      const resp = await tenantPortalApi.soa(start, end);
-      setData(resp);
-    } catch (err) {
-      if (err.status === 401 || err.status === 403) {
-        clearTenantSession();
+  const load = useCallback(
+    async (start, end) => {
+      if (!getTenantToken()) {
         navigate("/tenant/login", { replace: true });
-      } else setError(err.message || "Failed to load statement.");
-    } finally {
-      setLoading(false);
-    }
-  }, [navigate]);
+        return;
+      }
+      setLoading(true);
+      setError(null);
+      setEmailSuccess(null);
+      try {
+        const resp = await tenantPortalApi.soa(start, end);
+        setData(resp);
+      } catch (err) {
+        if (err.status === 401 || err.status === 403) {
+          clearTenantSession();
+          navigate("/tenant/login", { replace: true });
+        } else setError(err.message || "Failed to load statement.");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [navigate]
+  );
 
-  useEffect(() => { load(periodStart, periodEnd); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    load(periodStart, periodEnd);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleApply = () => load(periodStart, periodEnd);
 
@@ -119,15 +139,23 @@ export default function TenantSOA() {
 
   const handleCloseModal = () => setModalOpen(false);
 
-  const invoices = data?.invoices || [];
-  const summary  = data?.summary || {};
+  const sections = data?.sections || [];
+  const totals = data?.totals || {};
+  const balanceForward = data?.balance_forward;
   const tenantEmail = data?.tenant_email;
+  const hasAnyCharges = sections.some(
+    (s) => s.invoice_lines.length > 0 || s.payment_lines.length > 0
+  );
 
   return (
     <PortalLayout>
       <Stack spacing={3}>
         <Stack direction="row" alignItems="center" spacing={1}>
-          <Button startIcon={<ArrowBackIcon />} onClick={() => navigate("/tenant/dashboard")} sx={{ color: "#1a237e" }}>
+          <Button
+            startIcon={<ArrowBackIcon />}
+            onClick={() => navigate("/tenant/dashboard")}
+            sx={{ color: "#1a237e" }}
+          >
             Dashboard
           </Button>
           <Typography variant="h5" fontWeight={700} flex={1}>
@@ -135,7 +163,9 @@ export default function TenantSOA() {
           </Typography>
           <Button
             variant="contained"
-            startIcon={pdfLoading ? <CircularProgress size={16} sx={{ color: "white" }} /> : <DownloadIcon />}
+            startIcon={
+              pdfLoading ? <CircularProgress size={16} sx={{ color: "white" }} /> : <DownloadIcon />
+            }
             onClick={handleDownloadPdf}
             disabled={pdfLoading || loading}
             sx={{ bgcolor: "#1a237e", "&:hover": { bgcolor: "#283593" }, whiteSpace: "nowrap" }}
@@ -146,7 +176,13 @@ export default function TenantSOA() {
             <span>
               <Button
                 variant="outlined"
-                startIcon={emailLoading ? <CircularProgress size={16} sx={{ color: "#1a237e" }} /> : <EmailIcon />}
+                startIcon={
+                  emailLoading ? (
+                    <CircularProgress size={16} sx={{ color: "#1a237e" }} />
+                  ) : (
+                    <EmailIcon />
+                  )
+                }
                 onClick={handleEmailSoa}
                 disabled={emailLoading || loading || !tenantEmail}
                 sx={{ borderColor: "#1a237e", color: "#1a237e", whiteSpace: "nowrap" }}
@@ -160,7 +196,11 @@ export default function TenantSOA() {
         {/* Period selector */}
         <Card>
           <CardContent>
-            <Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems={{ sm: "center" }}>
+            <Stack
+              direction={{ xs: "column", sm: "row" }}
+              spacing={2}
+              alignItems={{ sm: "center" }}
+            >
               <TextField
                 size="small"
                 type="date"
@@ -179,14 +219,23 @@ export default function TenantSOA() {
                 InputLabelProps={{ shrink: true }}
                 sx={{ minWidth: 160 }}
               />
-              <Button variant="outlined" onClick={handleApply} disabled={loading} sx={{ borderColor: "#1a237e", color: "#1a237e" }}>
+              <Button
+                variant="outlined"
+                onClick={handleApply}
+                disabled={loading}
+                sx={{ borderColor: "#1a237e", color: "#1a237e" }}
+              >
                 Apply
               </Button>
             </Stack>
           </CardContent>
         </Card>
 
-        {loading && <Box display="flex" justifyContent="center" py={4}><CircularProgress /></Box>}
+        {loading && (
+          <Box display="flex" justifyContent="center" py={4}>
+            <CircularProgress />
+          </Box>
+        )}
         {error && <Alert severity="error">{error}</Alert>}
         {emailSuccess && <Alert severity="success">{emailSuccess}</Alert>}
 
@@ -194,16 +243,25 @@ export default function TenantSOA() {
         {data && !loading && (
           <Card sx={{ bgcolor: "#e8eaf6" }}>
             <CardContent>
-              <Stack direction={{ xs: "column", sm: "row" }} spacing={3} justifyContent="space-around" textAlign="center">
+              <Stack
+                direction={{ xs: "column", sm: "row" }}
+                spacing={3}
+                justifyContent="space-around"
+                textAlign="center"
+              >
                 {[
-                  ["Balance Forward", summary.balance_forward],
-                  ["Total Charged",   summary.total_charged],
-                  ["Total Paid",      summary.total_paid],
-                  ["Ending Balance",  summary.ending_balance],
+                  ["Balance Forward", balanceForward],
+                  ["Total Charged", totals.charged],
+                  ["Total Paid", totals.paid],
+                  ["Ending Balance", totals.ending_balance],
                 ].map(([label, val]) => (
                   <Box key={label}>
-                    <Typography variant="caption" color="text.secondary">{label}</Typography>
-                    <Typography variant="h6" fontWeight={700}>{peso(val)}</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {label}
+                    </Typography>
+                    <Typography variant="h6" fontWeight={700}>
+                      {peso(val)}
+                    </Typography>
                   </Box>
                 ))}
               </Stack>
@@ -211,59 +269,130 @@ export default function TenantSOA() {
           </Card>
         )}
 
-        {/* Invoice table */}
-        {!loading && invoices.length === 0 && data && (
-          <Alert severity="info">No invoices found for this period.</Alert>
+        {/* 5-section charge-type breakdown (M1 Q3/C1) */}
+        {!loading && data && !hasAnyCharges && (
+          <Alert severity="info">No charges found for this period.</Alert>
         )}
 
-        {!loading && invoices.length > 0 && (
-          <Card>
-            <CardContent sx={{ p: 0 }}>
-              <Box sx={{ overflowX: "auto" }}>
-                <Table size="small">
-                  <TableHead sx={{ bgcolor: "#1a237e" }}>
-                    <TableRow>
-                      {["Invoice #", "Period", "Charged", "Paid", "Balance", "Status"].map((h) => (
-                        <TableCell key={h} sx={{ color: "white", fontWeight: 700, whiteSpace: "nowrap" }}>{h}</TableCell>
-                      ))}
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {invoices.map((inv, i) => (
-                      <TableRow
-                        key={i}
-                        onClick={() => handleRowClick(inv.invoice_id)}
-                        sx={{
-                          bgcolor: i % 2 === 1 ? "#f8f9ff" : "white",
-                          cursor: "pointer",
-                          "&:hover": { bgcolor: "#e8eaf6" },
-                        }}
-                      >
-                        <TableCell sx={{ fontFamily: "monospace", fontSize: "0.8rem" }}>{inv.invoice_number}</TableCell>
-                        <TableCell sx={{ whiteSpace: "nowrap" }}>
-                          {inv.period_start} – {inv.period_end}
-                        </TableCell>
-                        <TableCell align="right">{peso(inv.total)}</TableCell>
-                        <TableCell align="right">{peso(inv.paid)}</TableCell>
-                        <TableCell align="right" sx={{ fontWeight: Number(inv.balance) > 0 ? 700 : 400 }}>
-                          {peso(inv.balance)}
-                        </TableCell>
-                        <TableCell>
-                          <Chip
-                            size="small"
-                            label={inv.status}
-                            color={inv.status === "PAID" ? "success" : inv.status === "PARTIAL" ? "warning" : "default"}
-                            variant="outlined"
-                          />
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </Box>
-            </CardContent>
-          </Card>
-        )}
+        {!loading &&
+          sections.map((section) => (
+            <Card key={section.charge_type_code}>
+              <CardContent>
+                <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
+                  <Typography variant="subtitle1" fontWeight={700}>
+                    {section.charge_type_label}
+                  </Typography>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    Subtotal: {peso(section.balance)}
+                  </Typography>
+                </Stack>
+
+                {section.invoice_lines.length === 0 && section.payment_lines.length === 0 ? (
+                  <Typography variant="body2" color="text.secondary">
+                    No activity this period.
+                  </Typography>
+                ) : (
+                  <Stack spacing={2}>
+                    {section.invoice_lines.length > 0 && (
+                      <Box sx={{ overflowX: "auto" }}>
+                        <Table size="small">
+                          <TableHead sx={{ bgcolor: "#1a237e" }}>
+                            <TableRow>
+                              {[
+                                "Invoice #",
+                                "Date",
+                                "Description",
+                                "Charged",
+                                "Paid",
+                                "Balance",
+                              ].map((h) => (
+                                <TableCell
+                                  key={h}
+                                  sx={{ color: "white", fontWeight: 700, whiteSpace: "nowrap" }}
+                                >
+                                  {h}
+                                </TableCell>
+                              ))}
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {section.invoice_lines.map((ln, i) => (
+                              <TableRow
+                                key={i}
+                                onClick={() => handleRowClick(ln.invoice_id)}
+                                sx={{
+                                  bgcolor: i % 2 === 1 ? "#f8f9ff" : "white",
+                                  cursor: "pointer",
+                                  "&:hover": { bgcolor: "#e8eaf6" },
+                                }}
+                              >
+                                <TableCell sx={{ fontFamily: "monospace", fontSize: "0.8rem" }}>
+                                  {ln.invoice_number}
+                                </TableCell>
+                                <TableCell sx={{ whiteSpace: "nowrap" }}>{ln.line_date}</TableCell>
+                                <TableCell>{ln.description || "—"}</TableCell>
+                                <TableCell align="right">{peso(ln.amount)}</TableCell>
+                                <TableCell align="right">{peso(ln.paid)}</TableCell>
+                                <TableCell align="right">
+                                  {peso(Number(ln.amount) - Number(ln.paid))}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                            <TableRow>
+                              <TableCell colSpan={3} sx={{ fontWeight: 700 }}>
+                                SUBTOTAL
+                              </TableCell>
+                              <TableCell align="right" sx={{ fontWeight: 700 }}>
+                                {peso(section.total_charged)}
+                              </TableCell>
+                              <TableCell align="right" sx={{ fontWeight: 700 }}>
+                                {peso(section.total_paid)}
+                              </TableCell>
+                              <TableCell align="right" sx={{ fontWeight: 700 }}>
+                                {peso(section.balance)}
+                              </TableCell>
+                            </TableRow>
+                          </TableBody>
+                        </Table>
+                      </Box>
+                    )}
+
+                    {section.payment_lines.length > 0 && (
+                      <Box sx={{ overflowX: "auto" }}>
+                        <Typography variant="caption" color="text.secondary">
+                          Payments applied
+                        </Typography>
+                        <Table size="small">
+                          <TableHead sx={{ bgcolor: "#37474f" }}>
+                            <TableRow>
+                              {["Date", "Amount", "Period", "Arrear?"].map((h) => (
+                                <TableCell
+                                  key={h}
+                                  sx={{ color: "white", fontWeight: 700, whiteSpace: "nowrap" }}
+                                >
+                                  {h}
+                                </TableCell>
+                              ))}
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {section.payment_lines.map((pl, i) => (
+                              <TableRow key={i} sx={{ bgcolor: i % 2 === 1 ? "#f8f9ff" : "white" }}>
+                                <TableCell>{pl.payment_date}</TableCell>
+                                <TableCell align="right">{peso(pl.amount)}</TableCell>
+                                <TableCell>{pl.period_label || "—"}</TableCell>
+                                <TableCell>{pl.is_arrear ? "Yes" : "No"}</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </Box>
+                    )}
+                  </Stack>
+                )}
+              </CardContent>
+            </Card>
+          ))}
       </Stack>
 
       <InvoiceDetailModal

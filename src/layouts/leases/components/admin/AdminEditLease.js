@@ -117,6 +117,15 @@ function AdminEditLease({ open, lease, onClose, onSuccess }) {
             required
           />
           <TextField
+            name="annual_rights_fee"
+            label="Annual Rights Fee"
+            value={values.annual_rights_fee || ""}
+            onChange={handleChange}
+            type="number"
+            inputProps={{ step: "0.01", min: "0" }}
+            helperText="Annual amount; amortized to a monthly invoice line. Leave 0 if no rights fee."
+          />
+          <TextField
             select
             name="status"
             label="Status"

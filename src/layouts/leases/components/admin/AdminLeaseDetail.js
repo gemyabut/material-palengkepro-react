@@ -68,6 +68,10 @@ function AdminLeaseDetail({ open, lease, onClose }) {
             <Typography>{lease.lease_amount}</Typography>
           </Grid>
           <Grid item xs={6}>
+            <Typography variant="subtitle2">Annual Rights Fee</Typography>
+            <Typography>{lease.annual_rights_fee || "0.00"}</Typography>
+          </Grid>
+          <Grid item xs={6}>
             <Typography variant="subtitle2">Status</Typography>
             <Typography>{getLabel(LEASE_STATUS_CHOICES, lease.status)}</Typography>
           </Grid>
@@ -97,6 +101,7 @@ AdminLeaseDetail.propTypes = {
     end_date: PropTypes.string,
     payment_schedule: PropTypes.string,
     lease_amount: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    annual_rights_fee: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     status: PropTypes.string,
   }),
   onClose: PropTypes.func.isRequired,
