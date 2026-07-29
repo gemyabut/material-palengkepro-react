@@ -1,5 +1,6 @@
 import React from "react";
 import PropTypes from "prop-types";
+import { useNavigate } from "react-router-dom";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -45,6 +46,8 @@ function formatPeriod(periodStart) {
 const peso = (v) => `₱${Number(v ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
 
 function SoaTable({ invoices = [] }) {
+  const navigate = useNavigate();
+
   if (invoices.length === 0) {
     return (
       <MDTypography variant="body2" color="secondary" mt={1}>
@@ -68,8 +71,20 @@ function SoaTable({ invoices = [] }) {
       </TableHead>
       <TableBody>
         {invoices.map((inv) => (
-          <TableRow key={inv.invoice_id}>
-            <TableCell sx={{ fontFamily: "monospace", fontSize: "0.8rem" }}>
+          <TableRow
+            key={inv.invoice_id}
+            hover
+            sx={{ cursor: "pointer" }}
+            onClick={() => navigate(`/invoices/${inv.invoice_id}`)}
+          >
+            <TableCell
+              sx={{
+                fontFamily: "monospace",
+                fontSize: "0.8rem",
+                color: "info.main",
+                "&:hover": { textDecoration: "underline" },
+              }}
+            >
               {inv.invoice_number}
             </TableCell>
             <TableCell sx={{ whiteSpace: "nowrap" }}>{formatPeriod(inv.period_start)}</TableCell>
