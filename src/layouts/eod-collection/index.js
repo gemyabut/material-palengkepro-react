@@ -10,6 +10,7 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import FormControl from "@mui/material/FormControl";
 import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
+import Pagination from "@mui/material/Pagination";
 import Paper from "@mui/material/Paper";
 import Select from "@mui/material/Select";
 import Table from "@mui/material/Table";
@@ -36,6 +37,8 @@ function getRole() {
 
 const peso = (v) =>
   `₱${Number(v ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+const DEFAULT_LIMIT = 20;
 
 const STATUS_OPTIONS = [
   { value: "PENDING_APPROVAL",  label: "Pending Approval" },
@@ -87,6 +90,8 @@ export default function EodCashCountPage() {
   const isStaff = userProfile?.is_staff || false;
   const navigate = useNavigate();
   const [counts, setCounts]             = useState([]);
+  const [total, setTotal]               = useState(0);
+  const [page, setPage]                 = useState(1);
   const [loading, setLoading]           = useState(true);
   const [error, setError]               = useState(null);
   const [statusFilter, setStatusFilter] = useState("PENDING_APPROVAL");
@@ -95,22 +100,32 @@ export default function EodCashCountPage() {
     setLoading(true);
     setError(null);
     try {
-      const params = {};
+      const params = { page, limit: DEFAULT_LIMIT };
       if (statusFilter === "ESCALATED") {
         params.escalated_to_admin = "true";
       } else if (statusFilter) {
         params.status = statusFilter;
       }
       const resp = await listEodCounts(params);
-      setCounts(Array.isArray(resp) ? resp : (resp?.results ?? []));
+      const results = Array.isArray(resp) ? resp : (resp?.results ?? []);
+      const count = Array.isArray(resp) ? resp.length : (resp?.count ?? results.length);
+      setCounts(results);
+      setTotal(count);
     } catch {
       setError("Failed to load EOD collections.");
     } finally {
       setLoading(false);
     }
-  }, [statusFilter]);
+  }, [statusFilter, page]);
 
   useEffect(() => { load(); }, [load]);
+
+  const handleStatusFilterChange = (value) => {
+    setStatusFilter(value);
+    setPage(1);
+  };
+
+  const handlePageChange = (_, value) => setPage(value);
 
   if (!canViewEodCounts(role)) return <Navigate to="/dashboard" replace />;
 
@@ -134,7 +149,7 @@ export default function EodCashCountPage() {
             <Select
               value={statusFilter}
               label="Status"
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => handleStatusFilterChange(e.target.value)}
             >
               {STATUS_OPTIONS.map((o) => (
                 <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>
@@ -247,6 +262,17 @@ export default function EodCashCountPage() {
               </TableBody>
             </Table>
           </Paper>
+        )}
+
+        {!loading && counts.length > 0 && (
+          <MDBox mt={2} display="flex" justifyContent="center">
+            <Pagination
+              count={Math.ceil(total / DEFAULT_LIMIT) || 1}
+              page={page}
+              onChange={handlePageChange}
+              color="primary"
+            />
+          </MDBox>
         )}
       </MDBox>
     </DashboardLayout>
