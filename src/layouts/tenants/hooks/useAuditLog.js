@@ -15,13 +15,14 @@ import { debugLog } from "../../stalls/utils/debug";
  *  - logs: Array of audit entries
  *  - loading: boolean
  *  - error: any
- *  - total: number (if the API is paginated and returns `count`)
+ *  - total: number (from the API's `count` when paginated, else logs.length — BUG-56)
  *  - page, pageSize, ordering: local state for UI controls
  *  - setPage, setPageSize, setOrdering: setters for UI controls
  *  - refetch: function to refetch with current params
  */
 export default function useAuditLog(tenantId, initialParams = {}) {
   const [logs, setLogs] = useState([]);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(Boolean(tenantId));
   const [error, setError] = useState(null);
 
@@ -55,6 +56,7 @@ export default function useAuditLog(tenantId, initialParams = {}) {
         // Support both paginated and non-paginated responses
         const results = data?.results ?? data ?? [];
         setLogs(results);
+        setTotal(Array.isArray(data) ? data.length : (data?.count ?? results.length));
         debugLog("useAuditLog: fetched", data);
       })
       .catch((err) => {
@@ -71,6 +73,7 @@ export default function useAuditLog(tenantId, initialParams = {}) {
 
   return {
     logs,
+    total,
     loading,
     error,
     // expose for UI controls

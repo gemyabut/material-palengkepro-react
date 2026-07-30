@@ -1,9 +1,17 @@
 import { useEffect, useState } from "react";
 import PropTypes from "prop-types";
-import { Card, CardContent, Chip, Table, TableBody, TableCell, TableHead, TableRow } from "@mui/material";
+import { Button, Card, CardContent, Chip, Table, TableBody, TableCell, TableHead, TableRow } from "@mui/material";
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 import { getImportJobs } from "api/csvImport";
+
+// ImportJobListView (csv_import/views.py) only supports page_size (capped at
+// 200 server-side) — there's no page/offset concept, it always returns the
+// N most recent jobs. True page-based Pagination would be non-functional
+// here (clicking "page 2" would just refetch the same top-N rows), so this
+// is a growing "Load more" step instead of a MUI Pagination control.
+const PAGE_SIZE_STEP = 20;
+const MAX_PAGE_SIZE = 200;
 
 const STATUS_COLOR = {
   COMPLETED: "success",
@@ -14,11 +22,12 @@ const STATUS_COLOR = {
 
 function ImportHistoryTable({ canSeeAll, refreshKey }) {
   const [jobs, setJobs] = useState([]);
+  const [pageSize, setPageSize] = useState(PAGE_SIZE_STEP);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setLoading(true);
-    getImportJobs({ page_size: 50 })
+    getImportJobs({ page_size: pageSize })
       .then((data) => {
         setJobs(Array.isArray(data) ? data : (data?.results ?? []));
       })
@@ -27,7 +36,10 @@ function ImportHistoryTable({ canSeeAll, refreshKey }) {
         setJobs([]);
       })
       .finally(() => setLoading(false));
-  }, [refreshKey]);
+  }, [refreshKey, pageSize]);
+
+  const canLoadMore = jobs.length >= pageSize && pageSize < MAX_PAGE_SIZE;
+  const handleLoadMore = () => setPageSize((n) => Math.min(n + PAGE_SIZE_STEP, MAX_PAGE_SIZE));
 
   return (
     <Card>
@@ -77,6 +89,14 @@ function ImportHistoryTable({ canSeeAll, refreshKey }) {
                 ))}
               </TableBody>
             </Table>
+          </MDBox>
+        )}
+
+        {!loading && canLoadMore && (
+          <MDBox mt={2} display="flex" justifyContent="center">
+            <Button variant="outlined" size="small" onClick={handleLoadMore}>
+              Load more
+            </Button>
           </MDBox>
         )}
       </CardContent>
