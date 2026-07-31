@@ -1,17 +1,12 @@
 import { useEffect, useState } from "react";
 import PropTypes from "prop-types";
-import { Button, Card, CardContent, Chip, Table, TableBody, TableCell, TableHead, TableRow } from "@mui/material";
+import { Card, CardContent, Chip, Table, TableBody, TableCell, TableHead, TableRow } from "@mui/material";
+import Pagination from "@mui/material/Pagination";
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 import { getImportJobs } from "api/csvImport";
 
-// ImportJobListView (csv_import/views.py) only supports page_size (capped at
-// 200 server-side) — there's no page/offset concept, it always returns the
-// N most recent jobs. True page-based Pagination would be non-functional
-// here (clicking "page 2" would just refetch the same top-N rows), so this
-// is a growing "Load more" step instead of a MUI Pagination control.
-const PAGE_SIZE_STEP = 20;
-const MAX_PAGE_SIZE = 200;
+const DEFAULT_LIMIT = 20;
 
 const STATUS_COLOR = {
   COMPLETED: "success",
@@ -22,24 +17,31 @@ const STATUS_COLOR = {
 
 function ImportHistoryTable({ canSeeAll, refreshKey }) {
   const [jobs, setJobs] = useState([]);
-  const [pageSize, setPageSize] = useState(PAGE_SIZE_STEP);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
+
+  // A fresh import should surface on page 1, not wherever the user had paged to.
+  useEffect(() => { setPage(1); }, [refreshKey]);
 
   useEffect(() => {
     setLoading(true);
-    getImportJobs({ page_size: pageSize })
+    getImportJobs({ page, page_size: DEFAULT_LIMIT })
       .then((data) => {
-        setJobs(Array.isArray(data) ? data : (data?.results ?? []));
+        const results = Array.isArray(data) ? data : (data?.results ?? []);
+        const count = Array.isArray(data) ? data.length : (data?.count ?? results.length);
+        setJobs(results);
+        setTotal(count);
       })
       .catch(() => {
         // Silently hide — history is secondary; endpoint may not be deployed yet
         setJobs([]);
+        setTotal(0);
       })
       .finally(() => setLoading(false));
-  }, [refreshKey, pageSize]);
+  }, [refreshKey, page]);
 
-  const canLoadMore = jobs.length >= pageSize && pageSize < MAX_PAGE_SIZE;
-  const handleLoadMore = () => setPageSize((n) => Math.min(n + PAGE_SIZE_STEP, MAX_PAGE_SIZE));
+  const handlePageChange = (_, value) => setPage(value);
 
   return (
     <Card>
@@ -92,11 +94,14 @@ function ImportHistoryTable({ canSeeAll, refreshKey }) {
           </MDBox>
         )}
 
-        {!loading && canLoadMore && (
+        {!loading && jobs.length > 0 && (
           <MDBox mt={2} display="flex" justifyContent="center">
-            <Button variant="outlined" size="small" onClick={handleLoadMore}>
-              Load more
-            </Button>
+            <Pagination
+              count={Math.ceil(total / DEFAULT_LIMIT) || 1}
+              page={page}
+              onChange={handlePageChange}
+              color="primary"
+            />
           </MDBox>
         )}
       </CardContent>
