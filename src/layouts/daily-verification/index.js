@@ -216,7 +216,7 @@ export default function DailyVerificationPage() {
                 <MethodCard label="Total Check" actual={s.total_actual_check} expected={s.total_expected_check} />
               </Grid>
               <Grid item xs={6} sm={true}>
-                <MethodCard label="Total GCASH" actual={s.total_actual_gcash} expected={s.total_expected_gcash} />
+                <MethodCard label="Total E-Wallet" actual={s.total_actual_e_wallet} expected={s.total_expected_e_wallet} />
               </Grid>
               <Grid item xs={6} sm={true}>
                 <MethodCard label="Total Bank" actual={s.total_actual_bank} expected={s.total_expected_bank} />
@@ -290,7 +290,7 @@ export default function DailyVerificationPage() {
                     <TableCell align="right">Expected</TableCell>
                     <TableCell align="right">Cash</TableCell>
                     <TableCell align="right">Check</TableCell>
-                    <TableCell align="right">GCASH</TableCell>
+                    <TableCell align="right">E-Wallet</TableCell>
                     <TableCell align="right">Bank</TableCell>
                     <TableCell align="right">Total</TableCell>
                     <TableCell align="right">Variance</TableCell>
@@ -330,7 +330,7 @@ export default function DailyVerificationPage() {
                           {row.has_intake ? peso(row.total_check) : "—"}
                         </TableCell>
                         <TableCell align="right">
-                          {row.has_intake ? peso(row.total_gcash) : "—"}
+                          {row.has_intake ? peso(row.total_e_wallet) : "—"}
                         </TableCell>
                         <TableCell align="right">
                           {row.has_intake ? peso(row.total_bank) : "—"}
@@ -340,7 +340,7 @@ export default function DailyVerificationPage() {
                             ? peso(
                                 parseFloat(row.total_cash || 0) +
                                 parseFloat(row.total_check || 0) +
-                                parseFloat(row.total_gcash || 0) +
+                                parseFloat(row.total_e_wallet || 0) +
                                 parseFloat(row.total_bank || 0)
                               )
                             : "—"}

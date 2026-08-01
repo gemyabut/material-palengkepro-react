@@ -69,12 +69,19 @@ const INVOICE_STATUS_CHIP = {
 };
 const METHOD_LABEL = {
   CASH: "Cash",
-  GCASH: "GCash",
+  E_WALLET: "E-Wallet",
   BANK: "Bank Transfer",
   BANK_TRANSFER: "Bank Transfer",
   CHEQUE: "Cheque",
   CHECK: "Cheque",
   MAYA: "Maya",
+  OTHER: "Other",
+};
+const WALLET_PROVIDER_LABEL = {
+  GCASH: "GCash",
+  MAYA: "Maya",
+  GOTYME: "GoTyme",
+  SHOPEEPAY: "ShopeePay",
   OTHER: "Other",
 };
 
@@ -838,7 +845,16 @@ export default function TenantDetail({ tenant, user, onEdit, onRequestUpdate, sh
                         <TableRow key={pay.id}>
                           <TableCell sx={{ whiteSpace: "nowrap" }}>{pay.payment_date}</TableCell>
                           <TableCell>{fmt(pay.amount)}</TableCell>
-                          <TableCell>{METHOD_LABEL[pay.method] || pay.method}</TableCell>
+                          <TableCell>
+                            {METHOD_LABEL[pay.method] || pay.method}
+                            {pay.method === "E_WALLET" && pay.wallet_provider && (
+                              <Chip
+                                size="small"
+                                label={WALLET_PROVIDER_LABEL[pay.wallet_provider] || pay.wallet_provider}
+                                sx={{ ml: 1 }}
+                              />
+                            )}
+                          </TableCell>
                           <TableCell sx={{ fontFamily: "monospace" }}>
                             {pay.receipt_number || "—"}
                           </TableCell>

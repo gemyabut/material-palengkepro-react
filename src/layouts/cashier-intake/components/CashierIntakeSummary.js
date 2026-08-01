@@ -27,7 +27,7 @@ export default function CashierIntakeSummary({ intake, role, payments }) {
       <Divider sx={{ mb: 2 }} />
       <Grid container spacing={2}>
         <Total label="Cash" value={intake.total_cash} />
-        <Total label="GCash" value={intake.total_gcash} />
+        <Total label="E-Wallet" value={intake.total_e_wallet} />
         <Total label="Bank" value={intake.total_bank} />
         <Total label="Check" value={intake.total_check} />
       </Grid>

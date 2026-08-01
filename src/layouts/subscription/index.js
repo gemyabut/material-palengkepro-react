@@ -53,7 +53,7 @@ const FEATURE_LABELS = {
   tenant_inquiry: "Tenant inquiry",
   direct_payment_entry: "Real-time collections",
   collector_app: "Collector mobile app",
-  digital_payments: "Digital payments (QRPH/GCash/Maya)",
+  digital_payments: "Digital payments (E-Wallets, QRPH)",
   reminders: "SMS/Email reminders",
   bank_recon: "Bank reconciliation",
   autobilling: "Automated billing",

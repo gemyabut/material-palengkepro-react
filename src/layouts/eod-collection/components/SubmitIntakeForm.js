@@ -39,9 +39,9 @@ export default function SubmitIntakeForm({ intake, onSubmit, submitting }) {
   const [checkCount, setCheckCount]   = useState(0);
   const [actualCheck, setActualCheck] = useState("0");
 
-  // GCASH — pre-populate from rollup
-  const [actualGcash, setActualGcash]     = useState(String(intake?.total_gcash ?? "0"));
-  const [gcashConfirmed, setGcashConfirmed] = useState(false);
+  // E-Wallet — pre-populate from rollup
+  const [actualEWallet, setActualEWallet]     = useState(String(intake?.total_e_wallet ?? "0"));
+  const [eWalletConfirmed, setEWalletConfirmed] = useState(false);
 
   // Bank — pre-populate from rollup
   const [actualBank, setActualBank]       = useState(String(intake?.total_bank ?? "0"));
@@ -56,9 +56,9 @@ export default function SubmitIntakeForm({ intake, onSubmit, submitting }) {
   const expected    = parseFloat(intake?.expected_amount || 0);
   const cash        = parseFloat(actualCash) || 0;
   const check       = parseFloat(actualCheck) || 0;
-  const gcash       = parseFloat(actualGcash) || 0;
+  const eWallet     = parseFloat(actualEWallet) || 0;
   const bank        = parseFloat(actualBank) || 0;
-  const grandTotal  = cash + check + gcash + bank;
+  const grandTotal  = cash + check + eWallet + bank;
   const variance    = actualCash !== "" ? grandTotal - expected : null;
 
   const denomTotal    = computeDenomTotal(denomFields);
@@ -79,8 +79,8 @@ export default function SubmitIntakeForm({ intake, onSubmit, submitting }) {
     } else if (parseFloat(actualCash) < 0) {
       errs.actualCash = "Amount cannot be negative.";
     }
-    if (!gcashConfirmed) {
-      errs.gcashConfirmed = "Please verify GCASH receipts before submitting.";
+    if (!eWalletConfirmed) {
+      errs.eWalletConfirmed = "Please verify E-Wallet receipts before submitting.";
     }
     if (!bankConfirmed) {
       errs.bankConfirmed = "Please verify bank deposit receipts before submitting.";
@@ -95,7 +95,7 @@ export default function SubmitIntakeForm({ intake, onSubmit, submitting }) {
   const buildPayload = () => ({
     actual_cash:     parseFloat(actualCash).toFixed(2),
     actual_check:    parseFloat(actualCheck || 0).toFixed(2),
-    actual_gcash:    parseFloat(actualGcash || 0).toFixed(2),
+    actual_e_wallet: parseFloat(actualEWallet || 0).toFixed(2),
     actual_bank:     parseFloat(actualBank || 0).toFixed(2),
     check_count:     checkCount,
     variance_reason: varianceReason,
@@ -191,16 +191,16 @@ export default function SubmitIntakeForm({ intake, onSubmit, submitting }) {
           onChange={(v) => { setActualCheck(v); clearErrors(); }}
         />
 
-        {/* ── GCASH section ─────────────────────────────────────────────── */}
+        {/* ── E-Wallet section ──────────────────────────────────────────── */}
         <DigitalVerifySection
           icon="📱"
-          label="GCASH"
-          systemAmount={intake?.total_gcash ?? 0}
-          value={actualGcash}
-          onChange={(v) => { setActualGcash(v); clearErrors(); }}
-          confirmed={gcashConfirmed}
-          onConfirmChange={(v) => { setGcashConfirmed(v); clearErrors(); }}
-          confirmError={fieldErr.gcashConfirmed}
+          label="E-Wallet"
+          systemAmount={intake?.total_e_wallet ?? 0}
+          value={actualEWallet}
+          onChange={(v) => { setActualEWallet(v); clearErrors(); }}
+          confirmed={eWalletConfirmed}
+          onConfirmChange={(v) => { setEWalletConfirmed(v); clearErrors(); }}
+          confirmError={fieldErr.eWalletConfirmed}
         />
 
         {/* ── Bank section ──────────────────────────────────────────────── */}
