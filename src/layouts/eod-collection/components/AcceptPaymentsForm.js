@@ -13,6 +13,7 @@ import DenominationBreakdown, {
   computeDenomTotal,
   denomFieldsEntered,
 } from "./DenominationBreakdown";
+import DenominationCompareTable from "./DenominationCompareTable";
 import CheckSection from "./CheckSection";
 import DigitalVerifySection from "./DigitalVerifySection";
 
@@ -155,6 +156,9 @@ export default function AcceptPaymentsForm({ intake, onAccept, submitting }) {
           <MDBox mt={2} pl={1} borderLeft="3px solid #e0e0e0">
             <DenominationBreakdown fields={denomFields} onChange={setDenomFields} actualAmount={cash} />
           </MDBox>
+
+          {/* Unit 54 Phase 3 (DEC-066) — read-only, informational only; buildPayload below is unchanged */}
+          <DenominationCompareTable declaredFields={intake} actualFields={denomFields} />
         </MDBox>
 
         {/* ── Check section ─────────────────────────────────────────────── */}
