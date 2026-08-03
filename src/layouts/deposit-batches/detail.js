@@ -20,7 +20,7 @@ import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import { canViewBatches, canEditBatches, canConfirmBatches } from "utils/permissions";
 import { destinationLabel } from "utils/destinationLabels";
-import { getBatch, markDeposited, confirmBatch } from "api/remittanceBatches";
+import { getBatch, markDeposited, confirmBatch, downloadTurnoverPdf } from "api/remittanceBatches";
 import BatchStatusChip from "./components/BatchStatusChip";
 import MarkDepositedModal from "./components/MarkDepositedModal";
 import ConfirmDepositModal from "./components/ConfirmDepositModal";
@@ -80,6 +80,7 @@ export default function DepositBatchDetailPage() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [actioning, setActioning] = useState(false);
   const [deductionOpen, setDeductionOpen] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -145,6 +146,23 @@ export default function DepositBatchDetailPage() {
       toast(detail, "error");
     } finally {
       setActioning(false);
+    }
+  };
+
+  const handleTurnoverPdf = async () => {
+    setPdfLoading(true);
+    try {
+      const response = await downloadTurnoverPdf(id);
+      const url = URL.createObjectURL(response.data);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `turnover_slip_${id}_${batch?.date || ""}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast("Turnover slip download failed.", "error");
+    } finally {
+      setPdfLoading(false);
     }
   };
 
@@ -450,6 +468,16 @@ export default function DepositBatchDetailPage() {
           {batch.status === "POSTED" && canConfirmBatches(role) && (
             <Button variant="contained" color="success" onClick={() => setConfirmOpen(true)}>
               Confirm Remittance
+            </Button>
+          )}
+          {(batch.status === "POSTED" || batch.status === "CONFIRMED") && (
+            <Button
+              variant="outlined"
+              color="dark"
+              onClick={handleTurnoverPdf}
+              disabled={pdfLoading}
+            >
+              {pdfLoading ? "Preparing…" : "Download Turnover Slip"}
             </Button>
           )}
         </MDBox>

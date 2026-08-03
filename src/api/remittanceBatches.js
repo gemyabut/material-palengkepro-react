@@ -33,3 +33,7 @@ export async function getUnbatchedDCs(params = {}) {
   const { data } = await apiClient.get(`${BASE}/unbatched-dcs/`, { params });
   return data;
 }
+
+export async function downloadTurnoverPdf(id) {
+  return apiClient.get(`${BASE}/${id}/turnover-pdf/`, { responseType: "blob" });
+}
