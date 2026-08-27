@@ -305,6 +305,7 @@ export default function StallsPage() {
             onSave={handleAddSave}
             onClose={() => setAddModalOpen(false)}
             onSuccess={() => setAddModalOpen(false)}
+            market={userProfile?.primary_market ?? userProfile?.primary_market_id}
           />
         </Dialog>
         <Dialog

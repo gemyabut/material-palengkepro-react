@@ -2,16 +2,20 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Navigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import {
-  Alert, Chip, CircularProgress,
+  Alert, Button, Chip, CircularProgress,
   Paper, Table, TableBody, TableCell, TableHead, TableRow,
   TextField,
 } from "@mui/material";
+import DownloadIcon from "@mui/icons-material/Download";
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 import { canViewMarketUsers } from "utils/permissions";
 import { listMarketUsers } from "api/marketUsers";
+import { getMarket } from "api/markets";
+import { downloadStaffRosterExport } from "api/csvImport";
+import { useAuthProfile } from "context/AuthContext";
 
 function getRole() {
   const t = localStorage.getItem("access_token") || sessionStorage.getItem("access_token");
@@ -32,10 +36,12 @@ const ROLE_LABELS = {
 
 export default function MarketUsersPage() {
   const role = getRole();
+  const { userProfile } = useAuthProfile();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
+  const [exporting, setExporting] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -51,6 +57,24 @@ export default function MarketUsersPage() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  const handleExportRoster = async () => {
+    const marketId = userProfile?.primary_market ?? userProfile?.primary_market_id;
+    if (!marketId) {
+      setError("Can't export roster: no primary market on your profile.");
+      return;
+    }
+    setExporting(true);
+    setError(null);
+    try {
+      const market = await getMarket(marketId);
+      await downloadStaffRosterExport(market.code);
+    } catch (e) {
+      setError(e?.response?.data?.error || "Failed to export staff roster.");
+    } finally {
+      setExporting(false);
+    }
+  };
 
   if (!canViewMarketUsers(role)) return <Navigate to="/dashboard" replace />;
 
@@ -74,13 +98,26 @@ export default function MarketUsersPage() {
           <MDTypography variant="h5" fontWeight="medium">
             Market Users
           </MDTypography>
-          <TextField
-            size="small"
-            placeholder="Search name, email, role…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            sx={{ width: 280 }}
-          />
+          <MDBox display="flex" alignItems="center" gap={1}>
+            {role === "executive" && (
+              <Button
+                size="small"
+                variant="outlined"
+                startIcon={<DownloadIcon />}
+                onClick={handleExportRoster}
+                disabled={exporting}
+              >
+                {exporting ? "Exporting…" : "Export Roster"}
+              </Button>
+            )}
+            <TextField
+              size="small"
+              placeholder="Search name, email, role…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              sx={{ width: 280 }}
+            />
+          </MDBox>
         </MDBox>
 
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
