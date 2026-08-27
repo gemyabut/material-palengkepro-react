@@ -24,6 +24,9 @@ import {
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
+import PhotoLibraryIcon from "@mui/icons-material/PhotoLibrary";
 
 import { getStallLeases, getStallLeaseholderRights } from "../api/stalls";
 
@@ -60,6 +63,22 @@ function KV({ label, value }) {
   );
 }
 KV.propTypes = { label: PropTypes.string.isRequired, value: PropTypes.any };
+
+// Booleans render as nothing under plain KV (React drops a bare `false`
+// child) — this renders an explicit ✓ / — icon pair instead.
+function BoolKV({ label, value }) {
+  return (
+    <Stack direction="row" spacing={0.5} alignItems="center">
+      {value ? (
+        <CheckCircleIcon fontSize="small" color="success" />
+      ) : (
+        <RemoveCircleOutlineIcon fontSize="small" color="disabled" />
+      )}
+      <Typography variant="body2">{label}</Typography>
+    </Stack>
+  );
+}
+BoolKV.propTypes = { label: PropTypes.string.isRequired, value: PropTypes.bool };
 
 function Section({ title, children, defaultOpen = true }) {
   const [open, setOpen] = useState(defaultOpen);
@@ -157,6 +176,9 @@ export default function StallDetail({ stall, onEdit, showEdit = true }) {
             <KV label="Commerce type" value={stall.commerce_type?.replace(/_/g, " ")} />
           </Grid>
           <Grid item xs={6} sm={4}>
+            <KV label="Commerce subtype" value={stall.commerce_subtype?.replace(/_/g, " ")} />
+          </Grid>
+          <Grid item xs={6} sm={4}>
             <KV label="Lease model" value={stall.lease_model} />
           </Grid>
           <Grid item xs={6} sm={4}>
@@ -170,9 +192,6 @@ export default function StallDetail({ stall, onEdit, showEdit = true }) {
           </Grid>
           <Grid item xs={6} sm={4}>
             <KV label="Size (sqm)" value={stall.size_sqm ? `${stall.size_sqm} sqm` : "—"} />
-          </Grid>
-          <Grid item xs={6} sm={4}>
-            <KV label="Current rate" value={stall.current_rate ? fmt(stall.current_rate) : "—"} />
           </Grid>
           <Grid item xs={6} sm={4}>
             <KV label="Status" value={stall.status} />
@@ -270,8 +289,91 @@ export default function StallDetail({ stall, onEdit, showEdit = true }) {
         )}
       </Section>
 
-      {/* Section 3 — Lease history */}
-      <Section title="3. Lease History" defaultOpen={false}>
+      {/* Section 3 — Physical attributes (PR #93) */}
+      <Section title="3. Physical Attributes" defaultOpen={false}>
+        <Grid container spacing={2}>
+          <Grid item xs={6} sm={4}>
+            <KV label="Floor level" value={stall.floor_level?.replace(/_/g, " ")} />
+          </Grid>
+          <Grid item xs={6} sm={4}>
+            <KV label="Frontage type" value={stall.frontage_type?.replace(/_/g, " ")} />
+          </Grid>
+          <Grid item xs={6} sm={4}>
+            <KV label="Size dimensions" value={stall.size_dimensions || "—"} />
+          </Grid>
+          <Grid item xs={12}>
+            <KV label="Description" value={stall.description || "—"} />
+          </Grid>
+        </Grid>
+      </Section>
+
+      {/* Section 4 — Utility infrastructure (PR #93) */}
+      <Section title="4. Utility Infrastructure" defaultOpen={false}>
+        <Grid container spacing={1}>
+          <Grid item xs={6} sm={3}>
+            <BoolKV label="Electricity" value={stall.has_electricity} />
+          </Grid>
+          <Grid item xs={6} sm={3}>
+            <BoolKV label="Electricity meter" value={stall.has_electricity_meter} />
+          </Grid>
+          <Grid item xs={6} sm={3}>
+            <BoolKV label="Water" value={stall.has_water} />
+          </Grid>
+          <Grid item xs={6} sm={3}>
+            <BoolKV label="Water meter" value={stall.has_water_meter} />
+          </Grid>
+          <Grid item xs={6} sm={3}>
+            <BoolKV label="Drainage" value={stall.has_drainage} />
+          </Grid>
+          <Grid item xs={6} sm={3}>
+            <BoolKV label="Gas connection" value={stall.has_gas_connection} />
+          </Grid>
+          <Grid item xs={6} sm={3}>
+            <BoolKV label="Cold storage" value={stall.has_cold_storage} />
+          </Grid>
+          <Grid item xs={6} sm={3}>
+            <BoolKV label="Grease trap" value={stall.has_grease_trap} />
+          </Grid>
+        </Grid>
+      </Section>
+
+      {/* Section 5 — Photos (PR #93). Full gallery is Tier 1.5 — pilot gets a
+          count + a link to the first photo. */}
+      <Section title="5. Photos" defaultOpen={false}>
+        {(() => {
+          const urls = (stall.photo_urls || "")
+            .split(",")
+            .map((u) => u.trim())
+            .filter(Boolean);
+          if (urls.length === 0) {
+            return (
+              <Typography variant="body2" color="text.secondary">
+                0 photos attached.
+              </Typography>
+            );
+          }
+          return (
+            <Stack direction="row" spacing={1} alignItems="center">
+              <PhotoLibraryIcon fontSize="small" color="action" />
+              <Typography variant="body2">
+                {urls.length} photo{urls.length === 1 ? "" : "s"} attached
+              </Typography>
+              <Button
+                size="small"
+                variant="outlined"
+                href={urls[0]}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                View
+              </Button>
+            </Stack>
+          );
+        })()}
+      </Section>
+
+      {/* Section 6 — Lease history */}
+      <Section title="6. Lease History" defaultOpen={false}>
         {loading ? (
           <CircularProgress size={20} />
         ) : leases.length === 0 ? (
@@ -317,8 +419,8 @@ export default function StallDetail({ stall, onEdit, showEdit = true }) {
         )}
       </Section>
 
-      {/* Section 4 — Leaseholder rights history */}
-      <Section title="4. Leaseholder Rights" defaultOpen={false}>
+      {/* Section 7 — Leaseholder rights history */}
+      <Section title="7. Leaseholder Rights" defaultOpen={false}>
         {loading ? (
           <CircularProgress size={20} />
         ) : rights.length === 0 ? (
@@ -333,6 +435,10 @@ export default function StallDetail({ stall, onEdit, showEdit = true }) {
                 <TableCell>From</TableCell>
                 <TableCell>To</TableCell>
                 <TableCell>Reason</TableCell>
+                <TableCell>Amount</TableCell>
+                <TableCell>Payment method</TableCell>
+                <TableCell>LGU approval</TableCell>
+                <TableCell>LGU reference</TableCell>
                 <TableCell>Notes</TableCell>
               </TableRow>
             </TableHead>
@@ -343,6 +449,10 @@ export default function StallDetail({ stall, onEdit, showEdit = true }) {
                   <TableCell>{r.from_tenant_name || "—"}</TableCell>
                   <TableCell>{r.to_tenant_name}</TableCell>
                   <TableCell>{r.transfer_reason?.replace(/_/g, " ")}</TableCell>
+                  <TableCell>{r.transfer_amount ? fmt(r.transfer_amount) : "—"}</TableCell>
+                  <TableCell>{r.payment_method?.replace(/_/g, " ") || "—"}</TableCell>
+                  <TableCell>{r.lgu_approval_status?.replace(/_/g, " ") || "—"}</TableCell>
+                  <TableCell>{r.lgu_approval_reference || "—"}</TableCell>
                   <TableCell>{r.notes || "—"}</TableCell>
                 </TableRow>
               ))}
@@ -351,8 +461,8 @@ export default function StallDetail({ stall, onEdit, showEdit = true }) {
         )}
       </Section>
 
-      {/* Section 5 — Physical notes */}
-      <Section title="5. Physical Notes" defaultOpen={false}>
+      {/* Section 8 — Physical notes */}
+      <Section title="8. Physical Notes" defaultOpen={false}>
         <Grid container spacing={2}>
           <Grid item xs={12} sm={6}>
             <KV label="Route / Selling path" value={stall.route || "—"} />
