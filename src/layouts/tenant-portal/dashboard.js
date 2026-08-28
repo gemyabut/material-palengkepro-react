@@ -8,7 +8,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Box, Card, CardContent, Typography, Alert, CircularProgress,
+  Avatar, Box, Card, CardContent, Typography, Alert, CircularProgress,
   Grid, Chip, Divider, Button, Stack,
 } from "@mui/material";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
@@ -183,6 +183,42 @@ export default function TenantDashboard() {
                 <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                   Your Contact Information
                 </Typography>
+                <Stack direction="row" spacing={2} mb={2}>
+                  <Box textAlign="center">
+                    {data.contact.photograph_url ? (
+                      <Box
+                        component="img"
+                        src={data.contact.photograph_url}
+                        alt="Your photo"
+                        sx={{ width: 72, height: 72, borderRadius: 2, objectFit: "cover" }}
+                      />
+                    ) : (
+                      <Avatar sx={{ width: 72, height: 72, bgcolor: "grey.300" }}>
+                        <PhotoCameraIcon />
+                      </Avatar>
+                    )}
+                    <Typography variant="caption" color="text.secondary" display="block">
+                      You
+                    </Typography>
+                  </Box>
+                  <Box textAlign="center">
+                    {data.contact.contact_photograph_url ? (
+                      <Box
+                        component="img"
+                        src={data.contact.contact_photograph_url}
+                        alt="Contact person"
+                        sx={{ width: 72, height: 72, borderRadius: 2, objectFit: "cover" }}
+                      />
+                    ) : (
+                      <Avatar sx={{ width: 72, height: 72, bgcolor: "grey.300" }}>
+                        <PhotoCameraIcon />
+                      </Avatar>
+                    )}
+                    <Typography variant="caption" color="text.secondary" display="block">
+                      Contact Person
+                    </Typography>
+                  </Box>
+                </Stack>
                 <Stack spacing={0.5}>
                   <Typography variant="body2"><strong>Name:</strong> {data.contact.full_name}</Typography>
                   {data.contact.mobile_phone && (

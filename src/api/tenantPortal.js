@@ -104,6 +104,18 @@ export const tenantPortalApi = {
     return apiFetchMultipart("/photograph-upload/", { method: "PATCH", body: form });
   },
 
+  /** PR 4 (ID Card feature, PR #100): current contact-person photo status (pre-capture display) */
+  contactPhotographStatus: () => apiFetch("/contact-photograph-upload/"),
+
+  /** PR 4: tenant uploads/replaces their contact person's photograph (kiosk camera capture).
+   *  Does NOT reset verification_status -- that reset is specific to the tenant's own
+   *  identity photo (uploadPhotograph above), per PR #100 discipline. */
+  uploadContactPhotograph: (file) => {
+    const form = new FormData();
+    form.append("contact_person_photograph", file);
+    return apiFetchMultipart("/contact-photograph-upload/", { method: "PATCH", body: form });
+  },
+
   /** Task #115 item 2: emails the SOA PDF to the tenant's email_address on file */
   emailSoaPdf: (periodStart, periodEnd) =>
     apiFetch(`/soa/pdf/email/${soaQs(periodStart, periodEnd)}`, { method: "POST" }),

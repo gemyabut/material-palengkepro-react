@@ -81,3 +81,29 @@ export async function setVerificationStatus(tenantId, verification_status) {
   const { data } = await apiClient.patch(`/tenants/${tenantId}/`, { verification_status });
   return data;
 }
+
+// PR 4 — ID Card PDF download (PR #100's TenantIdCardSingleView). Same
+// authenticated-blob-download pattern as Staff Roster Export
+// (api/csvImport.js::downloadStaffRosterExport) — local filename-extraction
+// helper rather than a cross-module import, matching that file's own
+// precedent that a 5-line helper doesn't warrant sharing across modules.
+function extractFilenameFromResponse(response, fallback) {
+  const disposition = response.headers?.["content-disposition"] || "";
+  const match = disposition.match(/filename="([^"]+)"/);
+  return match ? match[1] : fallback;
+}
+
+export async function downloadTenantIdCard(tenantId) {
+  debugLog("API:downloadTenantIdCard", tenantId);
+  const res = await apiClient.get(`/tenants/${tenantId}/id-card.pdf`, {
+    responseType: "blob",
+  });
+  const url = window.URL.createObjectURL(res.data);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = extractFilenameFromResponse(res, `tenant_${tenantId}_id_card.pdf`);
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(url);
+}

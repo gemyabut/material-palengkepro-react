@@ -7,12 +7,38 @@ import {
   DialogContent,
   DialogActions,
   TextField,
+  MenuItem,
   Button,
+  Typography,
+  Grid,
+  Divider,
 } from "@mui/material";
 import PropTypes from "prop-types";
 
 import { debugLog } from "../../stalls/utils/debug";
 import { canEdit } from "../../leases/utils/roleUtils";
+
+const VERIFICATION_STATUS_CHOICES = ["UNVERIFIED", "PENDING", "VERIFIED", "REJECTED"];
+const TENANT_STATUS_CHOICES = ["ACTIVE", "INACTIVE", "DELINQUENT", "BLACKLISTED"];
+
+// Explicit defaults for every field this form manages -- updateTenant() PUTs
+// the whole object, so a field silently missing from state would blank out
+// existing tenant data on save, not just leave it untouched (same class of
+// silent-data-loss risk as PR #99's mobile/empire-pattern natural-key merge).
+const DEFAULT_FORM = {
+  full_name: "",
+  business_name: "",
+  mobile_phone: "",
+  email_address: "",
+  address: "",
+  barangay: "",
+  contact_person: "",
+  contact_phone_number: "",
+  verification_status: "UNVERIFIED",
+  status: "ACTIVE",
+  government_id: "",
+  barangay_permit_number: "",
+};
 
 export default function TenantForm({
   open,
@@ -22,11 +48,14 @@ export default function TenantForm({
   user,
   loading = false,
 }) {
-  const [form, setForm] = useState(initialValues || {});
+  const [form, setForm] = useState({ ...DEFAULT_FORM, ...initialValues });
 
   useEffect(() => {
     if (open) {
-      setForm(initialValues || {});
+      // Explicitly merge over DEFAULT_FORM (not just initialValues alone) so
+      // every one of the 11 fields always has a defined value -- see
+      // DEFAULT_FORM's comment on why this matters for the PUT payload.
+      setForm({ ...DEFAULT_FORM, ...initialValues });
     }
   }, [initialValues, open]);
 
@@ -44,37 +73,188 @@ export default function TenantForm({
   const editable = canEdit(user);
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>{form?.id ? "Edit Tenant" : "Add Tenant"}</DialogTitle>
       <DialogContent>
         <form id="tenant-form" onSubmit={handleSubmit}>
-          <TextField
-            label="Full Name"
-            name="full_name"
-            value={form?.full_name || ""}
-            onChange={handleChange}
-            margin="normal"
-            fullWidth
-            required
-            disabled={!editable || loading}
-          />
-          <TextField
-            label="Mobile Phone"
-            name="mobile_phone"
-            value={form?.mobile_phone || ""}
-            onChange={handleChange}
-            margin="normal"
-            fullWidth
-            required
-            disabled={!editable || loading}
-          />
-          {/* Future fields:
-            - Email Address
-            - Barangay
-            - Address
-            - Status
-            - File Uploads
-          */}
+          <Typography variant="overline" color="text.secondary">
+            Basic Info
+          </Typography>
+          <Grid container spacing={2} sx={{ mb: 1 }}>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="Full Name"
+                name="full_name"
+                value={form.full_name || ""}
+                onChange={handleChange}
+                margin="dense"
+                fullWidth
+                required
+                disabled={!editable || loading}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="Business Name"
+                name="business_name"
+                value={form.business_name || ""}
+                onChange={handleChange}
+                margin="dense"
+                fullWidth
+                disabled={!editable || loading}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="Mobile Phone"
+                name="mobile_phone"
+                value={form.mobile_phone || ""}
+                onChange={handleChange}
+                margin="dense"
+                fullWidth
+                required
+                disabled={!editable || loading}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="Email Address"
+                name="email_address"
+                type="email"
+                value={form.email_address || ""}
+                onChange={handleChange}
+                margin="dense"
+                fullWidth
+                disabled={!editable || loading}
+              />
+            </Grid>
+          </Grid>
+
+          <Divider sx={{ my: 1.5 }} />
+          <Typography variant="overline" color="text.secondary">
+            Address
+          </Typography>
+          <Grid container spacing={2} sx={{ mb: 1 }}>
+            <Grid item xs={12} sm={8}>
+              <TextField
+                label="Address"
+                name="address"
+                value={form.address || ""}
+                onChange={handleChange}
+                margin="dense"
+                fullWidth
+                multiline
+                minRows={2}
+                disabled={!editable || loading}
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <TextField
+                label="Barangay"
+                name="barangay"
+                value={form.barangay || ""}
+                onChange={handleChange}
+                margin="dense"
+                fullWidth
+                disabled={!editable || loading}
+              />
+            </Grid>
+          </Grid>
+
+          <Divider sx={{ my: 1.5 }} />
+          <Typography variant="overline" color="text.secondary">
+            Contact Person
+          </Typography>
+          <Grid container spacing={2} sx={{ mb: 1 }}>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="Contact Person"
+                name="contact_person"
+                value={form.contact_person || ""}
+                onChange={handleChange}
+                margin="dense"
+                fullWidth
+                helperText="Spouse, family, or trusted neighbor who manages the store"
+                disabled={!editable || loading}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="Contact Phone Number"
+                name="contact_phone_number"
+                value={form.contact_phone_number || ""}
+                onChange={handleChange}
+                margin="dense"
+                fullWidth
+                disabled={!editable || loading}
+              />
+            </Grid>
+          </Grid>
+
+          <Divider sx={{ my: 1.5 }} />
+          <Typography variant="overline" color="text.secondary">
+            Admin
+          </Typography>
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                select
+                label="Verification Status"
+                name="verification_status"
+                value={form.verification_status || "UNVERIFIED"}
+                onChange={handleChange}
+                margin="dense"
+                fullWidth
+                disabled={!editable || loading}
+              >
+                {VERIFICATION_STATUS_CHOICES.map((v) => (
+                  <MenuItem key={v} value={v}>
+                    {v}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                select
+                label="Status"
+                name="status"
+                value={form.status || "ACTIVE"}
+                onChange={handleChange}
+                margin="dense"
+                fullWidth
+                disabled={!editable || loading}
+              >
+                {TENANT_STATUS_CHOICES.map((s) => (
+                  <MenuItem key={s} value={s}>
+                    {s}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="Government ID"
+                name="government_id"
+                value={form.government_id || ""}
+                onChange={handleChange}
+                margin="dense"
+                fullWidth
+                disabled={!editable || loading}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="Barangay Permit Number"
+                name="barangay_permit_number"
+                value={form.barangay_permit_number || ""}
+                onChange={handleChange}
+                margin="dense"
+                fullWidth
+                disabled={!editable || loading}
+              />
+            </Grid>
+          </Grid>
         </form>
       </DialogContent>
       <DialogActions>
