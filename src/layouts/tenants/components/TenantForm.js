@@ -8,7 +8,6 @@ import {
   DialogActions,
   TextField,
   MenuItem,
-  Autocomplete,
   Button,
   Typography,
   Grid,
@@ -18,7 +17,6 @@ import PropTypes from "prop-types";
 
 import { debugLog } from "../../stalls/utils/debug";
 import { canEdit } from "../../leases/utils/roleUtils";
-import { searchMarkets, getMarket } from "../../../api/markets";
 
 const VERIFICATION_STATUS_CHOICES = ["UNVERIFIED", "PENDING", "VERIFIED", "REJECTED"];
 const TENANT_STATUS_CHOICES = ["ACTIVE", "INACTIVE", "DELINQUENT", "BLACKLISTED"];
@@ -36,7 +34,6 @@ const DEFAULT_FORM = {
   barangay: "",
   contact_person: "",
   contact_phone_number: "",
-  preferred_market: null,
   verification_status: "UNVERIFIED",
   status: "ACTIVE",
   government_id: "",
@@ -52,43 +49,15 @@ export default function TenantForm({
   loading = false,
 }) {
   const [form, setForm] = useState({ ...DEFAULT_FORM, ...initialValues });
-  const [marketOptions, setMarketOptions] = useState([]);
-  const [marketInput, setMarketInput] = useState("");
 
   useEffect(() => {
     if (open) {
       // Explicitly merge over DEFAULT_FORM (not just initialValues alone) so
-      // every one of the 12 fields always has a defined value -- see
+      // every one of the 11 fields always has a defined value -- see
       // DEFAULT_FORM's comment on why this matters for the PUT payload.
       setForm({ ...DEFAULT_FORM, ...initialValues });
     }
   }, [initialValues, open]);
-
-  // preferred_market is stored as a plain market id (matches what the API
-  // reads/writes); resolve it to a {id, code, name} option for the
-  // Autocomplete's display once the current tenant's market is known.
-  useEffect(() => {
-    if (!open) return;
-    const marketId = initialValues?.preferred_market;
-    if (!marketId) return;
-    getMarket(marketId)
-      .then((market) => {
-        setMarketOptions((prev) =>
-          prev.some((m) => m.id === market.id) ? prev : [...prev, market],
-        );
-      })
-      .catch(() => {}); // best-effort preload -- typing in the field re-fetches anyway
-  }, [open, initialValues?.preferred_market]);
-
-  useEffect(() => {
-    if (!open) return undefined;
-    const handle = setTimeout(() => {
-      searchMarkets(marketInput)
-        .then((results) => setMarketOptions(results))
-        .catch(() => {});
-    }, 250);
-    return () => clearTimeout(handle);
-  }, [marketInput, open]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -97,19 +66,11 @@ export default function TenantForm({
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const payload = {
-      ...form,
-      preferred_market: form.preferred_market?.id ?? form.preferred_market ?? null,
-    };
-    debugLog("[TenantForm] Submit:", payload);
-    onSubmit(payload);
+    debugLog("[TenantForm] Submit:", form);
+    onSubmit(form);
   };
 
   const editable = canEdit(user);
-  const selectedMarket =
-    typeof form.preferred_market === "object"
-      ? form.preferred_market
-      : marketOptions.find((m) => m.id === form.preferred_market) || null;
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
@@ -202,7 +163,7 @@ export default function TenantForm({
 
           <Divider sx={{ my: 1.5 }} />
           <Typography variant="overline" color="text.secondary">
-            Delegate
+            Contact Person
           </Typography>
           <Grid container spacing={2} sx={{ mb: 1 }}>
             <Grid item xs={12} sm={6}>
@@ -213,7 +174,7 @@ export default function TenantForm({
                 onChange={handleChange}
                 margin="dense"
                 fullWidth
-                helperText="Delegate: spouse, family, or trusted neighbor"
+                helperText="Spouse, family, or trusted neighbor who manages the store"
                 disabled={!editable || loading}
               />
             </Grid>
@@ -235,22 +196,6 @@ export default function TenantForm({
             Admin
           </Typography>
           <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
-              <Autocomplete
-                options={marketOptions}
-                value={selectedMarket}
-                onChange={(e, newValue) =>
-                  setForm((prev) => ({ ...prev, preferred_market: newValue }))
-                }
-                onInputChange={(e, newInput) => setMarketInput(newInput)}
-                getOptionLabel={(m) => (m ? `${m.code} — ${m.name}` : "")}
-                isOptionEqualToValue={(a, b) => a?.id === b?.id}
-                disabled={!editable || loading}
-                renderInput={(params) => (
-                  <TextField {...params} label="Preferred Market" margin="dense" fullWidth />
-                )}
-              />
-            </Grid>
             <Grid item xs={12} sm={6}>
               <TextField
                 select

@@ -38,7 +38,6 @@ import SaveIcon from "@mui/icons-material/Save";
 import MDButton from "components/MDButton";
 
 import { canEdit } from "../../leases/utils/roleUtils";
-import { getMarket } from "../../../api/markets";
 import {
   getTenantLeases,
   getTenantLeaseholderRights,
@@ -161,8 +160,7 @@ export default function TenantDetail({ tenant, user, onEdit, onRequestUpdate, sh
   const [docActionError, setDocActionError] = useState(null);
   const [unverifyDialogOpen, setUnverifyDialogOpen] = useState(false);
 
-  // ── PR 4: preferred_market resolution + Print ID Card ──────────────────────
-  const [preferredMarket, setPreferredMarket] = useState(null);
+  // ── PR 4: Print ID Card ──────────────────────────────────────────────────
   const [downloadingIdCard, setDownloadingIdCard] = useState(false);
   const [idCardError, setIdCardError] = useState(null);
 
@@ -170,14 +168,6 @@ export default function TenantDetail({ tenant, user, onEdit, onRequestUpdate, sh
     setDocOverrides({});
     setNotesDraft(tenant?.verification_notes || "");
   }, [tenant?.id]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    setPreferredMarket(null);
-    if (!tenant?.preferred_market) return;
-    getMarket(tenant.preferred_market)
-      .then(setPreferredMarket)
-      .catch(() => {}); // best-effort -- KV row falls back to "—" on failure
-  }, [tenant?.preferred_market]);
 
   const effectiveTenant = { ...tenant, ...docOverrides };
 
@@ -463,9 +453,6 @@ export default function TenantDetail({ tenant, user, onEdit, onRequestUpdate, sh
             </Grid>
             <Grid item xs={2} sm={1}>
               <KV label="Contact Phone" value={tenant.contact_phone_number} />
-            </Grid>
-            <Grid item xs={2} sm={1}>
-              <KV label="Preferred Market" value={preferredMarket?.code} />
             </Grid>
             <Grid item xs={2} sm={1}>
               <KV label="Government ID" value={tenant.government_id} />

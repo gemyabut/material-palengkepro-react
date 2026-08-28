@@ -300,7 +300,7 @@ export default function TenantDocumentUpload() {
               <UploadSection
                 icon={<PeopleAltIcon sx={{ color: "#1a237e" }} />}
                 title="Contact Person Photo"
-                subtitle="Your delegate — spouse, family, or trusted neighbor who manages your stall when you're away"
+                subtitle="Spouse, family, or trusted neighbor who manages your stall when you're away"
                 captureLabel="Take Their Photo"
                 replaceLabel="Retake Their Photo"
                 showThumbnail
