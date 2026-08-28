@@ -38,6 +38,7 @@ import SaveIcon from "@mui/icons-material/Save";
 import MDButton from "components/MDButton";
 
 import { canEdit } from "../../leases/utils/roleUtils";
+import { getMarket } from "../../../api/markets";
 import {
   getTenantLeases,
   getTenantLeaseholderRights,
@@ -47,6 +48,7 @@ import {
   uploadTenantPhotograph,
   updateVerificationNotes,
   setVerificationStatus,
+  downloadTenantIdCard,
 } from "../api/tenants";
 
 // ── Chip colour maps ──────────────────────────────────────────────────────────
@@ -159,10 +161,23 @@ export default function TenantDetail({ tenant, user, onEdit, onRequestUpdate, sh
   const [docActionError, setDocActionError] = useState(null);
   const [unverifyDialogOpen, setUnverifyDialogOpen] = useState(false);
 
+  // ── PR 4: preferred_market resolution + Print ID Card ──────────────────────
+  const [preferredMarket, setPreferredMarket] = useState(null);
+  const [downloadingIdCard, setDownloadingIdCard] = useState(false);
+  const [idCardError, setIdCardError] = useState(null);
+
   useEffect(() => {
     setDocOverrides({});
     setNotesDraft(tenant?.verification_notes || "");
   }, [tenant?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    setPreferredMarket(null);
+    if (!tenant?.preferred_market) return;
+    getMarket(tenant.preferred_market)
+      .then(setPreferredMarket)
+      .catch(() => {}); // best-effort -- KV row falls back to "—" on failure
+  }, [tenant?.preferred_market]);
 
   const effectiveTenant = { ...tenant, ...docOverrides };
 
@@ -195,6 +210,18 @@ export default function TenantDetail({ tenant, user, onEdit, onRequestUpdate, sh
       setDocActionError(err?.response?.data?.detail || "Failed to upload photograph.");
     } finally {
       setUploadingPhoto(false);
+    }
+  };
+
+  const handlePrintIdCard = async () => {
+    setIdCardError(null);
+    setDownloadingIdCard(true);
+    try {
+      await downloadTenantIdCard(tenant.id);
+    } catch (err) {
+      setIdCardError(err?.response?.data?.error || "Failed to generate ID card.");
+    } finally {
+      setDownloadingIdCard(false);
     }
   };
 
@@ -296,21 +323,55 @@ export default function TenantDetail({ tenant, user, onEdit, onRequestUpdate, sh
       <Card>
         <CardContent>
           <Grid container spacing={2} alignItems="flex-start">
-            {/* Photo / Avatar */}
-            <Grid item xs={12} sm="auto">
-              {effectiveTenant.photograph ? (
-                <Box
-                  component="img"
-                  src={effectiveTenant.photograph}
-                  alt={tenant.full_name}
-                  sx={{ width: 96, height: 96, borderRadius: 2, objectFit: "cover" }}
-                />
-              ) : (
+            {/* Photo / Avatar -- tenant + contact person (view-only), side by side.
+                Both blank -> a single placeholder (not two empty avatars);
+                one present -> show it plus a placeholder for the other. */}
+            {!effectiveTenant.photograph && !effectiveTenant.contact_person_photograph ? (
+              <Grid item xs={12} sm="auto">
                 <Avatar sx={{ width: 96, height: 96, bgcolor: "primary.main", fontSize: 32 }}>
                   {initials(tenant.full_name)}
                 </Avatar>
-              )}
-            </Grid>
+              </Grid>
+            ) : (
+              <Grid item xs={12} sm="auto">
+                <Stack direction="row" spacing={1}>
+                  <Box textAlign="center">
+                    {effectiveTenant.photograph ? (
+                      <Box
+                        component="img"
+                        src={effectiveTenant.photograph}
+                        alt={tenant.full_name}
+                        sx={{ width: 96, height: 96, borderRadius: 2, objectFit: "cover" }}
+                      />
+                    ) : (
+                      <Avatar sx={{ width: 96, height: 96, bgcolor: "primary.main", fontSize: 32 }}>
+                        {initials(tenant.full_name)}
+                      </Avatar>
+                    )}
+                    <Typography variant="caption" color="text.secondary" display="block">
+                      Tenant
+                    </Typography>
+                  </Box>
+                  <Box textAlign="center">
+                    {effectiveTenant.contact_person_photograph ? (
+                      <Box
+                        component="img"
+                        src={effectiveTenant.contact_person_photograph}
+                        alt={tenant.contact_person || "Contact person"}
+                        sx={{ width: 96, height: 96, borderRadius: 2, objectFit: "cover" }}
+                      />
+                    ) : (
+                      <Avatar sx={{ width: 96, height: 96, bgcolor: "grey.400", fontSize: 32 }}>
+                        {initials(tenant.contact_person)}
+                      </Avatar>
+                    )}
+                    <Typography variant="caption" color="text.secondary" display="block">
+                      Contact Person
+                    </Typography>
+                  </Box>
+                </Stack>
+              </Grid>
+            )}
 
             {/* Identity */}
             <Grid item xs>
@@ -332,7 +393,7 @@ export default function TenantDetail({ tenant, user, onEdit, onRequestUpdate, sh
             </Grid>
 
             {/* Actions */}
-            {(editable && showEdit) || user?.role === "tenant" ? (
+            {(editable && showEdit) || user?.role === "tenant" || user?.role === "executive" ? (
               <Grid item xs={12} sm="auto">
                 <Stack direction="row" spacing={1} flexWrap="wrap">
                   {editable && showEdit && (
@@ -359,7 +420,24 @@ export default function TenantDetail({ tenant, user, onEdit, onRequestUpdate, sh
                       Request Update
                     </Button>
                   )}
+                  {/* Owner-only, matches backend TenantIdCardExportPermission gate exactly
+                      (defense-in-depth per BUG #25 discipline -- not relying on the 403 alone) */}
+                  {user?.role === "executive" && (
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={handlePrintIdCard}
+                      disabled={downloadingIdCard}
+                    >
+                      {downloadingIdCard ? "Generating…" : "Print ID Card"}
+                    </Button>
+                  )}
                 </Stack>
+                {idCardError && (
+                  <Typography variant="caption" color="error" display="block" mt={0.5}>
+                    {idCardError}
+                  </Typography>
+                )}
               </Grid>
             ) : null}
           </Grid>
@@ -385,6 +463,9 @@ export default function TenantDetail({ tenant, user, onEdit, onRequestUpdate, sh
             </Grid>
             <Grid item xs={2} sm={1}>
               <KV label="Contact Phone" value={tenant.contact_phone_number} />
+            </Grid>
+            <Grid item xs={2} sm={1}>
+              <KV label="Preferred Market" value={preferredMarket?.code} />
             </Grid>
             <Grid item xs={2} sm={1}>
               <KV label="Government ID" value={tenant.government_id} />

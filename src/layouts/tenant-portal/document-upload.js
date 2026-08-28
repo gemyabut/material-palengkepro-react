@@ -16,6 +16,7 @@ import {
   Button, Stack, Grid,
 } from "@mui/material";
 import PortraitIcon from "@mui/icons-material/Portrait";
+import PeopleAltIcon from "@mui/icons-material/PeopleAlt";
 import DescriptionIcon from "@mui/icons-material/Description";
 import ReplayIcon from "@mui/icons-material/Replay";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
@@ -33,16 +34,21 @@ const AUTO_RETURN_MS = 4000;
  * "Documents" operate fully independently of each other.
  */
 function UploadSection({
-  icon, title, currentUrl, statusLoading, onCaptured, previewUrl, submitting,
+  icon, title, subtitle, currentUrl, statusLoading, onCaptured, previewUrl, submitting,
   onRetake, onSubmit, captureLabel, replaceLabel, showThumbnail,
 }) {
   return (
     <Card sx={{ height: "100%" }}>
       <CardContent sx={{ p: { xs: 3, sm: 4 } }}>
-        <Stack direction="row" alignItems="center" spacing={1} mb={2}>
+        <Stack direction="row" alignItems="center" spacing={1} mb={subtitle ? 0.5 : 2}>
           {icon}
           <Typography variant="h6" fontWeight={700}>{title}</Typography>
         </Stack>
+        {subtitle && (
+          <Typography variant="body2" color="text.secondary" mb={2}>
+            {subtitle}
+          </Typography>
+        )}
 
         {statusLoading ? (
           <Box display="flex" justifyContent="center" py={4}>
@@ -235,6 +241,14 @@ export default function TenantDocumentUpload() {
     onAuthError: handleAuthError,
   });
 
+  const contactPhoto = useUploadSection({
+    statusFetcher: tenantPortalApi.contactPhotographStatus,
+    uploadFn: tenantPortalApi.uploadContactPhotograph,
+    urlKey: "contact_photograph_url",
+    onSuccess: handleUploadResult,
+    onAuthError: handleAuthError,
+  });
+
   const doc = useUploadSection({
     statusFetcher: tenantPortalApi.documentStatus,
     uploadFn: tenantPortalApi.uploadDocument,
@@ -272,7 +286,7 @@ export default function TenantDocumentUpload() {
 
         {!success && (
           <Grid container spacing={3}>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12} sm={4}>
               <UploadSection
                 icon={<PortraitIcon sx={{ color: "#1a237e" }} />}
                 title="Your Photo"
@@ -282,7 +296,18 @@ export default function TenantDocumentUpload() {
                 {...photo}
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12} sm={4}>
+              <UploadSection
+                icon={<PeopleAltIcon sx={{ color: "#1a237e" }} />}
+                title="Contact Person Photo"
+                subtitle="Your delegate — spouse, family, or trusted neighbor who manages your stall when you're away"
+                captureLabel="Take Their Photo"
+                replaceLabel="Retake Their Photo"
+                showThumbnail
+                {...contactPhoto}
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
               <UploadSection
                 icon={<DescriptionIcon sx={{ color: "#1a237e" }} />}
                 title="Documents (Permits, IDs, etc.)"
