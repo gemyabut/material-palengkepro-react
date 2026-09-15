@@ -110,6 +110,11 @@ export default function StallsPaginatedTable({
           <TableHead>
             <TableRow>
               {[
+                // BUG-64 follow-up (2026-09-15 Octal QA, PR 5) — system-generated
+                // ID column, not sortable: neither StallViewSet.ordering_fields
+                // (stalls/views.py) includes 'id' — adding it is a backend change,
+                // out of scope for this frontend-only fix.
+                { id: "id", label: "ID", sortable: false },
                 { id: "stall_number", label: "Stall #" },
                 { id: "zone", label: "Zone" },
                 { id: "size_sqm", label: "Size (sqm)" },
@@ -121,7 +126,10 @@ export default function StallsPaginatedTable({
                 { id: "remarks", label: "Remarks" },
                 { id: "actions", label: "Actions", sortable: false },
               ].map((col) => (
-                <TableCell key={col.id} align={col.id === "actions" ? "center" : "left"}>
+                <TableCell
+                  key={col.id}
+                  align={col.id === "actions" ? "center" : col.id === "id" ? "right" : "left"}
+                >
                   {col.sortable === false ? (
                     <MDTypography variant="button">{col.label}</MDTypography>
                   ) : (
@@ -140,19 +148,24 @@ export default function StallsPaginatedTable({
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={10} align="center">
+                <TableCell colSpan={11} align="center">
                   <MDTypography variant="button">Loading...</MDTypography>
                 </TableCell>
               </TableRow>
             ) : stalls.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={10} align="center">
+                <TableCell colSpan={11} align="center">
                   <MDTypography variant="button">No stalls found.</MDTypography>
                 </TableCell>
               </TableRow>
             ) : (
               stalls.map((stall) => (
                 <TableRow key={stall.id}>
+                  <TableCell align="right">
+                    <MDTypography variant="body2" sx={{ fontFamily: "monospace" }}>
+                      {stall.id ?? "—"}
+                    </MDTypography>
+                  </TableCell>
                   <TableCell>
                     <MDTypography variant="body2">{stall.stall_number}</MDTypography>
                   </TableCell>
