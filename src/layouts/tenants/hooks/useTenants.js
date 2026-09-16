@@ -1,51 +1,55 @@
 // src/layouts/tenants/hooks/useTenants.js
-
-import { useState, useEffect, useCallback } from "react";
+//
+// BUG-67/MDU-002 follow-up — Tenant list previously hand-rolled its own
+// page/page_size fetch inline in MasterTenantList.js (and sent the wrong
+// param names entirely, the original bug). Now built on the same shared
+// core as useStalls/useLeases, matching that pattern for consistency.
+import { useCallback } from "react";
 import { getTenants } from "../api/tenants";
-import { debugLog } from "../../stalls/utils/debug";
+import usePaginatedResource from "../../../hooks/usePaginatedResource";
 
-/**
- * useTenants - React hook for tenant data
- * @param {object} queryParams - search/filter/pagination params
- * @param {object} user - current user (for role-based filtering)
- */
-export default function useTenants(queryParams = {}, user = null) {
-  const [tenants, setTenants] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [total, setTotal] = useState(0);
-  const [error, setError] = useState(null);
+export default function useTenants({ initialPageSize = 20, initialOrdering = "full_name" } = {}) {
+  const {
+    items: tenants,
+    total: totalCount,
+    loading,
+    error,
+    page,
+    pageSize: rowsPerPage,
+    filters,
+    setPage,
+    setPageSize: setRowsPerPage,
+    updateFilters,
+    refresh: fetchTenants,
+  } = usePaginatedResource(getTenants, {
+    initialPageSize,
+    initialFilters: { ordering: initialOrdering },
+  });
 
-  const fetchTenants = useCallback(() => {
-    setLoading(true);
-    setError(null);
+  const search = filters.search || "";
+  const ordering = filters.ordering || initialOrdering;
 
-    // Optionally adjust params by role
-    let params = { ...queryParams };
-    if (user) {
-      if (user.role === "leasing_officer") params.assigned_to = user.id;
-      if (user.role === "collector") params.assigned_collector = user.id;
-      if (user.role === "tenant") params.tenant_id = user.id;
-      // ...other role filters as needed
-    }
+  // Original only sent `search` when truthy — clearing it drops the key
+  // (axios omits undefined params) rather than sending an empty string.
+  const setSearch = useCallback(
+    (val) => updateFilters({ search: val || undefined }),
+    [updateFilters]
+  );
+  const setOrdering = useCallback((val) => updateFilters({ ordering: val }), [updateFilters]);
 
-    getTenants(params)
-      .then((data) => {
-        setTenants(data.results || data); // API paginated or not
-        setTotal(data.count || (data.results ? data.results.length : data.length));
-        debugLog("Fetched tenants (hook):", data);
-      })
-      .catch((err) => {
-        setError(err);
-        debugLog("useTenants error:", err);
-      })
-      .finally(() => setLoading(false));
-    // eslint-disable-next-line
-  }, [JSON.stringify(queryParams), user?.id, user?.role]);
-
-  // Fetch on mount or query/user change
-  useEffect(() => {
-    fetchTenants();
-  }, [fetchTenants]);
-
-  return { tenants, loading, total, error, refetch: fetchTenants };
+  return {
+    tenants,
+    totalCount,
+    loading,
+    error,
+    page,
+    rowsPerPage,
+    search,
+    ordering,
+    setPage,
+    setRowsPerPage,
+    setSearch,
+    setOrdering,
+    fetchTenants,
+  };
 }

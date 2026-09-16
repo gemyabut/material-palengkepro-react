@@ -6,7 +6,7 @@ import MDBox from "components/MDBox";
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import { useAuth } from "context/AuthContext";
-import { Card, Snackbar, Alert, Pagination, Stack } from "@mui/material";
+import { Card, Snackbar, Alert } from "@mui/material";
 
 // Role-based views
 import MasterTenantList from "./pages/MasterTenantList";
@@ -19,7 +19,6 @@ import TenantSummaryBand from "./components/TenantSummaryBand";
 export default function Tenants() {
   const { userProfile: user } = useAuth();
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "info" });
-  const [page, setPage] = useState(1);
 
   const showSnackbar = (message, severity = "info") => {
     setSnackbar({ open: true, message, severity });
@@ -39,13 +38,13 @@ export default function Tenants() {
       case "finance_head":
       case "executive":
       case "accounts_receivable":
-        return <MasterTenantList showSnackbar={showSnackbar} page={page} setPage={setPage} />;
+        return <MasterTenantList showSnackbar={showSnackbar} />;
       case "leasing_officer":
-        return <OfficerTenantList showSnackbar={showSnackbar} page={page} setPage={setPage} />;
+        return <OfficerTenantList showSnackbar={showSnackbar} />;
       case "collector":
-        return <CollectorTenantList showSnackbar={showSnackbar} page={page} setPage={setPage} />;
+        return <CollectorTenantList showSnackbar={showSnackbar} />;
       case "cashier":
-        return <CashierTenantList showSnackbar={showSnackbar} page={page} setPage={setPage} />;
+        return <CashierTenantList showSnackbar={showSnackbar} />;
       case "tenant":
         return <TenantSelfPortal showSnackbar={showSnackbar} />;
       default:
@@ -59,17 +58,13 @@ export default function Tenants() {
       <MDBox py={3}>
         {user?.role && user.role.toLowerCase() !== "tenant" && <TenantSummaryBand />}
         <Card>
+          {/* Pagination lives inside each child component now (e.g.
+              MasterTenantList) — this wrapper used to render its own
+              second, non-functional placeholder Pagination on top of it
+              (count hardcoded to 10, page/setPage unread by every child).
+              Removed as a duplicate-widget fix, not part of the pagination
+              consolidation itself. */}
           <MDBox p={2}>{renderTenantComponent()}</MDBox>
-          {user?.role !== "tenant" && (
-            <MDBox display="flex" justifyContent="center" py={2}>
-              <Pagination
-                count={10} // Placeholder value, override in child component
-                page={page}
-                onChange={(e, value) => setPage(value)}
-                color="primary"
-              />
-            </MDBox>
-          )}
         </Card>
         <Snackbar
           open={snackbar.open}

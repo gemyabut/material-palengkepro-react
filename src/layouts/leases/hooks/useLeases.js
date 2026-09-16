@@ -1,5 +1,5 @@
 //
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import {
   getLeases,
   addLease,
@@ -14,6 +14,7 @@ import {
 import { debugLog } from "../../stalls/utils/debug";
 import Papa from "papaparse";
 import * as XLSX from "xlsx";
+import usePaginatedResource from "../../../hooks/usePaginatedResource";
 
 // Utility: summary count by status/type/etc.
 function summarizeLeases(leases) {
@@ -25,97 +26,108 @@ function summarizeLeases(leases) {
   return summary;
 }
 
+const STATUSES = ["ACTIVE", "PENDING", "EXPIRED", "TERMINATED"];
+
+// Maps the UI filter shape ({status, tenant, stall, lease_type,
+// payment_status, full_name|search}) to the actual DRF query params —
+// same mapping loadLeases used to do inline.
+function toApiParams({
+  page,
+  page_size,
+  status,
+  tenant,
+  stall,
+  lease_type,
+  payment_status,
+  full_name,
+  search,
+}) {
+  const params = { page, page_size };
+  if (status) params.status = status;
+  if (tenant) params.tenant = tenant;
+  if (stall) params.stall = stall;
+  if (lease_type) params.lease_type = lease_type;
+  if (payment_status) params.payment_status = payment_status;
+  if (full_name) params.search = full_name;
+  else if (search) params.search = search;
+  return params;
+}
+
 export function useLeases({ filter = {}, page = 1, limit = 10, autoLoad = true, onLoaded } = {}) {
-  const [leases, setLeases] = useState([]);
   const [summary, setSummary] = useState({});
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState();
-  const [currentPage, setCurrentPage] = useState(page);
-  const [currentFilter, setCurrentFilter] = useState(filter);
 
-  // Load leases (with filter, pagination)
-  const loadLeases = useCallback(
-    async (opt = {}) => {
-      setLoading(true);
-      setError(undefined);
+  const fetchFn = useCallback(
+    async (rawParams) => {
+      const params = toApiParams(rawParams);
+      debugLog("[useLeases] Loading leases", params);
+      const response = await getLeases(params);
+      const results = Array.isArray(response)
+        ? response
+        : Array.isArray(response?.results)
+        ? response.results
+        : [];
+      if (onLoaded) onLoaded(results, results);
 
+      // Summary: server-side per-status counts (independent of current
+      // filter/search), so the widget shows true totals across all leases.
       try {
-        const pageNum = opt.page || currentPage || 1;
-        const perPage = opt.limit || limit;
-        const f = opt.filter || currentFilter || {};
-
-        // Build server params (DRF DjangoFilterBackend + SearchFilter)
-        const params = { page: pageNum, page_size: perPage };
-        if (f.status) params.status = f.status;
-        if (f.tenant) params.tenant = f.tenant;
-        if (f.stall) params.stall = f.stall;
-        if (f.lease_type) params.lease_type = f.lease_type;
-        if (f.payment_status) params.payment_status = f.payment_status;
-        // Map UI "full_name" search to DRF SearchFilter ?search=
-        if (f.full_name) params.search = f.full_name;
-        else if (f.search) params.search = f.search;
-
-        debugLog("[useLeases] Loading leases", params);
-        const response = await getLeases(params);
-
-        // DRF paginated { count, next, previous, results } or plain array
-        const results = Array.isArray(response)
-          ? response
-          : Array.isArray(response?.results)
-          ? response.results
-          : [];
-        const totalCount = Array.isArray(response)
-          ? response.length
-          : response?.count ?? results.length;
-
-        setLeases(results);
-        setTotal(totalCount);
-        setCurrentPage(pageNum);
-
-        // Summary: server-side per-status counts (independent of current filter/search),
-        // so the dashboard widget shows true totals across all leases.
-        try {
-          const STATUSES = ["ACTIVE", "PENDING", "EXPIRED", "TERMINATED"];
-          const summaryResponses = await Promise.all(
-            STATUSES.map((s) => getLeases({ status: s, page: 1, page_size: 1 }))
-          );
-          const summaryObj = {};
-          STATUSES.forEach((s, i) => {
-            summaryObj[s.toLowerCase()] = summaryResponses[i]?.count ?? 0;
-          });
-          setSummary(summaryObj);
-        } catch (summaryErr) {
-          debugLog("[useLeases] Error loading summary counts", summaryErr);
-          setSummary({});
-        }
-
-        if (onLoaded) onLoaded(results, results);
-      } catch (e) {
-        debugLog("[useLeases] Error loading leases", e);
-        setError(e);
-      } finally {
-        setLoading(false);
+        const summaryResponses = await Promise.all(
+          STATUSES.map((s) => getLeases({ status: s, page: 1, page_size: 1 }))
+        );
+        const summaryObj = {};
+        STATUSES.forEach((s, i) => {
+          summaryObj[s.toLowerCase()] = summaryResponses[i]?.count ?? 0;
+        });
+        setSummary(summaryObj);
+      } catch (summaryErr) {
+        debugLog("[useLeases] Error loading summary counts", summaryErr);
+        setSummary({});
       }
+
+      return response;
     },
-    [currentFilter, currentPage, limit, onLoaded]
+    [onLoaded]
   );
 
-  useEffect(() => {
-    if (autoLoad) loadLeases({ filter: currentFilter, page: currentPage });
-    // eslint-disable-next-line
-  }, [currentFilter, currentPage, autoLoad]);
+  const {
+    items: leases,
+    total,
+    loading,
+    error,
+    page: currentPage,
+    setPage,
+    filters: currentFilter,
+    setFilters,
+    refresh,
+  } = usePaginatedResource(fetchFn, {
+    initialPage: page,
+    initialPageSize: limit,
+    initialFilters: filter,
+    enabled: autoLoad,
+  });
+
+  // BUG-67/MDU-002 follow-up fix: filter changes now reset to page 1 (the
+  // pre-consolidation hook left the page wherever it was, so a new filter
+  // could land on an empty out-of-range page). Original setFilter was a
+  // raw replace (not a merge), preserved here — just with the page reset
+  // added.
+  const setFilter = useCallback(
+    (newFilter) => {
+      setFilters(newFilter);
+      setPage(1);
+    },
+    [setFilters, setPage]
+  );
+
+  const setCurrentPage = setPage;
 
   // Pagination controls
   const nextPage = useCallback(() => {
     setCurrentPage((p) => p + 1);
-  }, []);
+  }, [setCurrentPage]);
   const prevPage = useCallback(() => {
     setCurrentPage((p) => Math.max(1, p - 1));
-  }, []);
-  const refresh = useCallback(() => {
-    loadLeases({ filter: currentFilter, page: currentPage });
-  }, [loadLeases, currentFilter, currentPage]);
+  }, [setCurrentPage]);
 
   // CRUD and other actions
   const createLease = useCallback(
@@ -179,7 +191,12 @@ export function useLeases({ filter = {}, page = 1, limit = 10, autoLoad = true, 
 
   // Direct lease setter (for admin UI, etc.)
   const setLease = useCallback((updater) => {
-    setLeases((prev) => (typeof updater === "function" ? updater(prev) : updater));
+    // Note: this used to mutate the hook's internal `leases` state
+    // directly. That state now lives inside usePaginatedResource and isn't
+    // externally settable — no caller currently uses setLease, so this is
+    // kept as a documented no-op rather than removed outright pending
+    // confirmation nothing depends on it.
+    debugLog("[useLeases] setLease called but is a no-op post-consolidation", updater);
   }, []);
 
   // Return API
@@ -191,7 +208,7 @@ export function useLeases({ filter = {}, page = 1, limit = 10, autoLoad = true, 
     error,
     currentPage,
     setCurrentPage,
-    setFilter: setCurrentFilter,
+    setFilter,
     nextPage,
     prevPage,
     refresh,

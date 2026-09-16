@@ -1,6 +1,6 @@
 // src/layouts/stalls/hooks/useStalls.js
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import {
   fetchStalls,
   fetchStallsSummary,
@@ -13,119 +13,83 @@ import {
 } from "../api/stalls";
 
 import { debugLog } from "layouts/stalls/utils/debug";
-// ...
+import usePaginatedResource from "../../../hooks/usePaginatedResource";
 
 // Default page size for pagination
 const DEFAULT_PAGE_SIZE = 20;
 
 export default function useStalls(initialFilters = {}) {
-  // Core state
-  const [stalls, setStalls] = useState([]);
   const [summary, setSummary] = useState([]);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  // CRUD-originated errors share the same displayed error slot as list-load
+  // errors, matching the pre-consolidation behavior exactly.
+  const [crudError, setCrudError] = useState(null);
 
-  // Pagination & filters
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
-  const [filters, setFilters] = useState(initialFilters); // { search, status, type, section, ... }
+  // Summary is fetched alongside the main list on every load — same
+  // cadence as before this hook was consolidated onto the shared core.
+  const fetchFn = useCallback(async (params) => {
+    debugLog(" [useStalls] Loading stalls with params:", params);
+    const [stallsRes, summaryRes] = await Promise.all([fetchStalls(params), fetchStallsSummary()]);
+    const summaryResponse = summaryRes.data || summaryRes;
+    setSummary(summaryResponse.summary || []);
+    return stallsRes.data || stallsRes;
+  }, []);
 
-  // Advanced: track if server has next/prev page
-  const [hasNextPage, setHasNextPage] = useState(false);
-  const [hasPrevPage, setHasPrevPage] = useState(false);
+  const {
+    items: stalls,
+    total,
+    loading,
+    error: rawError,
+    hasNextPage,
+    hasPrevPage,
+    page,
+    pageSize,
+    filters,
+    setPage: goToPage,
+    setPageSize: changePageSize,
+    updateFilters,
+    refresh,
+  } = usePaginatedResource(fetchFn, {
+    initialPageSize: DEFAULT_PAGE_SIZE,
+    initialFilters,
+  });
 
-  const refresh = () => load();
-
-  debugLog("[useStalls] Initial State summary", stalls);
-
-  // Main fetcher
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      // Pass pagination and filters as params
-      const params = {
-        page,
-        page_size: pageSize,
-        ...filters,
-      };
-      debugLog(" [useCallback] Loading stalls with params:", params);
-
-      const [stallsRes, summaryRes] = await Promise.all([
-        fetchStalls(params),
-        fetchStallsSummary(),
-      ]);
-
-      debugLog("[useCallback] fetchStalls returned:", stallsRes);
-      debugLog("[useCallback] fetchStalls Summary returned:", summaryRes);
-
-      // Universal pattern to support both axios (real) and direct mock
-      const response = stallsRes.data || stallsRes;
-      const { results, count, next, previous } = response;
-
-      setStalls(results || response); // If paginated, use results; if not, use full array
-      setTotal(count || (results ? results.length : response.length));
-      setHasNextPage(Boolean(next));
-      setHasPrevPage(Boolean(previous));
-
-      const summaryResponse = summaryRes.data || summaryRes;
-      setSummary(summaryResponse.summary || []);
-    } catch (err) {
-      setError(err?.response?.data?.detail || err.message || "Error loading stalls.");
-      debugLog("[useCallback] ERROR loading stalls:", err);
-    }
-    setLoading(false);
-  }, [page, pageSize, filters]);
-
-  // Load on mount & whenever page/filters change
-  useEffect(() => {
-    load();
-  }, [load]);
+  // Preserve the original string-error shape (error message text, not an
+  // Error/axios-error object) that StallsPage renders directly in an Alert.
+  const error = crudError
+    ? crudError
+    : rawError
+    ? rawError?.response?.data?.detail || rawError.message || "Error loading stalls."
+    : null;
 
   // Exposed API helpers for forms/components (optional)
   const create = async (data) => {
-    setLoading(true);
     try {
       await createStall(data);
-      await load();
+      await refresh();
     } catch (err) {
-      setError(err?.response?.data?.detail || err.message || "Error creating stall.");
+      setCrudError(err?.response?.data?.detail || err.message || "Error creating stall.");
       throw err;
     }
-    setLoading(false);
   };
 
   const update = async (id, data) => {
-    setLoading(true);
     try {
       await updateStall(id, data);
-      await load();
+      await refresh();
     } catch (err) {
-      setError(err?.response?.data?.detail || err.message || "Error updating stall.");
+      setCrudError(err?.response?.data?.detail || err.message || "Error updating stall.");
       throw err;
     }
-    setLoading(false);
   };
 
   const deactivate = async (id) => {
-    setLoading(true);
     try {
       await deactivateStall(id);
-      await load();
+      await refresh();
     } catch (err) {
-      setError(err?.response?.data?.detail || err.message || "Error deactivating stall.");
+      setCrudError(err?.response?.data?.detail || err.message || "Error deactivating stall.");
       throw err;
     }
-    setLoading(false);
-  };
-
-  // Pagination & filters API
-  const goToPage = (n) => setPage(n);
-  const changePageSize = (sz) => setPageSize(sz);
-  const updateFilters = (newFilters) => {
-    setFilters((f) => ({ ...f, ...newFilters }));
-    setPage(1); // reset to page 1 when filters change
   };
 
   // Export actions (returns blob, you handle download in component)
@@ -133,7 +97,7 @@ export default function useStalls(initialFilters = {}) {
     try {
       return await exportCsv();
     } catch (err) {
-      setError("Export failed: " + (err?.message || "Unknown error"));
+      debugLog("[useStalls] Export CSV error:", err);
       throw err;
     }
   };
@@ -141,7 +105,7 @@ export default function useStalls(initialFilters = {}) {
     try {
       return await exportExcel();
     } catch (err) {
-      setError("Export failed: " + (err?.message || "Unknown error"));
+      debugLog("[useStalls] Export XLSX error:", err);
       throw err;
     }
   };
@@ -157,7 +121,7 @@ export default function useStalls(initialFilters = {}) {
     hasNextPage,
     hasPrevPage,
     filters,
-    refresh: load,
+    refresh,
     goToPage,
     changePageSize,
     updateFilters,
