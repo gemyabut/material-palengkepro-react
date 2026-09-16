@@ -7,6 +7,7 @@ import {
   createStall,
   updateStall,
   deactivateStall,
+  reactivateStall,
   exportExcel,
   // ...any other API functions you want to expose
 } from "../api/stalls";
@@ -91,6 +92,16 @@ export default function useStalls(initialFilters = {}) {
     }
   };
 
+  const reactivate = async (id) => {
+    try {
+      await reactivateStall(id);
+      await refresh();
+    } catch (err) {
+      setCrudError(err?.response?.data?.detail || err.message || "Error reactivating stall.");
+      throw err;
+    }
+  };
+
   // Export actions (returns blob, you handle download in component)
   const exportXLSX = async () => {
     try {
@@ -119,6 +130,7 @@ export default function useStalls(initialFilters = {}) {
     createStall: create,
     updateStall: update,
     deactivateStall: deactivate,
+    reactivateStall: reactivate,
     exportXLSX,
   };
 }

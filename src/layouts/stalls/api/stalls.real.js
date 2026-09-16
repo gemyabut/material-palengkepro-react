@@ -9,6 +9,8 @@ export const createStall = async (data) => (await axios.post("/stalls/", data)).
 export const updateStall = async (id, data) => (await axios.patch(`/stalls/${id}/`, data)).data;
 export const deactivateStall = async (id) =>
   (await axios.patch(`/stalls/${id}/`, { status: "INACTIVE" })).data;
+export const reactivateStall = async (id) =>
+  (await axios.post(`/stalls/${id}/reactivate/`)).data;
 export const deleteStall = async (id) => (await axios.delete(`/stalls/${id}/`)).data;
 
 /**

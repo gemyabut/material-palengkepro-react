@@ -98,6 +98,7 @@ export const updateStall = (id, data) =>
   );
 
 export const deactivateStall = (id) => updateStall(id, { status: "INACTIVE" });
+export const reactivateStall = (id) => updateStall(id, { status: "AVAILABLE" });
 
 export const deleteStall = (id) =>
   new Promise((resolve) =>
