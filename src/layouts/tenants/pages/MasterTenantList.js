@@ -1,6 +1,6 @@
 // src/layouts/tenants/pages/MasterTenantList.js
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Box,
   Stack,
@@ -25,7 +25,6 @@ import CommunicationDialog from "../components/CommunicationDialog";
 import TenantForm from "../components/TenantForm";
 
 import {
-  getTenants,
   addTenant,
   updateTenant,
   deactivateTenant,
@@ -37,14 +36,34 @@ import {
 import { useAuth } from "context/AuthContext";
 import { canBulk } from "../../leases/utils/roleUtils";
 import { debugLog } from "../../stalls/utils/debug";
+import useTenants from "../hooks/useTenants";
 
 export default function MasterTenantList() {
   const { userProfile: user } = useAuth();
   const navigate = useNavigate();
 
-  const [tenants, setTenants] = useState([]);
-  const [totalCount, setTotalCount] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const {
+    tenants,
+    totalCount,
+    loading: listLoading,
+    error: listError,
+    page,
+    rowsPerPage,
+    search,
+    ordering,
+    setPage,
+    setRowsPerPage,
+    setSearch,
+    setOrdering,
+    fetchTenants,
+  } = useTenants();
+
+  // CRUD actions (deactivate/save/bulk) toggle this independently of the
+  // list fetch's own loading state — matches the pre-consolidation
+  // behavior where a single loading flag covered both concerns.
+  const [actionLoading, setActionLoading] = useState(false);
+  const loading = listLoading || actionLoading;
+
   const [selectedIds, setSelectedIds] = useState([]);
   const [commOpen, setCommOpen] = useState(false);
   const [commLoading, setCommLoading] = useState(false);
@@ -52,44 +71,34 @@ export default function MasterTenantList() {
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "info" });
   const [showForm, setShowForm] = useState(false);
   const [editTenant, setEditTenant] = useState(null);
-  const [page, setPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(20);
-  const [search, setSearch] = useState('');
-  const [ordering, setOrdering] = useState('full_name');
 
   const allowBulk = canBulk(user);
 
-  const fetchTenants = useCallback(() => {
-    const offset = (page - 1) * rowsPerPage;
-    setLoading(true);
-    const params = { limit: rowsPerPage, offset, ordering };
-    if (search) params.search = search;
-    getTenants(params)
-      .then((data) => {
-        const tenantsList = Array.isArray(data.results) ? data.results : data;
-        const count = data.count || tenantsList.length;
-        setTenants(tenantsList);
-        setTotalCount(count);
-        setSelectedIds([]);
-      })
-      .catch((err) => {
-        debugLog("[MasterTenantList] Fetch error", err);
-        setSnackbar({ open: true, message: "Failed to load tenants.", severity: "error" });
-      })
-      .finally(() => setLoading(false));
-  }, [page, rowsPerPage, search, ordering]);
+  // Reset selection whenever a new page of tenants loads — matches the
+  // pre-consolidation fetchTenants().then(() => setSelectedIds([])).
+  useEffect(() => {
+    setSelectedIds([]);
+  }, [tenants]);
 
   useEffect(() => {
-    fetchTenants();
-  }, [fetchTenants]);
+    if (listError) {
+      debugLog("[MasterTenantList] Fetch error", listError);
+      setSnackbar({ open: true, message: "Failed to load tenants.", severity: "error" });
+    }
+  }, [listError]);
 
   const handleDeactivate = (id) => {
     if (!window.confirm("Are you sure you want to deactivate this tenant?")) return;
-    setLoading(true);
+    setActionLoading(true);
     deactivateTenant(id)
       .then(() => {
         setSnackbar({ open: true, message: "Tenant deactivated.", severity: "success" });
         fetchTenants();
+        // Matches pre-consolidation behavior exactly: the single shared
+        // `loading` flag only got reset via the chained fetch's own
+        // .finally() on success — a failed deactivate left it stuck true.
+        // Not fixing that here; just preserving it faithfully.
+        setActionLoading(false);
       })
       .catch((err) => {
         debugLog("[MasterTenantList] Deactivate error", err);
@@ -112,7 +121,7 @@ export default function MasterTenantList() {
   };
 
   const handleFormSubmit = (form) => {
-    setLoading(true);
+    setActionLoading(true);
     const apiCall = form.id ? updateTenant(form.id, form) : addTenant(form);
     apiCall
       .then(() => {
@@ -125,7 +134,7 @@ export default function MasterTenantList() {
         debugLog("[MasterTenantList] Save error", err);
         setSnackbar({ open: true, message: "Failed to save tenant.", severity: "error" });
       })
-      .finally(() => setLoading(false));
+      .finally(() => setActionLoading(false));
   };
 
   const handleBulkExport = async () => {
@@ -216,9 +225,9 @@ export default function MasterTenantList() {
               onDeactivate={handleDeactivate}
               showCheckbox={allowBulk}
               search={search}
-              onSearchChange={(val) => { setSearch(val); setPage(1); }}
+              onSearchChange={setSearch}
               ordering={ordering}
-              onOrderingChange={(val) => { setOrdering(val); setPage(1); }}
+              onOrderingChange={setOrdering}
             />
             <Stack direction="row" justifyContent="space-between" alignItems="center" p={2}>
               <FormControl sx={{ minWidth: 120 }} size="small">
