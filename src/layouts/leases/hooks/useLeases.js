@@ -96,7 +96,7 @@ export function useLeases({ filter = {}, page = 1, limit = 10, autoLoad = true, 
     page: currentPage,
     setPage,
     filters: currentFilter,
-    setFilters,
+    updateFilters,
     refresh,
   } = usePaginatedResource(fetchFn, {
     initialPage: page,
@@ -104,19 +104,6 @@ export function useLeases({ filter = {}, page = 1, limit = 10, autoLoad = true, 
     initialFilters: filter,
     enabled: autoLoad,
   });
-
-  // BUG-67/MDU-002 follow-up fix: filter changes now reset to page 1 (the
-  // pre-consolidation hook left the page wherever it was, so a new filter
-  // could land on an empty out-of-range page). Original setFilter was a
-  // raw replace (not a merge), preserved here — just with the page reset
-  // added.
-  const setFilter = useCallback(
-    (newFilter) => {
-      setFilters(newFilter);
-      setPage(1);
-    },
-    [setFilters, setPage]
-  );
 
   const setCurrentPage = setPage;
 
@@ -198,7 +185,13 @@ export function useLeases({ filter = {}, page = 1, limit = 10, autoLoad = true, 
     error,
     currentPage,
     setCurrentPage,
-    setFilter,
+    // BUG-68 — consumers must drive filter changes through this (merges +
+    // resets page to 1), not by recomputing a `filter` object and passing
+    // it back in as a prop. usePaginatedResource seeds its filters state
+    // once from initialFilters at mount; it's an uncontrolled/self-owning
+    // hook by design (see usePaginatedResource.js docstring), so a changed
+    // prop on a later render is silently ignored — that was the bug.
+    updateFilters,
     nextPage,
     prevPage,
     refresh,

@@ -2,7 +2,7 @@
 //src/layouts/leases/index.js
 // src/layouts/leases/index.js
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useLeases } from "./hooks/useLeases";
 import useProfile from "../profile/hooks/useProfile";
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
@@ -22,6 +22,12 @@ import { LEASE_TYPE_CHOICES, LEASE_STATUS_CHOICES } from "./data/choices";
 
 const DEFAULT_LIMIT = 20;
 
+// leases/models.py Lease.Status only has ACTIVE/PENDING/EXPIRED/TERMINATED —
+// LEASE_STATUS_CHOICES also carries "renewal"/"draft" for other UI purposes
+// (Add/Edit lease forms) that don't map to any backend enum value.
+// Filtering to a real status here means the filter dropdown 400s.
+const FILTERABLE_LEASE_STATUSES = ["active", "pending", "terminated", "expired"];
+
 // Helper
 function getLabel(choices, value) {
   if (!value) return "";
@@ -34,9 +40,6 @@ function getLabel(choices, value) {
 function LeasesPage() {
   // useProfile now comes from AuthContext; never fetches here!
   const { userProfile, loading: profileLoading } = useProfile();
-  const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("");
-  const [page, setPage] = useState(1);
   const [addOpen, setAddOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -45,14 +48,6 @@ function LeasesPage() {
 
   // All hooks and memo above any return!
   const userRole = userProfile?.role;
-  const leaseFilter = useMemo(() => {
-    let filter = {};
-    if (status) filter.status = status;
-    if (search) filter.full_name = search;
-    if (isTenant(userRole) && userProfile?.tenant?.id) filter.tenant = userProfile.tenant.id;
-    if (isCollector(userRole) && userProfile?.id) filter.collector = userProfile.id;
-    return filter;
-  }, [status, search, userRole, userProfile]);
 
   const {
     leases,
@@ -62,7 +57,11 @@ function LeasesPage() {
     error,
     currentPage,
     setCurrentPage,
-    setFilter,
+    // BUG-68 — search/status/role-based scoping are now driven through this
+    // (see useLeases.js) instead of a recomputed `filter` object passed back
+    // in as a prop, which usePaginatedResource silently ignored after mount.
+    updateFilters,
+    filter,
     nextPage,
     prevPage,
     refresh,
@@ -71,10 +70,24 @@ function LeasesPage() {
     deactivateLease,
     exportXLS,
   } = useLeases({
-    filter: leaseFilter,
-    page,
+    page: 1,
     limit: DEFAULT_LIMIT,
   });
+
+  // Role-based scoping (tenant/collector) — same reactivity fix as
+  // search/status. Runs once userProfile is available; harmless no-op for
+  // roles where neither branch applies.
+  useEffect(() => {
+    if (isTenant(userRole) && userProfile?.tenant?.id) {
+      updateFilters({ tenant: userProfile.tenant.id });
+    } else if (isCollector(userRole) && userProfile?.id) {
+      updateFilters({ collector: userProfile.id });
+    }
+    // Depend on the primitive ids, not the userProfile object reference —
+    // avoids re-firing (and resetting the user's page back to 1) on every
+    // render where the profile context hands back a new object identity
+    // for the same underlying values.
+  }, [userRole, userProfile?.tenant?.id, userProfile?.id, updateFilters]);
 
   // Lease summary widget logic (must run before any early return to satisfy rules-of-hooks)
   const leaseSummaryData = useMemo(() => {
@@ -96,14 +109,18 @@ function LeasesPage() {
 
   // Handlers
   const handleSearchChange = (e) => {
-    setSearch(e.target.value);
-    setPage(1);
+    updateFilters({ full_name: e.target.value });
     debugLog("[LeasesPage] Search changed:", e.target.value);
   };
   const handleStatusChange = (e) => {
-    setStatus(e.target.value);
-    setPage(1);
-    debugLog("[LeasesPage] Status filter changed:", e.target.value);
+    // LEASE_STATUS_CHOICES values are lowercase (shared with the Add/Edit/
+    // Detail lease forms elsewhere), but the backend's Lease.Status enum
+    // (leases/models.py) is uppercase — django_filters 400s on a case
+    // mismatch. Map here rather than uppercasing the shared choices list,
+    // which would ripple into those other forms.
+    const value = e.target.value;
+    updateFilters({ status: value ? value.toUpperCase() : value });
+    debugLog("[LeasesPage] Status filter changed:", value);
   };
   const handleAdd = () => setAddOpen(true);
   const handleEdit = (lease) => {
@@ -133,7 +150,6 @@ function LeasesPage() {
     refresh();
   };
   const handlePageChange = (_, value) => {
-    setPage(value);
     setCurrentPage(value);
     debugLog("[LeasesPage] Page changed:", value);
   };
@@ -163,7 +179,7 @@ function LeasesPage() {
           loading={loading}
           error={error}
           total={total}
-          page={page}
+          page={currentPage}
           limit={DEFAULT_LIMIT}
           onEdit={tableActions.onEdit}
           onView={tableActions.onView}
@@ -214,19 +230,21 @@ function LeasesPage() {
         <Stack direction="row" spacing={2} alignItems="center" mb={2}>
           <TextField
             label="Search Tenant/Lease"
-            value={search}
+            value={filter.full_name || ""}
             onChange={handleSearchChange}
             size="small"
           />
           <Select
-            value={status}
+            value={(filter.status || "").toLowerCase()}
             onChange={handleStatusChange}
             displayEmpty
             size="small"
             sx={{ minWidth: 140 }}
           >
             <MenuItem value="">All Status</MenuItem>
-            {LEASE_STATUS_CHOICES.map((opt) => (
+            {LEASE_STATUS_CHOICES.filter((opt) =>
+              FILTERABLE_LEASE_STATUSES.includes(opt.value)
+            ).map((opt) => (
               <MenuItem key={opt.value} value={opt.value}>
                 {opt.label}
               </MenuItem>
@@ -247,7 +265,7 @@ function LeasesPage() {
         <MDBox mt={2} display="flex" justifyContent="center">
           <Pagination
             count={Math.ceil(total / DEFAULT_LIMIT)}
-            page={page}
+            page={currentPage}
             onChange={handlePageChange}
             color="primary"
           />
