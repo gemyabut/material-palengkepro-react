@@ -7,7 +7,6 @@ import {
   createStall,
   updateStall,
   deactivateStall,
-  exportCsv,
   exportExcel,
   // ...any other API functions you want to expose
 } from "../api/stalls";
@@ -93,14 +92,6 @@ export default function useStalls(initialFilters = {}) {
   };
 
   // Export actions (returns blob, you handle download in component)
-  const exportCSV = async () => {
-    try {
-      return await exportCsv();
-    } catch (err) {
-      debugLog("[useStalls] Export CSV error:", err);
-      throw err;
-    }
-  };
   const exportXLSX = async () => {
     try {
       return await exportExcel();
@@ -128,7 +119,6 @@ export default function useStalls(initialFilters = {}) {
     createStall: create,
     updateStall: update,
     deactivateStall: deactivate,
-    exportCSV,
     exportXLSX,
   };
 }

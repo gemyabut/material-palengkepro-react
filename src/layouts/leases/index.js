@@ -69,7 +69,6 @@ function LeasesPage() {
     createLease,
     editLease,
     deactivateLease,
-    exportCSV,
     exportXLS,
   } = useLeases({
     filter: leaseFilter,
@@ -238,7 +237,6 @@ function LeasesPage() {
               Add Lease
             </Button>
           )}
-          <Button onClick={exportCSV}>Export CSV</Button>
           <Button onClick={exportXLS}>Export XLS</Button>
           <Button onClick={refresh}>Refresh</Button>
         </Stack>

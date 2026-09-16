@@ -12,6 +12,7 @@ import {
   Select,
   FormControl,
   InputLabel,
+  Button,
 } from "@mui/material";
 import MuiAlert from "@mui/material/Alert";
 import { useNavigate } from "react-router-dom";
@@ -30,7 +31,7 @@ import {
   deactivateTenant,
   sendBulkSMS,
   sendBulkEmail,
-  exportTenantsCSV,
+  exportTenantsXLSX,
 } from "../api/tenants";
 
 import { useAuth } from "context/AuthContext";
@@ -137,16 +138,19 @@ export default function MasterTenantList() {
       .finally(() => setActionLoading(false));
   };
 
-  const handleBulkExport = async () => {
-    if (!allowBulk || !selectedIds.length) return;
+  // Top-toolbar export — full market-scoped list, not selection-based.
+  // Lead's scope call: master export is a page-level action, not a
+  // bulk-select action (that's what BulkActionBar's row-selection was for).
+  const handleExportAll = async () => {
     try {
-      const blob = await exportTenantsCSV({ ids: selectedIds.join(",") });
+      const blob = await exportTenantsXLSX();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "tenants.csv";
+      a.download = "tenants.xlsx";
       a.click();
       window.URL.revokeObjectURL(url);
+      setSnackbar({ open: true, message: "Export started", severity: "info" });
     } catch (err) {
       debugLog("[MasterTenantList] Export error", err);
       setSnackbar({ open: true, message: "Export failed.", severity: "error" });
@@ -189,15 +193,19 @@ export default function MasterTenantList() {
 
   return (
     <MDBox px={3} py={3}>
-      <MDTypography variant="h4" gutterBottom>
-        All Tenants
-      </MDTypography>
+      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
+        <MDTypography variant="h4" gutterBottom>
+          All Tenants
+        </MDTypography>
+        <Button variant="outlined" onClick={handleExportAll}>
+          Export XLSX
+        </Button>
+      </Stack>
 
       <BulkActionBar
         selectedIds={selectedIds}
         user={user}
         onBulkDeactivate={handleBulkDeactivate}
-        onBulkExport={handleBulkExport}
         onOpenComm={handleOpenComm}
         loading={loading}
       />

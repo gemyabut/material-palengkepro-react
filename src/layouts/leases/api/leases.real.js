@@ -8,6 +8,15 @@ export const getLeases = async (params = {}) => {
   return res.data;
 };
 
+// BUG-72/MDU-001 — server-side full-ledger export, replaces the old
+// client-side Papa/XLSX serialization of the paginated `leases` array
+// (which silently truncated to page_size=20).
+export const exportLeasesXLSX = async (params = {}) => {
+  debugLog("[leases.real.js] exportLeasesXLSX called", params);
+  const res = await axios.get("/leases/export/excel/", { params, responseType: "blob" });
+  return res.data; // Blob
+};
+
 export const getLeaseById = async (id) => {
   debugLog("[leases.real.js] getLeaseById called", id);
   const res = await axios.get(`/leases/${id}/`);

@@ -50,6 +50,13 @@ export async function exportTenantsCSV(params = {}) {
   const res = await apiClient.get("/tenants/export/", { params, responseType: "blob" });
   return res.data; // Blob
 }
+// BUG-69/MDU-001 — bulk export now uses XLSX (BulkActionBar), not CSV.
+// exportTenantsCSV above is kept but unused by any button after this
+// change — see BUG-70/71 for why it's not deleted outright.
+export async function exportTenantsXLSX(params = {}) {
+  const res = await apiClient.get("/tenants/export/excel/", { params, responseType: "blob" });
+  return res.data; // Blob
+}
 export async function importTenantsCSV(file) {
   const form = new FormData();
   form.append("file", file);

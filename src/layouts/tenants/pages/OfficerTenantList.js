@@ -17,7 +17,6 @@ import {
   deactivateTenant,
   sendBulkSMS,
   sendBulkEmail,
-  exportTenantsCSV,
 } from "../api/tenants";
 
 import { useAuth } from "context/AuthContext";
@@ -37,8 +36,8 @@ export default function OfficerTenantList() {
   const [commOpen, setCommOpen] = useState(false);
   const [commLoading, setCommLoading] = useState(false);
   const [commError, setCommError] = useState(null);
-  const [search, setSearch] = useState('');
-  const [ordering, setOrdering] = useState('full_name');
+  const [search, setSearch] = useState("");
+  const [ordering, setOrdering] = useState("full_name");
 
   useEffect(() => {
     setLoading(true);
@@ -119,23 +118,6 @@ export default function OfficerTenantList() {
       .finally(() => setLoading(false));
   };
 
-  const handleBulkExport = async () => {
-    if (!allowBulk || !selectedIds.length) return;
-    try {
-      const blob = await exportTenantsCSV({ ids: selectedIds.join(",") });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "tenants.csv";
-      a.click();
-      window.URL.revokeObjectURL(url);
-      toast.success("Export started.");
-    } catch (err) {
-      debugLog("Export error:", err);
-      toast.error("Export failed.");
-    }
-  };
-
   const handleOpenComm = () => {
     if (!allowBulk || !selectedIds.length) return;
     setCommError(null);
@@ -185,7 +167,6 @@ export default function OfficerTenantList() {
         selectedIds={selectedIds}
         user={user}
         onBulkDeactivate={handleBulkDeactivate}
-        onBulkExport={handleBulkExport}
         onOpenComm={handleOpenComm}
         loading={loading}
       />

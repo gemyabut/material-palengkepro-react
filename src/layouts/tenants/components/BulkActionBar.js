@@ -10,7 +10,6 @@ export default function BulkActionBar({
   selectedIds = [],
   user,
   onBulkDeactivate,
-  onBulkExport,
   onOpenComm,
   loading = false,
 }) {
@@ -24,9 +23,6 @@ export default function BulkActionBar({
       <Button color="error" onClick={onBulkDeactivate} disabled={loading}>
         Bulk Deactivate
       </Button>
-      <Button onClick={onBulkExport} disabled={loading}>
-        Export CSV
-      </Button>
       <Button color="info" onClick={onOpenComm} disabled={loading}>
         Communicate (SMS/Email)
       </Button>
@@ -39,7 +35,6 @@ BulkActionBar.propTypes = {
     .isRequired,
   user: PropTypes.object,
   onBulkDeactivate: PropTypes.func.isRequired,
-  onBulkExport: PropTypes.func.isRequired,
   onOpenComm: PropTypes.func.isRequired,
   loading: PropTypes.bool,
 };
