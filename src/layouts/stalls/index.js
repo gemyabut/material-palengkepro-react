@@ -10,6 +10,9 @@ import {
   Chip,
   CircularProgress,
   Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   MenuItem,
   Pagination,
   Snackbar,
@@ -20,6 +23,7 @@ import {
   TableHead,
   TableRow,
   TextField,
+  Tooltip,
 } from "@mui/material";
 import { canAddStall, canEditStall, canDeleteStall } from "utils/permissions";
 import { useAuthProfile } from "context/AuthContext";
@@ -56,13 +60,15 @@ export default function StallsPage() {
   const [addModalOpen, setAddModalOpen]   = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedStall, setSelectedStall] = useState(null);
+  const [deactivateTarget, setDeactivateTarget] = useState(null);
+  const [reactivateTarget, setReactivateTarget] = useState(null);
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
 
   const {
     stalls, summary, total, loading, error,
     page, pageSize, filters,
     goToPage, changePageSize, updateFilters, refresh,
-    createStall, updateStall, deactivateStall,
+    createStall, updateStall, deactivateStall, reactivateStall,
     exportXLSX,
   } = useStalls();
 
@@ -87,12 +93,43 @@ export default function StallsPage() {
     }
   };
 
-  const handleDeactivate = async (stall) => {
+  // MDU-005/BUG-76 — was a direct call with no confirmation and no
+  // active-lease check. Backend now guards active-lease cases (400 with a
+  // structured error), but current_lease_id is already on every row from
+  // the list annotation, so we can disable the button client-side too and
+  // avoid the round-trip in the common case.
+  const confirmDeactivate = async () => {
+    const stall = deactivateTarget;
+    if (!stall) return;
     try {
       await deactivateStall(stall.id);
       setSnackbar({ open: true, message: "Stall deactivated.", severity: "info" });
-    } catch {
-      setSnackbar({ open: true, message: "Failed to deactivate.", severity: "error" });
+    } catch (err) {
+      const data = err?.response?.data;
+      const message =
+        data?.reason === "stall_has_active_lease"
+          ? `Cannot deactivate — stall has an active lease (#${data.lease_id}${
+              data.lease_end_date ? `, ends ${data.lease_end_date}` : ""
+            }). Terminate the lease first.`
+          : data?.detail || "Failed to deactivate.";
+      setSnackbar({ open: true, message, severity: "error" });
+    } finally {
+      setDeactivateTarget(null);
+    }
+  };
+
+  // MDU-006/BUG-77 — no UI path existed to undo a deactivate.
+  const confirmReactivate = async () => {
+    const stall = reactivateTarget;
+    if (!stall) return;
+    try {
+      await reactivateStall(stall.id);
+      setSnackbar({ open: true, message: "Stall reactivated.", severity: "success" });
+    } catch (err) {
+      const message = err?.response?.data?.detail || "Failed to reactivate.";
+      setSnackbar({ open: true, message, severity: "error" });
+    } finally {
+      setReactivateTarget(null);
     }
   };
 
@@ -134,7 +171,16 @@ export default function StallsPage() {
             label="Status"
             select
             value={filters.status || ""}
-            onChange={(e) => updateFilters({ status: e.target.value })}
+            onChange={(e) => {
+              const value = e.target.value;
+              // MDU-006 — INACTIVE stalls are excluded from the queryset
+              // unless include_inactive=true is also sent; status=INACTIVE
+              // alone silently returns zero rows.
+              updateFilters({
+                status: value,
+                include_inactive: value === "INACTIVE" ? "true" : undefined,
+              });
+            }}
             size="small"
             sx={{ minWidth: 130 }}
           >
@@ -280,12 +326,31 @@ export default function StallsPage() {
                             </Button>
                           )}
                           {canDelete && s.status !== "INACTIVE" && (
+                            s.current_lease_id ? (
+                              <Tooltip title="Cannot deactivate — stall has an active lease">
+                                <span>
+                                  <Button size="small" color="error" disabled>
+                                    Deactivate
+                                  </Button>
+                                </span>
+                              </Tooltip>
+                            ) : (
+                              <Button
+                                size="small"
+                                color="error"
+                                onClick={(e) => { e.stopPropagation(); setDeactivateTarget(s); }}
+                              >
+                                Deactivate
+                              </Button>
+                            )
+                          )}
+                          {canDelete && s.status === "INACTIVE" && (
                             <Button
                               size="small"
-                              color="error"
-                              onClick={(e) => { e.stopPropagation(); handleDeactivate(s); }}
+                              color="success"
+                              onClick={(e) => { e.stopPropagation(); setReactivateTarget(s); }}
                             >
-                              Deactivate
+                              Reactivate
                             </Button>
                           )}
                         </Stack>
@@ -335,6 +400,34 @@ export default function StallsPage() {
               onSuccess={() => { setEditModalOpen(false); setSelectedStall(null); refresh(); }}
             />
           )}
+        </Dialog>
+
+        <Dialog open={Boolean(deactivateTarget)} onClose={() => setDeactivateTarget(null)}>
+          <DialogTitle>Deactivate stall?</DialogTitle>
+          <DialogContent>
+            <MDTypography variant="body2">
+              Deactivate stall #{deactivateTarget?.stall_number}? This marks the stall
+              INACTIVE. It can be reactivated later.
+            </MDTypography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setDeactivateTarget(null)}>Cancel</Button>
+            <Button color="error" onClick={confirmDeactivate}>Deactivate</Button>
+          </DialogActions>
+        </Dialog>
+
+        <Dialog open={Boolean(reactivateTarget)} onClose={() => setReactivateTarget(null)}>
+          <DialogTitle>Reactivate stall?</DialogTitle>
+          <DialogContent>
+            <MDTypography variant="body2">
+              Reactivate stall #{reactivateTarget?.stall_number}? This moves it back to
+              AVAILABLE and it can be leased again.
+            </MDTypography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setReactivateTarget(null)}>Cancel</Button>
+            <Button color="success" onClick={confirmReactivate}>Reactivate</Button>
+          </DialogActions>
         </Dialog>
 
         <Snackbar

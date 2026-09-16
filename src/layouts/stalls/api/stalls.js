@@ -19,6 +19,7 @@ export const fetchStall = api.fetchStall;
 export const createStall = api.createStall;
 export const updateStall = api.updateStall;
 export const deactivateStall = api.deactivateStall;
+export const reactivateStall = api.reactivateStall;
 export const deleteStall = api.deleteStall;
 
 export const fetchVacantStalls = api.fetchVacantStalls;
