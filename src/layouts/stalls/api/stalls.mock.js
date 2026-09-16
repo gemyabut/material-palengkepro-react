@@ -148,16 +148,6 @@ export const fetchStallsSummary = () =>
 /**
  * Export
  */
-export const exportCsv = () =>
-  new Promise((resolve) =>
-    setTimeout(() => {
-      const csv =
-        "id,stall_number,zone,status\n" +
-        stalls.map((s) => `${s.id},"${s.stall_number}","${s.zone}","${s.status}"`).join("\n");
-      resolve(csv);
-    }, 400)
-  );
-
 export const exportExcel = () =>
   new Promise((resolve) => setTimeout(() => resolve("Fake Excel Data"), 600));
 

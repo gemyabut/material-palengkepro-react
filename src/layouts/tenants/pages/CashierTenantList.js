@@ -8,7 +8,7 @@ import TenantTable from "../components/TenantTable";
 import BulkActionBar from "../components/BulkActionBar";
 import CommunicationDialog from "../components/CommunicationDialog";
 
-import { getTenants, sendBulkSMS, sendBulkEmail, exportTenantsCSV } from "../api/tenants";
+import { getTenants, sendBulkSMS, sendBulkEmail } from "../api/tenants";
 import { debugLog } from "../utils/debug";
 import { useAuth } from "../../../context/AuthContext";
 import { canBulk } from "../../leases/utils/roleUtils"; // cashier => false
@@ -24,8 +24,8 @@ export default function CashierTenantList() {
   const [commOpen, setCommOpen] = useState(false);
   const [commLoading, setCommLoading] = useState(false);
   const [commError, setCommError] = useState(null);
-  const [search, setSearch] = useState('');
-  const [ordering, setOrdering] = useState('full_name');
+  const [search, setSearch] = useState("");
+  const [ordering, setOrdering] = useState("full_name");
 
   const allowBulk = canBulk(user);
 
@@ -40,22 +40,6 @@ export default function CashierTenantList() {
   }, [search, ordering]);
 
   const handleView = (id) => navigate(`/tenants/${id}`);
-
-  const handleBulkExport = async () => {
-    if (!allowBulk || !selectedIds.length) return;
-    try {
-      const blob = await exportTenantsCSV({ ids: selectedIds.join(",") });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "tenants.csv";
-      a.click();
-      window.URL.revokeObjectURL(url);
-    } catch (err) {
-      debugLog("Cashier export error:", err);
-      alert("Export failed.");
-    }
-  };
 
   const handleOpenComm = () => {
     if (!allowBulk || !selectedIds.length) return;
@@ -103,7 +87,6 @@ export default function CashierTenantList() {
         selectedIds={selectedIds}
         user={user}
         onBulkDeactivate={() => {}}
-        onBulkExport={handleBulkExport}
         onOpenComm={handleOpenComm}
         loading={loading}
       />

@@ -15,7 +15,6 @@ import {
   deactivateTenant,
   sendBulkSMS,
   sendBulkEmail,
-  exportTenantsCSV,
 } from "../api/tenants";
 
 import { UserContext } from "../../../components/AppLayout";
@@ -79,9 +78,7 @@ export default function TenantsPage() {
     setLoading(true);
     deactivateTenant(id)
       .then(() => {
-        setTenants((prev) =>
-          prev.map((t) => (t.id === id ? { ...t, status: "inactive" } : t))
-        );
+        setTenants((prev) => prev.map((t) => (t.id === id ? { ...t, status: "inactive" } : t)));
         setSelectedIds((prev) => prev.filter((tid) => tid !== id));
         alert("Tenant deactivated.");
       })
@@ -100,9 +97,7 @@ export default function TenantsPage() {
     Promise.all(selectedIds.map((id) => deactivateTenant(id)))
       .then(() => {
         setTenants((prev) =>
-          prev.map((t) =>
-            selectedIds.includes(t.id) ? { ...t, status: "inactive" } : t
-          )
+          prev.map((t) => (selectedIds.includes(t.id) ? { ...t, status: "inactive" } : t))
         );
         setSelectedIds([]);
         alert("Selected tenants deactivated.");
@@ -132,23 +127,6 @@ export default function TenantsPage() {
         alert("Failed to save tenant.");
       })
       .finally(() => setLoading(false));
-  };
-
-  // Export CSV
-  const handleBulkExport = async () => {
-    if (!allowBulk || !selectedIds.length) return;
-    try {
-      const blob = await exportTenantsCSV({ ids: selectedIds.join(",") });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "tenants.csv";
-      a.click();
-      window.URL.revokeObjectURL(url);
-    } catch (err) {
-      debugLog("Export error:", err);
-      alert("Export failed.");
-    }
   };
 
   // Communication dialog
@@ -202,8 +180,7 @@ export default function TenantsPage() {
         selectedIds={selectedIds}
         user={user}
         onBulkDeactivate={handleBulkDeactivate}
-        onBulkExport={handleBulkExport}
-        onOpenComm={handleOpenComm}   // <-- opens CommunicationDialog
+        onOpenComm={handleOpenComm} // <-- opens CommunicationDialog
         loading={loading}
       />
 
@@ -212,9 +189,7 @@ export default function TenantsPage() {
         user={user}
         selectedIds={selectedIds}
         onSelect={setSelectedIds}
-        onSelectAll={(checked) =>
-          setSelectedIds(checked ? tenants.map((t) => t.id) : [])
-        }
+        onSelectAll={(checked) => setSelectedIds(checked ? tenants.map((t) => t.id) : [])}
         onEdit={handleEdit}
         onView={handleView}
         onDeactivate={handleDeactivate}
@@ -233,12 +208,7 @@ export default function TenantsPage() {
 
       {/* Detail Card */}
       {showDetail && (
-        <TenantDetail
-          tenant={viewTenant}
-          user={user}
-          onEdit={handleEdit}
-          showEdit={true}
-        />
+        <TenantDetail tenant={viewTenant} user={user} onEdit={handleEdit} showEdit={true} />
       )}
 
       {/* Communication (SMS/Email) */}

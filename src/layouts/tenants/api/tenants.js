@@ -18,6 +18,7 @@ export const deactivateTenant = source.deactivateTenant;
 // Bulk / CSV / Comms
 export const bulkDeactivateTenants = source.bulkDeactivateTenants;
 export const exportTenantsCSV = source.exportTenantsCSV;
+export const exportTenantsXLSX = source.exportTenantsXLSX;
 export const importTenantsCSV = source.importTenantsCSV;
 export const sendBulkSMS = source.sendBulkSMS;
 export const sendBulkEmail = source.sendBulkEmail;

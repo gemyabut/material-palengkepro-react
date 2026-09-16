@@ -15,6 +15,7 @@ export const getLeaseById = api.getLeaseById;
 export const addLease = api.addLease;
 export const updateLease = api.updateLease;
 export const deleteLease = api.deleteLease;
+export const exportLeasesXLSX = api.exportLeasesXLSX;
 
 // Filters/Extras
 export const fetchActiveLeases = api.fetchActiveLeases;

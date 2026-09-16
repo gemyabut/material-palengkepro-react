@@ -25,8 +25,6 @@ export const fetchStallsSummary = async () => (await axios.get("/stalls/summary/
 /**
  * Export
  */
-export const exportCsv = async () =>
-  (await axios.get("/stalls/export/csv/", { responseType: "blob" })).data;
 export const exportExcel = async () =>
   (await axios.get("/stalls/export/excel/", { responseType: "blob" })).data;
 

@@ -10,10 +10,9 @@ import {
   fetchExpiredLeases,
   fetchLeasesByTenant,
   fetchLeasesByStall,
+  exportLeasesXLSX,
 } from "../api/leases";
 import { debugLog } from "../../stalls/utils/debug";
-import Papa from "papaparse";
-import * as XLSX from "xlsx";
 import usePaginatedResource from "../../../hooks/usePaginatedResource";
 
 // Utility: summary count by status/type/etc.
@@ -160,34 +159,25 @@ export function useLeases({ filter = {}, page = 1, limit = 10, autoLoad = true, 
     [refresh]
   );
 
-  // Export functions
-  const exportCSV = useCallback(() => {
-    debugLog("[useLeases] exportCSV called");
+  // Export function — BUG-72/MDU-001: server-side full-ledger XLSX export.
+  // Previously built a workbook client-side from the in-memory `leases`
+  // array, which was only ever the current paginated page (page_size=20) —
+  // silent truncation. Now hits the backend's export_excel action, which
+  // returns the FULL market-scoped ledger.
+  const exportXLS = useCallback(async () => {
+    debugLog("[useLeases] exportXLS called");
     try {
-      const csv = Papa.unparse(leases);
-      const blob = new Blob([csv], { type: "text/csv" });
+      const blob = await exportLeasesXLSX();
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = "leases.csv";
+      link.download = "leases.xlsx";
       link.click();
       URL.revokeObjectURL(url);
     } catch (e) {
-      debugLog("[useLeases] exportCSV error", e);
-    }
-  }, [leases]);
-
-  const exportXLS = useCallback(() => {
-    debugLog("[useLeases] exportXLS called");
-    try {
-      const ws = XLSX.utils.json_to_sheet(leases);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Leases");
-      XLSX.writeFile(wb, "leases.xlsx");
-    } catch (e) {
       debugLog("[useLeases] exportXLS error", e);
     }
-  }, [leases]);
+  }, []);
 
   // Direct lease setter (for admin UI, etc.)
   const setLease = useCallback((updater) => {
@@ -216,7 +206,6 @@ export function useLeases({ filter = {}, page = 1, limit = 10, autoLoad = true, 
     editLease,
     deactivateLease,
     setLease,
-    exportCSV,
     exportXLS,
     // for UI: raw filter state and more
     filter: currentFilter,

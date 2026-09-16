@@ -25,7 +25,6 @@ export const fetchVacantStalls = api.fetchVacantStalls;
 export const fetchAssignedStalls = api.fetchAssignedStalls;
 
 export const fetchStallsSummary = api.fetchStallsSummary;
-export const exportCsv = api.exportCsv;
 export const exportExcel = api.exportExcel;
 
 export const fetchStallsByFilter = api.fetchStallsByFilter;

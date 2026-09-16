@@ -63,7 +63,7 @@ export default function StallsPage() {
     page, pageSize, filters,
     goToPage, changePageSize, updateFilters, refresh,
     createStall, updateStall, deactivateStall,
-    exportCSV, exportXLSX,
+    exportXLSX,
   } = useStalls();
 
   const handleAddSave = async (data) => {
@@ -96,13 +96,23 @@ export default function StallsPage() {
     }
   };
 
-  const handleExportCSV = async () => {
-    try { await exportCSV(); setSnackbar({ open: true, message: "CSV export started.", severity: "info" }); }
-    catch { setSnackbar({ open: true, message: "CSV export failed.", severity: "error" }); }
-  };
   const handleExportXLSX = async () => {
-    try { await exportXLSX(); setSnackbar({ open: true, message: "Excel export started.", severity: "info" }); }
-    catch { setSnackbar({ open: true, message: "Excel export failed.", severity: "error" }); }
+    // BUG-75/MDU-001 — this used to call exportXLSX() and discard the
+    // returned blob entirely, never triggering an actual file save. The
+    // "Excel export started." toast fired regardless of whether anything
+    // downloaded. Now mirrors the Tenant/Lease download pattern.
+    try {
+      const blob = await exportXLSX();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "stalls.xlsx";
+      a.click();
+      window.URL.revokeObjectURL(url);
+      setSnackbar({ open: true, message: "Excel export started.", severity: "info" });
+    } catch {
+      setSnackbar({ open: true, message: "Excel export failed.", severity: "error" });
+    }
   };
 
   return (
@@ -164,7 +174,6 @@ export default function StallsPage() {
               Add Stall
             </Button>
           )}
-          <Button variant="outlined" onClick={handleExportCSV}>CSV</Button>
           <Button variant="outlined" onClick={handleExportXLSX}>Excel</Button>
         </Stack>
 
@@ -189,6 +198,7 @@ export default function StallsPage() {
           <Table size="small">
             <TableHead>
               <TableRow>
+                <TableCell><strong>ID</strong></TableCell>
                 <TableCell><strong>Stall #</strong></TableCell>
                 <TableCell><strong>Zone / Section</strong></TableCell>
                 <TableCell><strong>Type</strong></TableCell>
@@ -202,7 +212,7 @@ export default function StallsPage() {
             <TableBody>
               {stalls.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8}>
+                  <TableCell colSpan={9}>
                     <MDTypography variant="body2" color="text" textAlign="center">
                       No stalls found.
                     </MDTypography>
@@ -216,6 +226,9 @@ export default function StallsPage() {
                     sx={{ cursor: "pointer" }}
                     onClick={() => navigate(`/stalls/${s.id}`)}
                   >
+                    <TableCell sx={{ fontFamily: "monospace", textAlign: "right" }}>
+                      {s.id ?? "—"}
+                    </TableCell>
                     <TableCell>
                       <MDTypography variant="button" fontWeight="medium">{s.stall_number}</MDTypography>
                     </TableCell>
