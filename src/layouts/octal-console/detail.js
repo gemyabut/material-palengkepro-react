@@ -34,7 +34,7 @@ import MDTypography from "components/MDTypography";
 
 import { useAuthProfile } from "context/AuthContext";
 import { getSubscriptionDetail } from "api/octalConsole";
-import { changePlan, recordPayment, getInvoices } from "../subscription/api/subscription";
+import { changePlan, recordPayment, getInvoices, getAccountSOA } from "../subscription/api/subscription";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -181,6 +181,12 @@ export default function OctalConsoleDetail() {
   });
   const [paymentSubmitting, setPaymentSubmitting] = useState(false);
 
+  const [soaOpen, setSoaOpen] = useState(false);
+  const [soaStart, setSoaStart] = useState("");
+  const [soaEnd, setSoaEnd] = useState("");
+  const [soaData, setSoaData] = useState(null);
+  const [soaLoading, setSoaLoading] = useState(false);
+
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
 
   const isAllowed =
@@ -283,6 +289,53 @@ export default function OctalConsoleDetail() {
     }
   };
 
+  const fetchSOA = async (start, end) => {
+    if (!data?.account?.id) return;
+    setSoaLoading(true);
+    try {
+      const res = await getAccountSOA(data.account.id, start || undefined, end || undefined);
+      setSoaData(res);
+    } catch (err) {
+      const msg = err?.response?.data?.error || err.message || "Failed to load SOA.";
+      setSnackbar({ open: true, message: String(msg), severity: "error" });
+    } finally {
+      setSoaLoading(false);
+    }
+  };
+
+  const openSOA = () => {
+    // Default to last 12 months — editable, "Apply" re-fetches.
+    const endD = new Date();
+    const startD = new Date();
+    startD.setFullYear(startD.getFullYear() - 1);
+    const toISO = (d) => d.toISOString().slice(0, 10);
+    const s = toISO(startD);
+    const e = toISO(endD);
+    setSoaStart(s);
+    setSoaEnd(e);
+    setSoaData(null);
+    setSoaOpen(true);
+    fetchSOA(s, e);
+  };
+
+  const downloadSoaCsv = () => {
+    if (!soaData) return;
+    const lines = ["Type,Number/Ref,Date,Amount,Status/Method"];
+    soaData.invoices.forEach((inv) => {
+      lines.push(`Invoice,${inv.number},${inv.issued_at},${inv.total},${inv.status}`);
+    });
+    soaData.payments.forEach((p) => {
+      lines.push(`Payment,${p.ref_no || ""},${p.received_at},${p.amount},${p.method}`);
+    });
+    const blob = new Blob([lines.join("\n")], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `soa_account_${data.account.id}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
   return (
     <DashboardLayout>
       <DashboardNavbar />
@@ -304,6 +357,9 @@ export default function OctalConsoleDetail() {
                 </Button>
                 <Button variant="outlined" color="success" onClick={openRecordPayment}>
                   Record Payment
+                </Button>
+                <Button variant="outlined" color="secondary" onClick={openSOA}>
+                  View SOA
                 </Button>
               </>
             )}
@@ -606,6 +662,119 @@ export default function OctalConsoleDetail() {
             >
               Record Payment
             </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* View SOA dialog */}
+        <Dialog open={soaOpen} onClose={() => setSoaOpen(false)} maxWidth="md" fullWidth>
+          <DialogTitle>Statement of account</DialogTitle>
+          <DialogContent>
+            <MDBox display="flex" gap={2} alignItems="center" flexWrap="wrap" mb={1}>
+              <TextField
+                type="date" label="Start" size="small"
+                value={soaStart}
+                onChange={(e) => setSoaStart(e.target.value)}
+                InputLabelProps={{ shrink: true }}
+              />
+              <TextField
+                type="date" label="End" size="small"
+                value={soaEnd}
+                onChange={(e) => setSoaEnd(e.target.value)}
+                InputLabelProps={{ shrink: true }}
+              />
+              <Button
+                variant="outlined" size="small"
+                onClick={() => fetchSOA(soaStart, soaEnd)}
+                disabled={soaLoading}
+              >
+                Apply
+              </Button>
+              {soaData && (
+                <Button variant="text" size="small" onClick={downloadSoaCsv}>
+                  Download CSV
+                </Button>
+              )}
+            </MDBox>
+
+            {soaLoading ? (
+              <LinearProgress color="info" />
+            ) : soaData ? (
+              <>
+                <MDTypography variant="body2" color="text" mb={1}>
+                  Opening balance: ₱{soaData.opening_balance} · Closing balance: ₱
+                  {soaData.closing_balance}
+                </MDTypography>
+
+                <MDTypography variant="h6" mt={2} mb={0.5}>Invoices</MDTypography>
+                {soaData.invoices.length === 0 ? (
+                  <MDTypography variant="body2" color="text">
+                    No invoices in this period.
+                  </MDTypography>
+                ) : (
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell sx={{ fontWeight: 600 }}>Number</TableCell>
+                        <TableCell sx={{ fontWeight: 600 }}>Issued</TableCell>
+                        <TableCell sx={{ fontWeight: 600 }} align="right">Total</TableCell>
+                        <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
+                        <TableCell sx={{ fontWeight: 600 }}>Paid at</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {soaData.invoices.map((inv) => (
+                        <TableRow key={inv.number}>
+                          <TableCell><code>{inv.number}</code></TableCell>
+                          <TableCell>{fmtDate(inv.issued_at)}</TableCell>
+                          <TableCell align="right">₱{inv.total}</TableCell>
+                          <TableCell>
+                            <Chip
+                              size="small"
+                              label={inv.status}
+                              color={INVOICE_STATUS_COLOR[inv.status] || "default"}
+                            />
+                          </TableCell>
+                          <TableCell>{inv.paid_at ? fmtDateTime(inv.paid_at) : "—"}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+
+                <MDTypography variant="h6" mt={2} mb={0.5}>Payments</MDTypography>
+                {soaData.payments.length === 0 ? (
+                  <MDTypography variant="body2" color="text">
+                    No payments in this period.
+                  </MDTypography>
+                ) : (
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell sx={{ fontWeight: 600 }}>Received</TableCell>
+                        <TableCell sx={{ fontWeight: 600 }} align="right">Amount</TableCell>
+                        <TableCell sx={{ fontWeight: 600 }}>Method</TableCell>
+                        <TableCell sx={{ fontWeight: 600 }}>Ref #</TableCell>
+                        <TableCell sx={{ fontWeight: 600 }}>Invoice</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {soaData.payments.map((p, idx) => (
+                        <TableRow key={`${p.invoice_number || "noinv"}-${idx}`}>
+                          <TableCell>{fmtDateTime(p.received_at)}</TableCell>
+                          <TableCell align="right">₱{p.amount}</TableCell>
+                          <TableCell>{p.method}</TableCell>
+                          <TableCell>{p.ref_no || "—"}</TableCell>
+                          <TableCell><code>{p.invoice_number || "—"}</code></TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </>
+            ) : null}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setSoaOpen(false)}>Close</Button>
           </DialogActions>
         </Dialog>
 

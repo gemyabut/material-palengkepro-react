@@ -3,7 +3,7 @@
 // Unsubscribed markets show "Onboard" → /administration.
 // Subscribed markets show tier/status and "View" → detail placeholder.
 // Access: role=system_administrator OR is_staff=True.
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Alert,
@@ -11,13 +11,22 @@ import {
   Card,
   CardContent,
   Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControlLabel,
   Grid,
   LinearProgress,
+  MenuItem,
+  Snackbar,
+  Switch,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableRow,
+  TextField,
 } from "@mui/material";
 import RefreshIcon from "@mui/icons-material/Refresh";
 
@@ -28,6 +37,7 @@ import MDTypography from "components/MDTypography";
 
 import { useAuthProfile } from "context/AuthContext";
 import { getOctalConsoleData } from "api/octalConsole";
+import { billMonth } from "../subscription/api/subscription";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -122,10 +132,63 @@ export default function OctalConsole() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const [billMonthOpen, setBillMonthOpen] = useState(false);
+  const [month, setMonth] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  });
+  const [dryRun, setDryRun] = useState(true);
+  const [selectedCompanies, setSelectedCompanies] = useState([]);
+  const [billSubmitting, setBillSubmitting] = useState(false);
+  const [billResult, setBillResult] = useState(null);
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
+
   const isAllowed =
     !authLoading &&
     ((userProfile?.role || "").toLowerCase() === "system_administrator" ||
       userProfile?.is_staff === true);
+
+  // Derived from already-loaded subscription data — no extra fetch needed.
+  // BillingAccount.company is a StringRelatedField: "Name (CODE)".
+  const companyOptions = useMemo(() => {
+    const byCode = new Map();
+    Object.values(subscriptionByMarketCode).forEach((entry) => {
+      const raw = entry?.account?.company;
+      if (!raw) return;
+      const m = String(raw).match(/\(([^)]+)\)$/);
+      const code = m ? m[1] : null;
+      if (code && !byCode.has(code)) byCode.set(code, raw);
+    });
+    return Array.from(byCode.entries()).map(([code, label]) => ({ code, label }));
+  }, [subscriptionByMarketCode]);
+
+  const openBillMonth = () => {
+    setBillResult(null);
+    setBillMonthOpen(true);
+  };
+
+  const handleRunBilling = async () => {
+    setBillSubmitting(true);
+    try {
+      const res = await billMonth({
+        month,
+        dryRun,
+        companies: selectedCompanies.length ? selectedCompanies : null,
+      });
+      setBillResult(res);
+      setSnackbar({
+        open: true,
+        message: dryRun ? "Preview ready." : "Billing run complete — invoices persisted.",
+        severity: "success",
+      });
+      if (!dryRun) load();
+    } catch (err) {
+      const msg = err?.response?.data?.error || err.message || "Billing run failed.";
+      setSnackbar({ open: true, message: String(msg), severity: "error" });
+    } finally {
+      setBillSubmitting(false);
+    }
+  };
 
   const load = () => {
     setLoading(true);
@@ -156,15 +219,20 @@ export default function OctalConsole() {
         <MDBox display="flex" justifyContent="space-between" alignItems="center" mb={2}>
           <MDTypography variant="h4">Octal Console</MDTypography>
           {isAllowed && (
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<RefreshIcon />}
-              onClick={load}
-              disabled={loading}
-            >
-              Refresh
-            </Button>
+            <MDBox display="flex" gap={1}>
+              <Button variant="outlined" color="warning" size="small" onClick={openBillMonth}>
+                Bill Month
+              </Button>
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<RefreshIcon />}
+                onClick={load}
+                disabled={loading}
+              >
+                Refresh
+              </Button>
+            </MDBox>
           )}
         </MDBox>
 
@@ -262,6 +330,98 @@ export default function OctalConsole() {
             </Card>
           </>
         )}
+
+        {/* Bill Month dialog */}
+        <Dialog open={billMonthOpen} onClose={() => setBillMonthOpen(false)} maxWidth="sm" fullWidth>
+          <DialogTitle>Run monthly billing</DialogTitle>
+          <DialogContent>
+            <TextField
+              type="month"
+              fullWidth
+              margin="normal"
+              label="Billing period"
+              value={month}
+              onChange={(e) => setMonth(e.target.value)}
+              InputLabelProps={{ shrink: true }}
+            />
+            <FormControlLabel
+              control={<Switch checked={dryRun} onChange={(e) => setDryRun(e.target.checked)} />}
+              label={dryRun ? "Dry run (preview only, nothing persisted)" : "Live run — will persist invoices"}
+            />
+            <TextField
+              select
+              fullWidth
+              margin="normal"
+              label="Companies (optional — leave empty for all)"
+              SelectProps={{ multiple: true }}
+              value={selectedCompanies}
+              onChange={(e) => setSelectedCompanies(e.target.value)}
+            >
+              {companyOptions.map((c) => (
+                <MenuItem key={c.code} value={c.code}>{c.label}</MenuItem>
+              ))}
+            </TextField>
+
+            {billResult && (
+              <MDBox mt={2}>
+                <MDTypography variant="body2" fontWeight="medium">
+                  {billResult.dry_run ? "Preview" : "Persisted"}: {billResult.invoice_count} invoice(s),
+                  {" "}total ₱{billResult.total_amount}
+                </MDTypography>
+                {billResult.invoices.length > 0 && (
+                  <Table size="small" sx={{ mt: 1 }}>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell sx={{ fontWeight: 600 }}>Number</TableCell>
+                        <TableCell sx={{ fontWeight: 600 }}>Company</TableCell>
+                        <TableCell sx={{ fontWeight: 600 }} align="right">Total</TableCell>
+                        <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {billResult.invoices.map((inv) => (
+                        <TableRow key={inv.number}>
+                          <TableCell><code>{inv.number}</code></TableCell>
+                          <TableCell>{inv.company_code}</TableCell>
+                          <TableCell align="right">₱{inv.total}</TableCell>
+                          <TableCell>
+                            <Chip size="small" label={inv.status} />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </MDBox>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setBillMonthOpen(false)}>Cancel</Button>
+            <Button
+              variant="contained"
+              color={dryRun ? "info" : "warning"}
+              disabled={!month || billSubmitting}
+              onClick={handleRunBilling}
+            >
+              {billSubmitting ? "Running…" : "Run Billing"}
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={4000}
+          onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
+          anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+        >
+          <Alert
+            severity={snackbar.severity}
+            onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
+            sx={{ width: "100%" }}
+          >
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
       </MDBox>
     </DashboardLayout>
   );
