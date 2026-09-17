@@ -93,6 +93,7 @@ export const canViewMarketUsers = (r) =>
 
 // Onboarding & staff provisioning (IAM-2).
 export const canOnboard = (r) => has(r, ["system_administrator"]); // platform-admin onboards companies
+export const canManagePricing = (r) => has(r, ["system_administrator"]); // platform-admin edits PriceBook rates
 export const canManageStaff = (r) => has(r, [...MARKET_ADMIN, "system_administrator"]); // market admin adds staff
 
 // ---- Role-class helpers ----

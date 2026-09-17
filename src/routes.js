@@ -49,6 +49,7 @@ import Subscription from "layouts/subscription";
 import Administration from "layouts/administration";
 import OctalConsole from "layouts/octal-console";
 import OctalConsoleDetail from "layouts/octal-console/detail";
+import SubscriptionPlans from "layouts/octal-console/plans";
 import TenantPortal from "layouts/tenant-portal";
 import TenantLogin from "layouts/tenant-portal/login";
 import TenantChangePassword from "layouts/tenant-portal/change-password";
@@ -534,6 +535,16 @@ const routes = [
     key: "octal-console-detail",
     route: "/octal-console/subscription/:id",
     component: <OctalConsoleDetail />,
+  },
+  {
+    type: "collapse",
+    name: "Subscription Plans",
+    key: "octal-console-plans",
+    icon: <Icon fontSize="small">price_change</Icon>,
+    route: "/octal-console/plans",
+    component: <SubscriptionPlans />,
+    sidenavGroup: "Admin",
+    allowedRoles: ["system_administrator"],
   },
 
   // =========================================================================

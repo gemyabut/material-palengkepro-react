@@ -52,4 +52,21 @@ export const getAccountSOA = (accountId, start, end) => {
   return apiClient.get(`/billing/accounts/${accountId}/soa/`, { params }).then((r) => r.data);
 };
 
-export default { getMySubscription, getInvoices, changePlan, recordPayment, billMonth, getAccountSOA };
+/** All PriceBook rows (one per LicenseTier). */
+export const listPricebook = () =>
+  apiClient.get("/billing/pricebook/").then((r) => {
+    const d = r.data;
+    return Array.isArray(d) ? d : d.results || [];
+  });
+
+/**
+ * Update a PriceBook row. PK is the numeric `id` (PriceBookSerializer has no
+ * custom lookup field — the router uses the default pk, NOT tier).
+ */
+export const updatePricebook = (id, data) =>
+  apiClient.patch(`/billing/pricebook/${id}/`, data).then((r) => r.data);
+
+export default {
+  getMySubscription, getInvoices, changePlan, recordPayment, billMonth, getAccountSOA,
+  listPricebook, updatePricebook,
+};
