@@ -33,4 +33,23 @@ export const recordPayment = ({ invoiceNumber, amount, method, refNo, notes }) =
     })
     .then((r) => r.data);
 
-export default { getMySubscription, getInvoices, changePlan, recordPayment };
+/**
+ * Trigger (or preview) the monthly billing run. Standalone APIView, not a
+ * SubscriptionViewSet action — POST /api/billing/bill_month/, NOT
+ * /api/billing/subscriptions/bill_month/.
+ * companies: array of company codes, or null/undefined to bill everyone.
+ */
+export const billMonth = ({ month, dryRun = true, companies = null }) =>
+  apiClient
+    .post("/billing/bill_month/", { month, dry_run: dryRun, companies })
+    .then((r) => r.data);
+
+/** Statement of account for a BillingAccount: invoices + payments + running balance. */
+export const getAccountSOA = (accountId, start, end) => {
+  const params = {};
+  if (start) params.start = start;
+  if (end) params.end = end;
+  return apiClient.get(`/billing/accounts/${accountId}/soa/`, { params }).then((r) => r.data);
+};
+
+export default { getMySubscription, getInvoices, changePlan, recordPayment, billMonth, getAccountSOA };
