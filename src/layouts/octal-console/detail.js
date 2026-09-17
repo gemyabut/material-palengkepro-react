@@ -555,7 +555,12 @@ export default function OctalConsoleDetail() {
                     </TableHead>
                     <TableBody>
                       {invoices.map((inv) => (
-                        <TableRow key={inv.id} hover>
+                        <TableRow
+                          key={inv.id}
+                          hover
+                          sx={{ cursor: "pointer" }}
+                          onClick={() => navigate(`/octal-console/invoice/${inv.id}`)}
+                        >
                           <TableCell><code>{inv.number}</code></TableCell>
                           <TableCell>
                             {fmtDate(inv.period_start)} – {fmtDate(inv.period_end)}
@@ -722,21 +727,37 @@ export default function OctalConsoleDetail() {
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {soaData.invoices.map((inv) => (
-                        <TableRow key={inv.number}>
-                          <TableCell><code>{inv.number}</code></TableCell>
-                          <TableCell>{fmtDate(inv.issued_at)}</TableCell>
-                          <TableCell align="right">₱{inv.total}</TableCell>
-                          <TableCell>
-                            <Chip
-                              size="small"
-                              label={inv.status}
-                              color={INVOICE_STATUS_COLOR[inv.status] || "default"}
-                            />
-                          </TableCell>
-                          <TableCell>{inv.paid_at ? fmtDateTime(inv.paid_at) : "—"}</TableCell>
-                        </TableRow>
-                      ))}
+                      {soaData.invoices.map((inv) => {
+                        // compute_account_soa's invoice rows carry only `number`,
+                        // no `id` — resolve it from the Invoices-section state
+                        // (same account, unfiltered, already fetched with `id`)
+                        // instead of adding a backend field for this alone.
+                        const matched = invoices.find((i) => i.number === inv.number);
+                        return (
+                          <TableRow
+                            key={inv.number}
+                            hover={!!matched}
+                            sx={matched ? { cursor: "pointer" } : undefined}
+                            onClick={
+                              matched
+                                ? () => navigate(`/octal-console/invoice/${matched.id}`)
+                                : undefined
+                            }
+                          >
+                            <TableCell><code>{inv.number}</code></TableCell>
+                            <TableCell>{fmtDate(inv.issued_at)}</TableCell>
+                            <TableCell align="right">₱{inv.total}</TableCell>
+                            <TableCell>
+                              <Chip
+                                size="small"
+                                label={inv.status}
+                                color={INVOICE_STATUS_COLOR[inv.status] || "default"}
+                              />
+                            </TableCell>
+                            <TableCell>{inv.paid_at ? fmtDateTime(inv.paid_at) : "—"}</TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 )}
