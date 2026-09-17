@@ -49,6 +49,7 @@ import Subscription from "layouts/subscription";
 import Administration from "layouts/administration";
 import OctalConsole from "layouts/octal-console";
 import OctalConsoleDetail from "layouts/octal-console/detail";
+import OctalInvoiceDetail from "layouts/octal-console/invoice-detail";
 import SubscriptionPlans from "layouts/octal-console/plans";
 import TenantPortal from "layouts/tenant-portal";
 import TenantLogin from "layouts/tenant-portal/login";
@@ -535,6 +536,13 @@ const routes = [
     key: "octal-console-detail",
     route: "/octal-console/subscription/:id",
     component: <OctalConsoleDetail />,
+  },
+  {
+    type: "route",
+    name: "Octal Console — Invoice Detail",
+    key: "octal-console-invoice-detail",
+    route: "/octal-console/invoice/:id",
+    component: <OctalInvoiceDetail />,
   },
   {
     type: "collapse",

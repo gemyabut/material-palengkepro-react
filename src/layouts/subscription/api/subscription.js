@@ -66,7 +66,38 @@ export const listPricebook = () =>
 export const updatePricebook = (id, data) =>
   apiClient.patch(`/billing/pricebook/${id}/`, data).then((r) => r.data);
 
+/** Single invoice, with nested lines (via InvoiceSerializer). */
+export const getInvoice = (id) =>
+  apiClient.get(`/billing/invoices/${id}/`).then((r) => r.data);
+
+/**
+ * All Subscriptions visible to the caller. No server-side filter by account
+ * — same "fetch all, filter client-side" pattern as getInvoices/listPayments.
+ * Used by invoice-detail to resolve invoice.account -> subscription id for
+ * the "back to subscriber" link (SubscriptionSerializer has no reverse
+ * account->subscriptions endpoint).
+ */
+export const listSubscriptions = () =>
+  apiClient.get("/billing/subscriptions/").then((r) => {
+    const d = r.data;
+    return Array.isArray(d) ? d : d.results || [];
+  });
+
+/**
+ * All ARPayments visible to the caller (platform admin: everyone; company
+ * user: their own company only — same scoping as everything else in this
+ * app). No server-side filter by invoice yet.
+ * TODO(perf): fetch all payments then client-side filter — server-side
+ * filterset_fields=['invoice'] on ARPaymentViewSet would be a cleaner
+ * Tier 1.5 optimization once payment volume grows past ~1000 rows.
+ */
+export const listPayments = () =>
+  apiClient.get("/billing/payments/").then((r) => {
+    const d = r.data;
+    return Array.isArray(d) ? d : d.results || [];
+  });
+
 export default {
   getMySubscription, getInvoices, changePlan, recordPayment, billMonth, getAccountSOA,
-  listPricebook, updatePricebook,
+  listPricebook, updatePricebook, getInvoice, listPayments, listSubscriptions,
 };
