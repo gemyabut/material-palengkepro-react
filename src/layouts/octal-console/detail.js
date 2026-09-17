@@ -9,14 +9,21 @@ import {
   Card,
   CardContent,
   Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Divider,
   Grid,
   LinearProgress,
+  MenuItem,
+  Snackbar,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableRow,
+  TextField,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 
@@ -27,6 +34,7 @@ import MDTypography from "components/MDTypography";
 
 import { useAuthProfile } from "context/AuthContext";
 import { getSubscriptionDetail } from "api/octalConsole";
+import { changePlan, recordPayment, getInvoices } from "../subscription/api/subscription";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -60,6 +68,24 @@ const STATUS_COLOR = {
   cancelled: "error",
   expired: "error",
 };
+
+const INVOICE_STATUS_COLOR = {
+  paid: "success",
+  open: "warning",
+  draft: "default",
+  void: "error",
+};
+
+// markets.models.LicenseTier
+const TIER_OPTIONS = ["community", "starter", "basic", "standard", "pro", "enterprise"];
+
+// billing.models.ARPayment.method choices — no "cash".
+const PAYMENT_METHOD_OPTIONS = [
+  { value: "bank", label: "Bank" },
+  { value: "e_wallet", label: "E-Wallet" },
+  { value: "maya", label: "Maya" },
+  { value: "check", label: "Check" },
+];
 
 function KV({ label, value }) {
   const isElement = typeof value === "object" && value !== null;
@@ -142,23 +168,120 @@ export default function OctalConsoleDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const [invoices, setInvoices] = useState([]);
+  const [invoicesLoading, setInvoicesLoading] = useState(false);
+
+  const [changePlanOpen, setChangePlanOpen] = useState(false);
+  const [selectedTier, setSelectedTier] = useState("");
+  const [changePlanSubmitting, setChangePlanSubmitting] = useState(false);
+
+  const [paymentOpen, setPaymentOpen] = useState(false);
+  const [paymentForm, setPaymentForm] = useState({
+    invoiceId: "", amount: "", method: "bank", refNo: "", notes: "",
+  });
+  const [paymentSubmitting, setPaymentSubmitting] = useState(false);
+
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
+
   const isAllowed =
     !authLoading &&
     ((userProfile?.role || "").toLowerCase() === "system_administrator" ||
       userProfile?.is_staff === true);
+
+  const fetchDetail = () => {
+    setLoading(true);
+    setError(null);
+    return getSubscriptionDetail(id)
+      .then(setData)
+      .catch((e) => setError(e?.response?.data?.detail || e.message || "Failed to load."))
+      .finally(() => setLoading(false));
+  };
+
+  // InvoiceViewSet has no server-side filterset_fields wired up (confirmed
+  // in views.py) — fetch everything the caller can see and filter client-side.
+  const fetchInvoices = (accountId) => {
+    if (!accountId) return Promise.resolve();
+    setInvoicesLoading(true);
+    return getInvoices()
+      .then((all) => setInvoices(all.filter((inv) => inv.account === accountId)))
+      .catch(() => setInvoices([]))
+      .finally(() => setInvoicesLoading(false));
+  };
 
   useEffect(() => {
     if (authLoading || !isAllowed) {
       setLoading(false);
       return;
     }
-    setLoading(true);
-    setError(null);
-    getSubscriptionDetail(id)
-      .then(setData)
-      .catch((e) => setError(e?.response?.data?.detail || e.message || "Failed to load."))
-      .finally(() => setLoading(false));
+    fetchDetail();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, authLoading, isAllowed]);
+
+  useEffect(() => {
+    if (data?.account?.id) fetchInvoices(data.account.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data?.account?.id]);
+
+  const openChangePlan = () => {
+    setSelectedTier(data?.subscription?.tier || "");
+    setChangePlanOpen(true);
+  };
+
+  const handleChangePlanConfirm = async () => {
+    setChangePlanSubmitting(true);
+    try {
+      const res = await changePlan(id, selectedTier);
+      setSnackbar({ open: true, message: `Plan changed to ${res.tier}`, severity: "success" });
+      setChangePlanOpen(false);
+      fetchDetail();
+    } catch (err) {
+      const msg =
+        err?.response?.data?.error || err?.response?.data?.detail || err.message ||
+        "Failed to change plan.";
+      setSnackbar({ open: true, message: String(msg), severity: "error" });
+    } finally {
+      setChangePlanSubmitting(false);
+    }
+  };
+
+  const openRecordPayment = () => {
+    setPaymentForm({ invoiceId: "", amount: "", method: "bank", refNo: "", notes: "" });
+    setPaymentOpen(true);
+  };
+
+  const handleInvoiceSelect = (invoiceId) => {
+    const inv = invoices.find((i) => i.id === invoiceId);
+    setPaymentForm((f) => ({
+      ...f,
+      invoiceId,
+      // Defaults to the full invoice total — there's no "balance" field on
+      // Invoice; the operator edits down manually for a partial payment.
+      amount: inv ? inv.total : f.amount,
+    }));
+  };
+
+  const handleRecordPaymentConfirm = async () => {
+    const invoice = invoices.find((i) => i.id === paymentForm.invoiceId);
+    setPaymentSubmitting(true);
+    try {
+      await recordPayment({
+        invoiceNumber: invoice?.number,
+        amount: paymentForm.amount,
+        method: paymentForm.method,
+        refNo: paymentForm.refNo,
+        notes: paymentForm.notes,
+      });
+      setSnackbar({ open: true, message: "Payment recorded", severity: "success" });
+      setPaymentOpen(false);
+      await fetchInvoices(data?.account?.id);
+      fetchDetail();
+    } catch (err) {
+      const msg = err?.response?.data?.detail || err.message || "Failed to record payment.";
+      setSnackbar({ open: true, message: String(msg), severity: "error" });
+    } finally {
+      setPaymentSubmitting(false);
+    }
+  };
 
   return (
     <DashboardLayout>
@@ -173,14 +296,26 @@ export default function OctalConsoleDetail() {
               </MDTypography>
             )}
           </MDBox>
-          <Button
-            variant="outlined"
-            size="small"
-            startIcon={<ArrowBackIcon />}
-            onClick={() => navigate("/octal-console")}
-          >
-            Back
-          </Button>
+          <MDBox display="flex" gap={1}>
+            {data && (
+              <>
+                <Button variant="outlined" color="info" onClick={openChangePlan}>
+                  Change Plan
+                </Button>
+                <Button variant="outlined" color="success" onClick={openRecordPayment}>
+                  Record Payment
+                </Button>
+              </>
+            )}
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<ArrowBackIcon />}
+              onClick={() => navigate("/octal-console")}
+            >
+              Back
+            </Button>
+          </MDBox>
         </MDBox>
 
         {!isAllowed && !authLoading ? (
@@ -341,8 +476,153 @@ export default function OctalConsoleDetail() {
                 )}
               </SectionCard>
             </MDBox>
+
+            {/* Row 4: Invoices */}
+            <MDBox mb={2}>
+              <SectionCard
+                title="Invoices"
+                subtitle={`${invoices.length} invoice(s) on this billing account`}
+              >
+                {invoicesLoading ? (
+                  <LinearProgress color="info" />
+                ) : invoices.length === 0 ? (
+                  <MDTypography variant="body2" color="text">No invoices yet.</MDTypography>
+                ) : (
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell sx={{ fontWeight: 600 }}>Number</TableCell>
+                        <TableCell sx={{ fontWeight: 600 }}>Period</TableCell>
+                        <TableCell sx={{ fontWeight: 600 }}>Total</TableCell>
+                        <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {invoices.map((inv) => (
+                        <TableRow key={inv.id} hover>
+                          <TableCell><code>{inv.number}</code></TableCell>
+                          <TableCell>
+                            {fmtDate(inv.period_start)} – {fmtDate(inv.period_end)}
+                          </TableCell>
+                          <TableCell>₱{inv.total}</TableCell>
+                          <TableCell>
+                            <Chip
+                              size="small"
+                              label={inv.status}
+                              color={INVOICE_STATUS_COLOR[inv.status] || "default"}
+                            />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </SectionCard>
+            </MDBox>
           </>
         )}
+
+        {/* Change Plan dialog */}
+        <Dialog open={changePlanOpen} onClose={() => setChangePlanOpen(false)} maxWidth="xs" fullWidth>
+          <DialogTitle>Change subscription plan</DialogTitle>
+          <DialogContent>
+            <TextField
+              select fullWidth margin="normal" label="Tier"
+              value={selectedTier}
+              onChange={(e) => setSelectedTier(e.target.value)}
+            >
+              {TIER_OPTIONS.map((t) => (
+                <MenuItem key={t} value={t}>
+                  {t.charAt(0).toUpperCase() + t.slice(1)}
+                </MenuItem>
+              ))}
+            </TextField>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setChangePlanOpen(false)}>Cancel</Button>
+            <Button
+              variant="contained"
+              color="info"
+              disabled={
+                !selectedTier || selectedTier === data?.subscription?.tier || changePlanSubmitting
+              }
+              onClick={handleChangePlanConfirm}
+            >
+              Change Plan
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Record Payment dialog */}
+        <Dialog open={paymentOpen} onClose={() => setPaymentOpen(false)} maxWidth="xs" fullWidth>
+          <DialogTitle>Record payment against invoice</DialogTitle>
+          <DialogContent>
+            <TextField
+              select fullWidth margin="normal" label="Invoice"
+              value={paymentForm.invoiceId}
+              onChange={(e) => handleInvoiceSelect(e.target.value)}
+            >
+              {invoices.filter((i) => i.status === "open").map((inv) => (
+                <MenuItem key={inv.id} value={inv.id}>
+                  {inv.number} — ₱{inv.total}
+                </MenuItem>
+              ))}
+            </TextField>
+            <TextField
+              fullWidth margin="normal" label="Amount" type="number"
+              value={paymentForm.amount}
+              onChange={(e) => setPaymentForm((f) => ({ ...f, amount: e.target.value }))}
+            />
+            <TextField
+              select fullWidth margin="normal" label="Method"
+              value={paymentForm.method}
+              onChange={(e) => setPaymentForm((f) => ({ ...f, method: e.target.value }))}
+            >
+              {PAYMENT_METHOD_OPTIONS.map((m) => (
+                <MenuItem key={m.value} value={m.value}>{m.label}</MenuItem>
+              ))}
+            </TextField>
+            <TextField
+              fullWidth margin="normal" label="Reference number"
+              value={paymentForm.refNo}
+              onChange={(e) => setPaymentForm((f) => ({ ...f, refNo: e.target.value }))}
+            />
+            <TextField
+              fullWidth margin="normal" label="Notes (optional)" multiline minRows={2}
+              value={paymentForm.notes}
+              onChange={(e) => setPaymentForm((f) => ({ ...f, notes: e.target.value }))}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setPaymentOpen(false)}>Cancel</Button>
+            <Button
+              variant="contained"
+              color="success"
+              disabled={
+                !paymentForm.invoiceId || !paymentForm.amount || !paymentForm.method ||
+                paymentSubmitting
+              }
+              onClick={handleRecordPaymentConfirm}
+            >
+              Record Payment
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={4000}
+          onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
+          anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+        >
+          <Alert
+            severity={snackbar.severity}
+            onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
+            sx={{ width: "100%" }}
+          >
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
       </MDBox>
     </DashboardLayout>
   );
