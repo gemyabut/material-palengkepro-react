@@ -58,9 +58,14 @@ function ResultBox({ result }) {
   );
 }
 
+// markets.models.LicenseTier
+const TIER_OPTIONS = ["community", "starter", "basic", "standard", "pro", "enterprise"];
+
 // Onboard a market (platform admin → POST /billing/signup/)
 function OnboardCard() {
-  const [form, setForm] = useState({ code: "", name: "", admin_email: "", admin_mobile: "", admin_name: "" });
+  const [form, setForm] = useState({
+    code: "", name: "", admin_email: "", admin_mobile: "", admin_name: "", plan: "community",
+  });
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
@@ -86,7 +91,7 @@ function OnboardCard() {
           Onboard a market
         </MDTypography>
         <MDTypography variant="caption" color="text">
-          Creates the company, its first market, a Community subscription, and the Market Administrator.
+          Creates the company, its first market, a subscription on the selected plan, and the Market Administrator.
         </MDTypography>
         <Stack spacing={2} mt={2}>
           <TextField size="small" label="Market code (e.g. ECM)" value={form.code} onChange={set("code")} />
@@ -94,6 +99,13 @@ function OnboardCard() {
           <TextField size="small" label="Admin email" value={form.admin_email} onChange={set("admin_email")} />
           <TextField size="small" label="Admin mobile" value={form.admin_mobile} onChange={set("admin_mobile")} />
           <TextField size="small" label="Admin name" value={form.admin_name} onChange={set("admin_name")} />
+          <TextField select size="small" label="Plan" value={form.plan} onChange={set("plan")}>
+            {TIER_OPTIONS.map((t) => (
+              <MenuItem key={t} value={t}>
+                {t.charAt(0).toUpperCase() + t.slice(1)}
+              </MenuItem>
+            ))}
+          </TextField>
           <Button variant="contained" color="success" disabled={busy || !form.code || !form.name} onClick={submit}>
             Onboard
           </Button>

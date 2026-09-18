@@ -79,8 +79,9 @@ const INVOICE_STATUS_COLOR = {
 // markets.models.LicenseTier
 const TIER_OPTIONS = ["community", "starter", "basic", "standard", "pro", "enterprise"];
 
-// billing.models.ARPayment.method choices — no "cash".
+// billing.models.ARPayment.method choices
 const PAYMENT_METHOD_OPTIONS = [
+  { value: "cash", label: "Cash" },
   { value: "bank", label: "Bank" },
   { value: "e_wallet", label: "E-Wallet" },
   { value: "maya", label: "Maya" },
