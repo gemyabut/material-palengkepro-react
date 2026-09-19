@@ -13,7 +13,7 @@ export const ROLE = {
   EXEC: 'executive',           // Owner — full governance
   FIN:  'finance_head',        // Finance Manager — top-tier equivalence
   MKT:  'market_administrator',// Market Administrator — per-market operations
-  ADM:  'admin_staff',         // Admin Staff — master data + batch imports
+  ADM:  'admin_staff',         // Admin Staff — Senior Admin / Supervisor level (distinct role, not an alias for market_administrator)
   LEA:  'leasing_officer',     // Leasing & Marketing Officer (promoted O1.5)
   AR:   'accounts_receivable', // A/R Staff — invoice reconciliation
   AP:   'accounts_payable',    // A/P Staff — Tier 1 sparse view
