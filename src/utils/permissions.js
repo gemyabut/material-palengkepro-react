@@ -3,7 +3,9 @@
  * Single source of truth for what the React layer shows. The SERVER is the real
  * boundary (doc 21 §9) — these helpers only govern UI visibility/affordances.
  *
- * `admin_staff` is kept as a working alias for `market_administrator`.
+ * `admin_staff` is a distinct Senior Admin / Supervisor role (per Lead 2026-09-19
+ * clarification); the group `MARKET_ADMIN = ["market_administrator", "admin_staff"]`
+ * reflects permission-level overlap, not role equivalence.
  */
 
 // Role classes
