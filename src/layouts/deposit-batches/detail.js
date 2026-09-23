@@ -19,7 +19,7 @@ import MDTypography from "components/MDTypography";
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import { canViewBatches, canEditBatches, canConfirmBatches } from "utils/permissions";
-import { destinationLabel } from "utils/destinationLabels";
+import { destinationLabel, batchNoun } from "utils/destinationLabels";
 import { getBatch, markDeposited, confirmBatch, downloadTurnoverPdf } from "api/remittanceBatches";
 import BatchStatusChip from "./components/BatchStatusChip";
 import MarkDepositedModal from "./components/MarkDepositedModal";
@@ -156,7 +156,7 @@ export default function DepositBatchDetailPage() {
       const url = URL.createObjectURL(response.data);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `turnover_slip_${id}_${batch?.date || ""}.pdf`;
+      a.download = `turnover_slip_${batch?.batch_code || id}_${batch?.date || ""}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
     } catch {
@@ -205,7 +205,7 @@ export default function DepositBatchDetailPage() {
         {/* Header */}
         <MDBox display="flex" alignItems="center" gap={2} mb={2} flexWrap="wrap">
           <MDTypography variant="h4" fontWeight="bold">
-            Deposit Batch #{batch.id}
+            {batchNoun(dest)} Batch {batch.batch_code || `#${batch.id}`}
           </MDTypography>
           <BatchStatusChip status={batch.status} size="medium" />
           <DestinationChip destinationType={batch.destination_type} />

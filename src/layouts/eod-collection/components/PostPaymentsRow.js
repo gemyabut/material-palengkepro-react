@@ -33,7 +33,7 @@ export default function PostPaymentsRow({ payment, role, onFlag }) {
           </IconButton>
         </TableCell>
         <TableCell>{payment.tenant_name || "—"}</TableCell>
-        <TableCell>{payment.stall_code || "—"}</TableCell>
+        <TableCell>{payment.stall_number || "—"}</TableCell>
         <TableCell>{payment.payment_type}</TableCell>
         <TableCell align="right">{peso(payment.amount)}</TableCell>
         <TableCell>

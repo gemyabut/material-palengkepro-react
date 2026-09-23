@@ -21,8 +21,10 @@ import MDTypography from "components/MDTypography";
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import { canViewBatches, canEditBatches } from "utils/permissions";
-import { destinationLabel } from "utils/destinationLabels";
+import { destinationLabel, batchNoun } from "utils/destinationLabels";
 import { listBatches } from "api/remittanceBatches";
+import { getMarket } from "api/markets";
+import useProfile from "layouts/profile/hooks/useProfile";
 import BatchStatusChip from "./components/BatchStatusChip";
 
 function getRole() {
@@ -56,6 +58,7 @@ function DestinationChip({ destinationType }) {
 export default function DepositBatchListPage() {
   const role = getRole();
   const navigate = useNavigate();
+  const { userProfile } = useProfile();
   // NOTE: /market-collections/remittance-batches/ (RemittanceBatchViewSet.list)
   // returns the full unpaginated queryset — no page/page_size support server-side.
   // Pagination here is client-side: fetch everything once per filter change,
@@ -66,6 +69,18 @@ export default function DepositBatchListPage() {
   const [error, setError] = useState(null);
   const [statusFilter, setStatusFilter] = useState("");
   const [destFilter,   setDestFilter]   = useState("");
+  // MDU-011 part 3 — page noun ("Deposit"/"Remittance") follows the
+  // operator's own market destination setting, same pattern as
+  // CreateDepositBatchPage's marketData fetch.
+  const [marketDestination, setMarketDestination] = useState(null);
+
+  useEffect(() => {
+    const mid = userProfile?.primary_market ?? userProfile?.primary_market_id;
+    if (!mid) return;
+    getMarket(mid)
+      .then((m) => setMarketDestination(m.destination_type ?? "BANK"))
+      .catch(() => setMarketDestination("BANK"));
+  }, [userProfile]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -121,7 +136,7 @@ export default function DepositBatchListPage() {
           gap={2}
         >
           <MDTypography variant="h4" fontWeight="bold">
-            Deposit Batches
+            {batchNoun(marketDestination)} Batches
           </MDTypography>
           <MDBox display="flex" gap={2} alignItems="center">
             <FormControl size="small" sx={{ minWidth: 140 }}>
@@ -165,7 +180,7 @@ export default function DepositBatchListPage() {
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell>ID</TableCell>
+                  <TableCell>Batch ID</TableCell>
                   <TableCell>Date</TableCell>
                   <TableCell>Destination</TableCell>
                   <TableCell>Deposit Reference</TableCell>
@@ -193,7 +208,7 @@ export default function DepositBatchListPage() {
                       sx={{ cursor: "pointer" }}
                       onClick={() => navigate(`/deposit-batches/${b.id}`)}
                     >
-                      <TableCell>#{b.id}</TableCell>
+                      <TableCell>{b.batch_code || `#${b.id}`}</TableCell>
                       <TableCell>{b.date}</TableCell>
                       <TableCell>
                         <DestinationChip destinationType={b.destination_type} />

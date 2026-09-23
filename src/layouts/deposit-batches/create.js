@@ -10,6 +10,7 @@ import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import { canEditBatches, canOverrideDestination } from "utils/permissions";
 import { createBatch } from "api/remittanceBatches";
 import { getMarket } from "api/markets";
+import { batchNoun } from "utils/destinationLabels";
 import CreateBatchForm from "./components/CreateBatchForm";
 import useProfile from "layouts/profile/hooks/useProfile";
 
@@ -66,7 +67,7 @@ export default function CreateDepositBatchPage() {
             ← Back
           </Button>
           <MDTypography variant="h4" fontWeight="bold">
-            New Deposit Batch
+            New {batchNoun(marketData?.destinationType)} Batch
           </MDTypography>
         </MDBox>
 

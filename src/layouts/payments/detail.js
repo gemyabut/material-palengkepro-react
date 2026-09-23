@@ -106,12 +106,12 @@ export default function PaymentDetailPage() {
         {!loading && payment && (
           <Paper variant="outlined" sx={{ p: 3, maxWidth: 640 }}>
             <MDBox display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-              <MDTypography variant="h5">Payment #{payment.id}</MDTypography>
+              <MDTypography variant="h5">Payment {payment.payment_code || `#${payment.id}`}</MDTypography>
               <PaymentStatusBadge status={payment.status} />
             </MDBox>
 
             <MDTypography variant="body2" color="secondary">
-              {payment.tenant_name || "—"} &middot; {payment.stall_code || "—"} &middot;{" "}
+              {payment.tenant_name || "—"} &middot; {payment.stall_number || "—"} &middot;{" "}
               {payment.payment_type}
             </MDTypography>
             <MDTypography variant="h6" mt={1}>
