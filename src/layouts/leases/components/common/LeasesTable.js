@@ -100,7 +100,7 @@ const LeaseTable = ({
         <TableBody>
           {leases.map((lease) => (
             <TableRow key={lease.id}>
-              <TableCell>{lease.id}</TableCell>
+              <TableCell>{lease.lease_code || lease.id}</TableCell>
               <TableCell>{lease.tenant?.full_name || ""}</TableCell>
               <TableCell>{lease.stall?.stall_number || ""}</TableCell>
               <TableCell>

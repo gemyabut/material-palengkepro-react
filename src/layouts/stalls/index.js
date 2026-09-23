@@ -273,7 +273,7 @@ export default function StallsPage() {
                     onClick={() => navigate(`/stalls/${s.id}`)}
                   >
                     <TableCell sx={{ fontFamily: "monospace", textAlign: "right" }}>
-                      {s.id ?? "—"}
+                      {s.stall_code ?? "—"}
                     </TableCell>
                     <TableCell>
                       <MDTypography variant="button" fontWeight="medium">{s.stall_number}</MDTypography>
