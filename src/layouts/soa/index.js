@@ -23,6 +23,7 @@ import SoaTenantPicker from "./components/SoaTenantPicker";
 import SoaTable from "./components/SoaTable";
 import SoaAgingBlock from "./components/SoaAgingBlock";
 import SoaChargeTypeSummary from "./components/SoaChargeTypeSummary";
+import { toLocalDateString } from "utils/dates";
 import "./soa.css";
 
 const peso = (v) => `₱${Number(v ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
@@ -47,7 +48,7 @@ function getUsername() {
 }
 
 // Today as YYYY-MM-DD for default period end
-const todayStr = new Date().toISOString().slice(0, 10);
+const todayStr = toLocalDateString();
 // First day of current month as default period start
 const firstOfMonth = todayStr.slice(0, 7) + "-01";
 

@@ -35,6 +35,7 @@ import MDTypography from "components/MDTypography";
 import { useAuthProfile } from "context/AuthContext";
 import { getSubscriptionDetail } from "api/octalConsole";
 import { changePlan, recordPayment, getInvoices, getAccountSOA } from "../subscription/api/subscription";
+import { toLocalDateString } from "utils/dates";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -309,9 +310,8 @@ export default function OctalConsoleDetail() {
     const endD = new Date();
     const startD = new Date();
     startD.setFullYear(startD.getFullYear() - 1);
-    const toISO = (d) => d.toISOString().slice(0, 10);
-    const s = toISO(startD);
-    const e = toISO(endD);
+    const s = toLocalDateString(startD);
+    const e = toLocalDateString(endD);
     setSoaStart(s);
     setSoaEnd(e);
     setSoaData(null);

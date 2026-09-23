@@ -32,6 +32,7 @@ import PortalLayout from "./PortalLayout";
 import InvoiceDetailModal from "./components/InvoiceDetailModal";
 import { tenantPortalApi, downloadBlob } from "api/tenantPortal";
 import { getTenantToken, clearTenantSession } from "utils/tenantPortalAuth";
+import { toLocalDateString } from "utils/dates";
 
 const peso = (v) => `₱${Number(v ?? 0).toLocaleString("en-PH", { minimumFractionDigits: 2 })}`;
 
@@ -39,8 +40,7 @@ function defaultPeriod() {
   const today = new Date();
   const yearAgo = new Date(today);
   yearAgo.setFullYear(yearAgo.getFullYear() - 1);
-  const fmt = (d) => d.toISOString().slice(0, 10);
-  return { start: fmt(yearAgo), end: fmt(today) };
+  return { start: toLocalDateString(yearAgo), end: toLocalDateString(today) };
 }
 
 export default function TenantSOA() {

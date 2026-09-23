@@ -17,6 +17,7 @@ import { createCashExpense } from "api/deductions";
 import { listExpenseCategories } from "api/expenseCategories";
 import { getMarket, searchMarkets } from "api/markets";
 import useProfile from "layouts/profile/hooks/useProfile";
+import { toLocalDateString } from "utils/dates";
 
 // Unit 52 Stage E — Request Cash Expense. Batch-independent create via the
 // flat POST /api/deductions/ endpoint (Stage C): no batch id, market + date
@@ -27,7 +28,7 @@ const MAX_SIZE = 5 * 1024 * 1024;
 const ALLOWED = ["image/jpeg", "image/jpg", "image/png"];
 
 function todayStr() {
-  return new Date().toISOString().slice(0, 10);
+  return toLocalDateString();
 }
 
 export default function RequestCashExpensePage() {

@@ -18,6 +18,7 @@ import { confirmBatch } from "api/remittanceBatches";
 import useProfile from "layouts/profile/hooks/useProfile";
 import BankAccountAccordion from "./components/BankAccountAccordion";
 import ConfirmDepositModal from "../deposit-batches/components/ConfirmDepositModal";
+import { toLocalDateString } from "utils/dates";
 import "./bank-rec.css";
 
 function getRole() {
@@ -31,11 +32,11 @@ function getRole() {
 
 function firstOfMonth() {
   const d = new Date();
-  return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10);
+  return toLocalDateString(new Date(d.getFullYear(), d.getMonth(), 1));
 }
 
 function today() {
-  return new Date().toISOString().slice(0, 10);
+  return toLocalDateString();
 }
 
 const peso = (v) =>

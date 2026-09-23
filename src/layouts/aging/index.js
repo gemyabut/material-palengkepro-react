@@ -18,6 +18,7 @@ import { getAgingReport } from "api/aging";
 import AgingKPICards from "./components/AgingKPICards";
 import AgingBarChart from "./components/AgingBarChart";
 import AgingBucketTable from "./components/AgingBucketTable";
+import { toLocalDateString } from "utils/dates";
 
 function getRole() {
   const t = localStorage.getItem("access_token") || sessionStorage.getItem("access_token");
@@ -25,7 +26,7 @@ function getRole() {
 }
 
 function todayISO() {
-  return new Date().toISOString().slice(0, 10);
+  return toLocalDateString();
 }
 
 export default function AgingDashboard() {
