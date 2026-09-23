@@ -20,3 +20,10 @@ export const DESTINATION_LABELS = {
 export function destinationLabel(destination_type, key) {
   return DESTINATION_LABELS[destination_type]?.[key] ?? key;
 }
+
+// MDU-011 part 3 — the "Deposit Batches" screen's noun follows the batch's
+// (or market's) own destination: "Deposit" for bank, "Remittance" for
+// LGU treasury.
+export function batchNoun(destination_type) {
+  return destination_type === "LGU_TREASURY" ? "Remittance" : "Deposit";
+}
