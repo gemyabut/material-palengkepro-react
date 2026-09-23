@@ -94,7 +94,7 @@ export default function SubmitEodCountPage() {
       const url = URL.createObjectURL(response.data);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `cash_tally_${id}_${intake?.date || ""}.pdf`;
+      a.download = `cash_tally_${intake?.intake_code || id}_${intake?.date || ""}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
     } catch {
@@ -162,6 +162,12 @@ export default function SubmitEodCountPage() {
         {!loading && intake && (
           <>
             <MDBox display="flex" gap={4} mb={3} flexWrap="wrap">
+              <MDBox>
+                <MDTypography variant="caption" color="secondary">Intake #</MDTypography>
+                <MDTypography variant="body2" fontWeight="medium">
+                  {intake.intake_code || `#${intake.id}`}
+                </MDTypography>
+              </MDBox>
               <MDBox>
                 <MDTypography variant="caption" color="secondary">Collector</MDTypography>
                 <MDTypography variant="body2" fontWeight="medium">

@@ -720,7 +720,7 @@ export default function TenantDetail({ tenant, user, onEdit, onRequestUpdate, sh
                         });
                         return rights.map((r) => (
                           <TableRow key={r.id}>
-                            <TableCell sx={{ fontFamily: "monospace" }}>{r.stall_code}</TableCell>
+                            <TableCell sx={{ fontFamily: "monospace" }}>{r.stall_number}</TableCell>
                             <TableCell>{r.market_code}</TableCell>
                             <TableCell sx={{ whiteSpace: "nowrap" }}>{r.transfer_date}</TableCell>
                             <TableCell>{r.transfer_reason?.replace(/_/g, " ")}</TableCell>

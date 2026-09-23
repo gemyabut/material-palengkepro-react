@@ -173,6 +173,7 @@ export default function EodCashCountPage() {
             <Table size="small">
               <TableHead>
                 <TableRow>
+                  <TableCell>Intake #</TableCell>
                   <TableCell>Collector</TableCell>
                   <TableCell>Date</TableCell>
                   <TableCell align="right">Expected</TableCell>
@@ -193,6 +194,7 @@ export default function EodCashCountPage() {
                   const variance = parseFloat(c.variance || 0);
                   return (
                     <TableRow key={c.id} hover>
+                      <TableCell>{c.intake_code || `#${c.id}`}</TableCell>
                       <TableCell>{c.collector_name}</TableCell>
                       <TableCell>{c.date}</TableCell>
                       <TableCell align="right">{peso(c.expected_amount)}</TableCell>
