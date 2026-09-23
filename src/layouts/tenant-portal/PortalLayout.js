@@ -2,7 +2,7 @@
  * Kiosk shell layout for Unit 15 Tenant Portal (DEC-042).
  *
  * - Hides the operator sidebar (setLayout "page")
- * - Shows tenant name + TID in header
+ * - Shows tenant name + TEN-#### ID in header
  * - D4: 5-minute idle auto-logout via useIdleAutoLogout
  * - Touch-friendly: large fonts, generous padding, no dense operator chrome
  */
