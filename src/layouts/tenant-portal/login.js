@@ -1,7 +1,7 @@
 /**
  * Tenant Portal — Login page (Unit 15, DEC-042).
  *
- * Single identifier field accepts email, mobile (raw or +63 normalized), or TID-XXXXXX.
+ * Single identifier field accepts email, mobile (raw or +63 normalized), or TEN-####.
  * On success: stores tokens, redirects to change-password (if must_change_password) or dashboard.
  * Kiosk-friendly: large touch targets, no operator sidebar.
  */
@@ -84,7 +84,7 @@ export default function TenantLogin() {
           <Box component="form" onSubmit={handleLogin}>
             <TextField
               fullWidth
-              label="Email, mobile, or Tenant ID (TID-XXXXXX)"
+              label="Email, mobile, or Tenant ID (TEN-####)"
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
               autoComplete="username"
