@@ -37,7 +37,7 @@ function AdminLeaseDetail({ open, lease, onClose }) {
         <Grid container spacing={2} sx={{ mt: 1 }}>
           <Grid item xs={6}>
             <Typography variant="subtitle2">Lease ID</Typography>
-            <Typography>{lease.id}</Typography>
+            <Typography>{lease.lease_code || lease.id}</Typography>
           </Grid>
           <Grid item xs={6}>
             <Typography variant="subtitle2">Tenant</Typography>

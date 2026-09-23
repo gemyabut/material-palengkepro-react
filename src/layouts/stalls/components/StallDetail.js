@@ -216,7 +216,7 @@ export default function StallDetail({ stall, onEdit, showEdit = true }) {
               />
             </Grid>
             <Grid item xs={6} sm={4}>
-              <KV label="Lease ID" value={activeLease.id} />
+              <KV label="Lease ID" value={activeLease.lease_code || activeLease.id} />
             </Grid>
             <Grid item xs={6} sm={4}>
               <KV
@@ -400,7 +400,7 @@ export default function StallDetail({ stall, onEdit, showEdit = true }) {
                   sx={{ cursor: "pointer" }}
                   onClick={() => navigate(`/leases/${l.id}`)}
                 >
-                  <TableCell>{l.id}</TableCell>
+                  <TableCell>{l.lease_code || l.id}</TableCell>
                   <TableCell>{l.tenant?.full_name || "—"}</TableCell>
                   <TableCell>{l.start_date}</TableCell>
                   <TableCell>{l.end_date}</TableCell>
