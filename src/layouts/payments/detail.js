@@ -121,6 +121,29 @@ export default function PaymentDetailPage() {
               Receipt: {payment.receipt_type}-{payment.receipt_number || "—"}
             </MDTypography>
 
+            {/* Tier 1.5 H6 — charge-type breakdown, when this payment was split. */}
+            {Array.isArray(payment.lines) && payment.lines.length > 0 && (
+              <MDBox mt={2}>
+                <Divider sx={{ mb: 1.5 }} />
+                <MDTypography variant="subtitle2" fontWeight="medium" mb={1}>
+                  Charge Breakdown
+                </MDTypography>
+                {payment.lines.map((line, idx) => (
+                  <MDBox
+                    key={`${line.charge_type}-${idx}`}
+                    display="flex"
+                    justifyContent="space-between"
+                    py={0.5}
+                  >
+                    <MDTypography variant="body2" color="secondary">
+                      {line.charge_type_display || line.charge_type}
+                    </MDTypography>
+                    <MDTypography variant="body2">{peso(line.amount)}</MDTypography>
+                  </MDBox>
+                ))}
+              </MDBox>
+            )}
+
             {payment.status === "FLAGGED" && (
               <MDBox mt={3}>
                 <Divider sx={{ mb: 2 }} />
