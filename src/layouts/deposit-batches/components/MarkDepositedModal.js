@@ -10,6 +10,7 @@ import Alert from "@mui/material/Alert";
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 import { destinationLabel } from "utils/destinationLabels";
+import { toLocalDateString } from "utils/dates";
 import DenominationBreakdownOptional, {
   EMPTY_DENOM,
   denomFieldsEntered,
@@ -19,7 +20,7 @@ const MAX_SIZE_BYTES = 5 * 1024 * 1024;
 const ALLOWED_TYPES = ["image/jpeg", "image/jpg", "image/png"];
 
 export default function MarkDepositedModal({ open, batch, onClose, onConfirm, submitting }) {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = toLocalDateString();
 
   const dest  = batch?.destination_type ?? "BANK";
   const isLGU = dest === "LGU_TREASURY";

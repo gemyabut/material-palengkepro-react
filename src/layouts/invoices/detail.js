@@ -11,6 +11,7 @@ import CircularProgress from "@mui/material/CircularProgress";
 import InvoiceLinesTable from "./components/InvoiceLinesTable";
 import PaymentApplicationsTable from "./components/PaymentApplicationsTable";
 import { canViewInvoices } from "utils/permissions";
+import { toLocalDateString } from "utils/dates";
 
 const STATUS_COLOR = {
   OPEN: "info",
@@ -93,7 +94,7 @@ function InvoiceDetailPage() {
 
   if (!invoice) return null;
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = toLocalDateString();
   const isSoftClose =
     invoice.period_end < today && ["OPEN", "PARTIAL"].includes(invoice.status);
   const balance = parseFloat(invoice.balance || 0);

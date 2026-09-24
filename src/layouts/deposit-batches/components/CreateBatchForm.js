@@ -15,13 +15,14 @@ import TextField from "@mui/material/TextField";
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 import { destinationLabel } from "utils/destinationLabels";
+import { toLocalDateString } from "utils/dates";
 import { getUnbatchedDCs } from "api/remittanceBatches";
 
 const peso = (v) =>
   `₱${Number(v ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
 
 export default function CreateBatchForm({ marketCode, destinationType, canOverride, onSubmit, submitting }) {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = toLocalDateString();
 
   const [dcs, setDcs]         = useState([]);
   const [loading, setLoading] = useState(true);

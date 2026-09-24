@@ -19,6 +19,7 @@ import { getMarket } from "api/markets";
 import useProfile from "layouts/profile/hooks/useProfile";
 import AccountTypeSection from "./components/AccountTypeSection";
 import DeductionsTodayWidget from "./components/DeductionsTodayWidget";
+import { toLocalDateString } from "utils/dates";
 
 function getRole() {
   const t = localStorage.getItem("access_token") || sessionStorage.getItem("access_token");
@@ -41,7 +42,7 @@ function fmtAsOf(iso) {
 const peso = (v) => `₱${Number(v ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
 
 function todayStr() {
-  return new Date().toISOString().slice(0, 10);
+  return toLocalDateString();
 }
 
 function getAccountTypes(destinationType) {

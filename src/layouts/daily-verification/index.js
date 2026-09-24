@@ -18,6 +18,7 @@ import MDTypography from "components/MDTypography";
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import { canViewDailyVerification } from "utils/permissions";
+import { toLocalDateString } from "utils/dates";
 import { getDailyVerification, downloadDailyVerificationPdf } from "api/dailyVerification";
 import { getMarket } from "api/markets";
 import useProfile from "layouts/profile/hooks/useProfile";
@@ -38,7 +39,7 @@ const peso = (v) =>
   })}`;
 
 function todayStr() {
-  return new Date().toISOString().slice(0, 10);
+  return toLocalDateString();
 }
 
 // eslint-disable-next-line react/prop-types

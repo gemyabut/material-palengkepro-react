@@ -27,6 +27,7 @@ import { canApproveDeduction, canCreateDeduction } from "utils/permissions";
 import { listDeductions, approveDeduction, rejectDeduction } from "api/deductions";
 import { getMarket } from "api/markets";
 import useProfile from "layouts/profile/hooks/useProfile";
+import { toLocalDateString } from "utils/dates";
 
 // Unit 52 Stage D — Cash Expenses list + approve page.
 // Reuses the flat GET/POST /api/deductions/ surface added in Stage C rather
@@ -54,13 +55,13 @@ function getRole() {
 }
 
 function todayStr() {
-  return new Date().toISOString().slice(0, 10);
+  return toLocalDateString();
 }
 
 function daysAgoStr(n) {
   const d = new Date();
   d.setDate(d.getDate() - n);
-  return d.toISOString().slice(0, 10);
+  return toLocalDateString(d);
 }
 
 const peso = (v) =>
