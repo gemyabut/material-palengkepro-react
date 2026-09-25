@@ -2,8 +2,8 @@
 // SaaS billing invoice detail: header + lines + payments applied.
 // Reads from GET /api/billing/invoices/:id/ (platform-admin scoped, same
 // pattern as the subscriber detail page). Payments are fetched separately
-// via GET /api/billing/payments/ and filtered client-side by invoice_number
-// (see TODO(perf) in subscription/api/subscription.js::listPayments).
+// via GET /api/billing/payments/?invoice=:id (server-side filter, Tier 1.5
+// H11 — see ARPaymentViewSet.filterset_fields).
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
@@ -87,10 +87,10 @@ export default function OctalInvoiceDetail() {
     }
     setLoading(true);
     setError(null);
-    Promise.all([getInvoice(id), listPayments(), listSubscriptions()])
-      .then(([inv, allPayments, allSubs]) => {
+    Promise.all([getInvoice(id), listPayments({ invoice: id }), listSubscriptions()])
+      .then(([inv, invoicePayments, allSubs]) => {
         setInvoice(inv);
-        setPayments(allPayments.filter((p) => p.invoice_number === inv.number));
+        setPayments(invoicePayments);
         // InvoiceSerializer only exposes account as a numeric PK, and there's
         // no reverse account->subscriptions endpoint — resolve the owning
         // subscription client-side for the "back to subscriber" link.

@@ -84,15 +84,14 @@ export const listSubscriptions = () =>
   });
 
 /**
- * All ARPayments visible to the caller (platform admin: everyone; company
- * user: their own company only — same scoping as everything else in this
- * app). No server-side filter by invoice yet.
- * TODO(perf): fetch all payments then client-side filter — server-side
- * filterset_fields=['invoice'] on ARPaymentViewSet would be a cleaner
- * Tier 1.5 optimization once payment volume grows past ~1000 rows.
+ * ARPayments visible to the caller (platform admin: everyone; company user:
+ * their own company only — same scoping as everything else in this app).
+ * Pass { invoice: <id> } to filter server-side to one invoice's payments
+ * (ARPaymentViewSet.filterset_fields = ['invoice'], Tier 1.5 H11) instead of
+ * fetching every payment and filtering client-side.
  */
-export const listPayments = () =>
-  apiClient.get("/billing/payments/").then((r) => {
+export const listPayments = (params) =>
+  apiClient.get("/billing/payments/", { params }).then((r) => {
     const d = r.data;
     return Array.isArray(d) ? d : d.results || [];
   });
