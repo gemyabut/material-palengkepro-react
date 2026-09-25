@@ -41,6 +41,11 @@ const STAFF_ROLES = [
   "market_manager",
 ];
 
+// D3 (Lead decision 2026-09-25): executive/platform admin may additionally
+// hire a Finance Head or another Market Administrator — mirrors backend
+// billing/onboarding.py EXTENDED_STAFF_ROLES / staff_roles_addable_by().
+const EXTENDED_STAFF_ROLES = [...STAFF_ROLES, "finance_head", "market_administrator"];
+
 function ResultBox({ result }) {
   if (!result) return null;
   const cred = result.admin || result; // onboard nests under .admin; staff is flat
@@ -91,7 +96,7 @@ function OnboardCard() {
           Onboard a market
         </MDTypography>
         <MDTypography variant="caption" color="text">
-          Creates the company, its first market, a subscription on the selected plan, and the Market Administrator.
+          Creates the company, its first market, a subscription on the selected plan, and the Owner account.
         </MDTypography>
         <Stack spacing={2} mt={2}>
           <TextField size="small" label="Market code (e.g. ECM)" value={form.code} onChange={set("code")} />
@@ -117,8 +122,10 @@ function OnboardCard() {
   );
 }
 
-// Add staff (market admin → POST /billing/staff/)
-function StaffCard() {
+// Add staff (Owner/market admin → POST /billing/staff/)
+function StaffCard({ role }) {
+  const canAddExtendedRoles = ["executive", "system_administrator"].includes(role);
+  const roleOptions = canAddExtendedRoles ? EXTENDED_STAFF_ROLES : STAFF_ROLES;
   const [form, setForm] = useState({ full_name: "", role: "collector", email: "", mobile: "" });
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState(null);
@@ -152,7 +159,7 @@ function StaffCard() {
           <FormControl size="small">
             <InputLabel>Role</InputLabel>
             <Select value={form.role} label="Role" onChange={set("role")}>
-              {STAFF_ROLES.map((r) => (
+              {roleOptions.map((r) => (
                 <MenuItem key={r} value={r} sx={{ textTransform: "capitalize" }}>
                   {r.replace(/_/g, " ")}
                 </MenuItem>
@@ -196,7 +203,7 @@ export default function Administration() {
             )}
             {showStaff && (
               <Grid item xs={12} md={6}>
-                <StaffCard />
+                <StaffCard role={role} />
               </Grid>
             )}
             {showTemplates && (

@@ -493,10 +493,12 @@ const routes = [
     route: "/administration",
     component: <Administration />,
     sidenavGroup: "Admin",
-    // Task #121: Owner (executive) delegates admin/staff management to
-    // Market Admin — executive excluded here. finance_head + market_administrator
-    // + system_administrator (Octal onboarding) keep access.
-    allowedRoles: [ROLE.FIN, ROLE.MKT, "system_administrator"],
+    // H13 / Lead decision 2026-09-23: reverses Task #121 for adding staff —
+    // the Owner (executive) can add a single staff member to their own
+    // market. finance_head + market_administrator + system_administrator
+    // (Octal onboarding) keep access; the Onboard card stays platform-admin
+    // only regardless (see canOnboard in utils/permissions.js).
+    allowedRoles: [ROLE.EXEC, ROLE.FIN, ROLE.MKT, "system_administrator"],
   },
   {
     type: "collapse",
