@@ -96,7 +96,10 @@ export const canViewMarketUsers = (r) =>
 // Onboarding & staff provisioning (IAM-2).
 export const canOnboard = (r) => has(r, ["system_administrator"]); // platform-admin onboards companies
 export const canManagePricing = (r) => has(r, ["system_administrator"]); // platform-admin edits PriceBook rates
-export const canManageStaff = (r) => has(r, [...MARKET_ADMIN, "system_administrator"]); // market admin adds staff
+// H13 / Lead decision 2026-09-23: reverses Task #121 for adding staff — the
+// Owner (executive) can add a single staff member to their own market, same
+// as a Market Administrator. canOnboard above (new companies) is unchanged.
+export const canManageStaff = (r) => has(r, [...MARKET_ADMIN, "executive", "system_administrator"]);
 
 // ---- Role-class helpers ----
 export const isMarketAdmin = (r) => has(r, MARKET_ADMIN);
