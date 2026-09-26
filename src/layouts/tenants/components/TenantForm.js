@@ -112,7 +112,6 @@ export default function TenantForm({
                 onChange={handleChange}
                 margin="dense"
                 fullWidth
-                required
                 disabled={!editable || loading}
               />
             </Grid>

@@ -28,6 +28,11 @@ export default function useTenants({ initialPageSize = 20, initialOrdering = "fu
 
   const search = filters.search || "";
   const ordering = filters.ordering || initialOrdering;
+  // MDU-015 (Heart QA 2026-09-26, BUG-114): "Incomplete contact" — blank
+  // mobile_phone AND blank email_address — filter, worked out server-side
+  // from the data (no stored field). undefined (not false) when off, same
+  // "drop the key rather than send a falsy value" convention as search.
+  const incompleteContact = filters.incomplete_contact === "true";
 
   // Original only sent `search` when truthy — clearing it drops the key
   // (axios omits undefined params) rather than sending an empty string.
@@ -36,6 +41,10 @@ export default function useTenants({ initialPageSize = 20, initialOrdering = "fu
     [updateFilters]
   );
   const setOrdering = useCallback((val) => updateFilters({ ordering: val }), [updateFilters]);
+  const setIncompleteContact = useCallback(
+    (val) => updateFilters({ incomplete_contact: val ? "true" : undefined }),
+    [updateFilters]
+  );
 
   return {
     tenants,
@@ -46,10 +55,12 @@ export default function useTenants({ initialPageSize = 20, initialOrdering = "fu
     rowsPerPage,
     search,
     ordering,
+    incompleteContact,
     setPage,
     setRowsPerPage,
     setSearch,
     setOrdering,
+    setIncompleteContact,
     fetchTenants,
   };
 }
