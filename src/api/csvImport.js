@@ -133,8 +133,14 @@ const MASTER_SCOPES = {
   "crm-crud":     "palengkepro_crm_crud_template.xlsx",
 };
 
-export async function downloadMasterTemplate(scope = "full") {
-  const params = scope && scope !== "full" ? { scope } : {};
+// marketCode (MDU-016 follow-up, Lead decision 2026-09-26): passed through
+// to the server so it can build the workbook with the resolved market
+// (not the hardcoded "ECM" default) and name the file
+// "{MARKET}_<name>.xlsx", same as downloadDomainTemplate.
+export async function downloadMasterTemplate(scope = "full", marketCode) {
+  const params = {};
+  if (scope && scope !== "full") params.scope = scope;
+  if (marketCode) params.market = marketCode;
   const res = await apiClient.get("/templates/master/", { responseType: "blob", params });
   const url = window.URL.createObjectURL(res.data);
   const a = document.createElement("a");

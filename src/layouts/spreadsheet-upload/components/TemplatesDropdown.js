@@ -11,10 +11,11 @@ import { listTemplates, downloadDomainTemplate, downloadMasterTemplate } from "a
 // drop, not after. Same Button+Menu interaction DomainPicker.js used for its
 // now-deleted "Download template" button, so it's a familiar pattern.
 //
-// marketCode (MDU-014, Lead decision 2026-09-26): when known (this user's
-// fixed market, or whatever they've picked in Step 1), the server names the
-// download "{MARKET}_{Template}.xlsx" instead of the old numbered catalog
-// filename — passed straight through to downloadDomainTemplate.
+// marketCode (MDU-014, Lead decision 2026-09-26; MDU-016 follow-up for the
+// master workbook): when known (this user's fixed market, or whatever
+// they've picked in Step 1), the server names the download
+// "{MARKET}_{Template}.xlsx" instead of the old numbered catalog filename —
+// passed straight through to downloadDomainTemplate and downloadMasterTemplate.
 function TemplatesDropdown({ marketCode }) {
   const [templates, setTemplates] = useState([]);
   const [anchorEl, setAnchorEl] = useState(null);
@@ -35,9 +36,11 @@ function TemplatesDropdown({ marketCode }) {
   };
   // "CRM Go-Live" scope explicitly, not downloadMasterTemplate's own "full"
   // default — this entry promises the Go-Live pack, not the full master set.
+  // MDU-016 follow-up (Lead decision 2026-09-26): marketCode passed through
+  // same as handlePickDomain, so this download is market-aware too.
   const handlePickMaster = () => {
     closeMenu();
-    downloadMasterTemplate("crm-golive");
+    downloadMasterTemplate("crm-golive", marketCode);
   };
 
   return (
