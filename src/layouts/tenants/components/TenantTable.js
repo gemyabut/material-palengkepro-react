@@ -72,6 +72,8 @@ export default function TenantTable({
   onSearchChange,
   ordering,
   onOrderingChange,
+  incompleteContactOnly,
+  onIncompleteContactChange,
 }) {
   const [inputVal, setInputVal] = useState(search ?? '');
   const debounceRef = useRef(null);
@@ -115,6 +117,18 @@ export default function TenantTable({
             ))}
           </Select>
         </FormControl>
+        {/* MDU-015 (Heart QA 2026-09-26, BUG-114): worked out from the data
+            (blank mobile AND blank email) — no stored field to filter on
+            server-side beyond the ?incomplete_contact=true param this
+            toggles. */}
+        <Chip
+          label="Incomplete contact"
+          size="small"
+          clickable
+          color={incompleteContactOnly ? 'warning' : 'default'}
+          variant={incompleteContactOnly ? 'filled' : 'outlined'}
+          onClick={() => onIncompleteContactChange?.(!incompleteContactOnly)}
+        />
       </Stack>
 
       {/* Table */}
@@ -185,6 +199,15 @@ export default function TenantTable({
 
                   <TableCell>
                     <Typography variant="body2">{t.mobile_phone || '—'}</Typography>
+                    {!t.mobile_phone && !t.email_address && (
+                      <Chip
+                        size="small"
+                        label="Incomplete contact"
+                        color="warning"
+                        variant="outlined"
+                        sx={{ mt: 0.5 }}
+                      />
+                    )}
                   </TableCell>
 
                   <TableCell>
@@ -256,6 +279,8 @@ TenantTable.propTypes = {
   onSearchChange: PropTypes.func,
   ordering: PropTypes.string,
   onOrderingChange: PropTypes.func,
+  incompleteContactOnly: PropTypes.bool,
+  onIncompleteContactChange: PropTypes.func,
 };
 
 TenantTable.defaultProps = {

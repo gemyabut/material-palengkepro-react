@@ -52,10 +52,12 @@ export default function MasterTenantList() {
     rowsPerPage,
     search,
     ordering,
+    incompleteContact,
     setPage,
     setRowsPerPage,
     setSearch,
     setOrdering,
+    setIncompleteContact,
     fetchTenants,
   } = useTenants();
 
@@ -236,6 +238,8 @@ export default function MasterTenantList() {
               onSearchChange={setSearch}
               ordering={ordering}
               onOrderingChange={setOrdering}
+              incompleteContactOnly={incompleteContact}
+              onIncompleteContactChange={setIncompleteContact}
             />
             <Stack direction="row" justifyContent="space-between" alignItems="center" p={2}>
               <FormControl sx={{ minWidth: 120 }} size="small">
