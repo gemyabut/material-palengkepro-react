@@ -390,7 +390,7 @@ export default function OctalConsoleDetail() {
               <Grid item xs={12} md={6}>
                 <SectionCard title="Company" subtitle="Client organization operating the market(s)">
                   <KV label="Name" value={data.company.name} />
-                  <KV label="Code" value={data.company.code} />
+                  <KV label="Company code (billing only)" value={data.company.code} />
                   <KV label="Contact person" value={data.company.contact_person} />
                   <KV label="Email" value={data.company.email} />
                   <KV label="Phone" value={data.company.phone} />
@@ -451,7 +451,7 @@ export default function OctalConsoleDetail() {
                   <Table size="small">
                     <TableHead>
                       <TableRow>
-                        <TableCell sx={{ fontWeight: 600 }}>Code</TableCell>
+                        <TableCell sx={{ fontWeight: 600 }}>Market code (use this in uploads)</TableCell>
                         <TableCell sx={{ fontWeight: 600 }}>Name</TableCell>
                         <TableCell sx={{ fontWeight: 600 }}>Location</TableCell>
                         <TableCell sx={{ fontWeight: 600 }}>Type</TableCell>

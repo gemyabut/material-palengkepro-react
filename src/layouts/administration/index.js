@@ -66,10 +66,30 @@ function ResultBox({ result }) {
 // markets.models.LicenseTier
 const TIER_OPTIONS = ["community", "starter", "basic", "standard", "pro", "enterprise"];
 
+// MDU-013 (Lead decision 2026-09-26): preview-only mirror of
+// billing/onboarding.py::_default_company_code() — the backend is the
+// source of truth and re-derives + validates this itself; this just shows
+// the operator what to expect before they submit.
+const COMPANY_CODE_SKIP_WORDS = new Set(["of", "the", "and", "&"]);
+
+function defaultCompanyCode(name) {
+  const words = (name || "").trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return "";
+  let significant = words.filter(
+    (w) => !COMPANY_CODE_SKIP_WORDS.has(w.replace(/[.,]/g, "").toLowerCase())
+  );
+  if (significant.length === 0) significant = words;
+  if (significant.length === 1) {
+    return significant[0].toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 10);
+  }
+  return significant.map((w) => (/[a-zA-Z0-9]/.test(w[0]) ? w[0].toUpperCase() : "")).join("");
+}
+
 // Onboard a market (platform admin → POST /billing/signup/)
 function OnboardCard() {
   const [form, setForm] = useState({
-    code: "", name: "", admin_email: "", admin_mobile: "", admin_name: "", plan: "community",
+    code: "", name: "", market_name: "", company_code: "",
+    admin_email: "", admin_mobile: "", admin_name: "", plan: "community",
   });
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState(null);
@@ -100,10 +120,27 @@ function OnboardCard() {
         </MDTypography>
         <Stack spacing={2} mt={2}>
           <TextField size="small" label="Market code (e.g. ECM)" value={form.code} onChange={set("code")} />
-          <TextField size="small" label="Company / market name" value={form.name} onChange={set("name")} />
-          <TextField size="small" label="Admin email" value={form.admin_email} onChange={set("admin_email")} />
-          <TextField size="small" label="Admin mobile" value={form.admin_mobile} onChange={set("admin_mobile")} />
-          <TextField size="small" label="Admin name" value={form.admin_name} onChange={set("admin_name")} />
+          <TextField size="small" label="Company name" value={form.name} onChange={set("name")} />
+          <TextField
+            size="small"
+            label="Market name (optional — defaults to company name)"
+            value={form.market_name}
+            onChange={set("market_name")}
+          />
+          <TextField
+            size="small"
+            label="Company code (optional)"
+            value={form.company_code}
+            onChange={set("company_code")}
+            helperText={
+              form.company_code
+                ? " "
+                : `Default: ${defaultCompanyCode(form.name) || "(enter a company name)"}`
+            }
+          />
+          <TextField size="small" label="Owner email" value={form.admin_email} onChange={set("admin_email")} />
+          <TextField size="small" label="Owner mobile" value={form.admin_mobile} onChange={set("admin_mobile")} />
+          <TextField size="small" label="Owner name" value={form.admin_name} onChange={set("admin_name")} />
           <TextField select size="small" label="Plan" value={form.plan} onChange={set("plan")}>
             {TIER_OPTIONS.map((t) => (
               <MenuItem key={t} value={t}>

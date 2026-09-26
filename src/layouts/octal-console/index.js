@@ -264,7 +264,7 @@ export default function OctalConsole() {
                   <Table size="small">
                     <TableHead>
                       <TableRow>
-                        <TableCell sx={{ fontWeight: 600, width: 110 }}>Market Code</TableCell>
+                        <TableCell sx={{ fontWeight: 600, width: 110 }}>Market code (use this in uploads)</TableCell>
                         <TableCell sx={{ fontWeight: 600 }}>Market Name</TableCell>
                         <TableCell sx={{ fontWeight: 600 }}>Company</TableCell>
                         <TableCell sx={{ fontWeight: 600, width: 130 }}>Subscription Tier</TableCell>
