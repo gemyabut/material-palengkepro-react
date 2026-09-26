@@ -94,6 +94,16 @@ function extractFilenameFromResponse(response, fallback) {
   return match ? match[1] : fallback;
 }
 
+// MDU-015b (BUGS.md BUG-114 follow-up) — office-initiated kiosk password
+// reset. Real axios, not mock-backed — same precedent as the Documents &
+// Verification functions above (this button is only meaningful against a
+// real backend, since it returns a genuine one-time temporary password).
+export async function resetTenantKioskPassword(tenantId) {
+  debugLog("API:resetTenantKioskPassword", tenantId);
+  const { data } = await apiClient.post(`/tenants/${tenantId}/reset-kiosk-password/`);
+  return data; // { detail, temporary_password }
+}
+
 export async function downloadTenantIdCard(tenantId) {
   debugLog("API:downloadTenantIdCard", tenantId);
   const res = await apiClient.get(`/tenants/${tenantId}/id-card.pdf`, {

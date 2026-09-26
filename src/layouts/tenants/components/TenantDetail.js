@@ -48,6 +48,7 @@ import {
   updateVerificationNotes,
   setVerificationStatus,
   downloadTenantIdCard,
+  resetTenantKioskPassword,
 } from "../api/tenants";
 
 // ── Chip colour maps ──────────────────────────────────────────────────────────
@@ -85,6 +86,22 @@ const WALLET_PROVIDER_LABEL = {
   SHOPEEPAY: "ShopeePay",
   OTHER: "Other",
 };
+
+// MDU-015b (BUGS.md BUG-114 follow-up, Lead decision 2026-09-26) — mirrors
+// backend tenants/permissions.py::KIOSK_RESET_ROLES exactly (deliberately
+// narrower than roleUtils' ADMIN_ROLES: excludes market_manager/finance_head/
+// executive). UI gate only — the backend 403 is authoritative either way
+// (BUG #25 discipline, same as the Print ID Card gate above).
+const KIOSK_RESET_ROLES = ["market_administrator", "admin_staff", "leasing_officer"];
+function canResetKioskPassword(user) {
+  const role = user?.role;
+  return (
+    KIOSK_RESET_ROLES.includes(role) ||
+    role === "system_administrator" ||
+    !!user?.is_staff ||
+    !!user?.is_superuser
+  );
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function fmt(val) {
@@ -164,6 +181,11 @@ export default function TenantDetail({ tenant, user, onEdit, onRequestUpdate, sh
   const [downloadingIdCard, setDownloadingIdCard] = useState(false);
   const [idCardError, setIdCardError] = useState(null);
 
+  // ── MDU-015b: Reset kiosk password ───────────────────────────────────────
+  const [resettingKioskPassword, setResettingKioskPassword] = useState(false);
+  const [kioskResetError, setKioskResetError] = useState(null);
+  const [kioskResetResult, setKioskResetResult] = useState(null); // { temporary_password }
+
   useEffect(() => {
     setDocOverrides({});
     setNotesDraft(tenant?.verification_notes || "");
@@ -212,6 +234,19 @@ export default function TenantDetail({ tenant, user, onEdit, onRequestUpdate, sh
       setIdCardError(err?.response?.data?.error || "Failed to generate ID card.");
     } finally {
       setDownloadingIdCard(false);
+    }
+  };
+
+  const handleResetKioskPassword = async () => {
+    setKioskResetError(null);
+    setResettingKioskPassword(true);
+    try {
+      const result = await resetTenantKioskPassword(tenant.id);
+      setKioskResetResult(result);
+    } catch (err) {
+      setKioskResetError(err?.response?.data?.detail || "Failed to reset kiosk password.");
+    } finally {
+      setResettingKioskPassword(false);
     }
   };
 
@@ -383,7 +418,10 @@ export default function TenantDetail({ tenant, user, onEdit, onRequestUpdate, sh
             </Grid>
 
             {/* Actions */}
-            {(editable && showEdit) || user?.role === "tenant" || user?.role === "executive" ? (
+            {(editable && showEdit) ||
+            user?.role === "tenant" ||
+            user?.role === "executive" ||
+            canResetKioskPassword(user) ? (
               <Grid item xs={12} sm="auto">
                 <Stack direction="row" spacing={1} flexWrap="wrap">
                   {editable && showEdit && (
@@ -422,7 +460,23 @@ export default function TenantDetail({ tenant, user, onEdit, onRequestUpdate, sh
                       {downloadingIdCard ? "Generating…" : "Print ID Card"}
                     </Button>
                   )}
+                  {canResetKioskPassword(user) && (
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      color="warning"
+                      onClick={handleResetKioskPassword}
+                      disabled={resettingKioskPassword}
+                    >
+                      {resettingKioskPassword ? "Resetting…" : "Reset Kiosk Password"}
+                    </Button>
+                  )}
                 </Stack>
+                {kioskResetError && (
+                  <Typography variant="caption" color="error" display="block" mt={0.5}>
+                    {kioskResetError}
+                  </Typography>
+                )}
                 {idCardError && (
                   <Typography variant="caption" color="error" display="block" mt={0.5}>
                     {idCardError}
@@ -624,6 +678,36 @@ export default function TenantDetail({ tenant, user, onEdit, onRequestUpdate, sh
             disabled={verifying}
           >
             {verifying ? "Unverifying…" : "Unverify"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* ── Kiosk password reset result (MDU-015b) — shown once ──────────── */}
+      <Dialog open={!!kioskResetResult} onClose={() => setKioskResetResult(null)}>
+        <DialogTitle>Kiosk password reset</DialogTitle>
+        <DialogContent>
+          <DialogContentText component="div">
+            <Typography variant="body2" gutterBottom>
+              Temporary password for {tenant.full_name || tenant.business_name}:
+            </Typography>
+            <Typography
+              variant="h5"
+              fontFamily="monospace"
+              textAlign="center"
+              my={2}
+              data-testid="kiosk-temp-password"
+            >
+              {kioskResetResult?.temporary_password}
+            </Typography>
+            <Alert severity="warning">
+              This password is shown only once and is not stored anywhere. Give it to the tenant in
+              person — they must change it the next time they log in to the kiosk.
+            </Alert>
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button variant="contained" onClick={() => setKioskResetResult(null)}>
+            Done
           </Button>
         </DialogActions>
       </Dialog>
@@ -918,7 +1002,9 @@ export default function TenantDetail({ tenant, user, onEdit, onRequestUpdate, sh
                             {pay.method === "E_WALLET" && pay.wallet_provider && (
                               <Chip
                                 size="small"
-                                label={WALLET_PROVIDER_LABEL[pay.wallet_provider] || pay.wallet_provider}
+                                label={
+                                  WALLET_PROVIDER_LABEL[pay.wallet_provider] || pay.wallet_provider
+                                }
                                 sx={{ ml: 1 }}
                               />
                             )}
