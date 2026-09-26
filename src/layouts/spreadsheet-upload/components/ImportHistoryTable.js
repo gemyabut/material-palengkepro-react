@@ -60,6 +60,7 @@ function ImportHistoryTable({ canSeeAll, refreshKey }) {
                 <TableRow>
                   <TableCell>Date</TableCell>
                   <TableCell>Domain</TableCell>
+                  <TableCell>Market</TableCell>
                   <TableCell>Status</TableCell>
                   <TableCell align="right">Total</TableCell>
                   <TableCell align="right">Created</TableCell>
@@ -75,6 +76,7 @@ function ImportHistoryTable({ canSeeAll, refreshKey }) {
                       {job.started_at ? new Date(job.started_at).toLocaleString() : "—"}
                     </TableCell>
                     <TableCell>{job.domain || "—"}</TableCell>
+                    <TableCell>{job.market || "—"}</TableCell>
                     <TableCell>
                       <Chip
                         size="small"

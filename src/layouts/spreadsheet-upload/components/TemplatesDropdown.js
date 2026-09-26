@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import PropTypes from "prop-types";
 import { Button, Menu, MenuItem, Divider } from "@mui/material";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import DownloadIcon from "@mui/icons-material/Download";
@@ -9,7 +10,12 @@ import { listTemplates, downloadDomainTemplate, downloadMasterTemplate } from "a
 // inspected) — a blank template is most useful BEFORE the user has a file to
 // drop, not after. Same Button+Menu interaction DomainPicker.js used for its
 // now-deleted "Download template" button, so it's a familiar pattern.
-function TemplatesDropdown() {
+//
+// marketCode (MDU-014, Lead decision 2026-09-26): when known (this user's
+// fixed market, or whatever they've picked in Step 1), the server names the
+// download "{MARKET}_{Template}.xlsx" instead of the old numbered catalog
+// filename — passed straight through to downloadDomainTemplate.
+function TemplatesDropdown({ marketCode }) {
   const [templates, setTemplates] = useState([]);
   const [anchorEl, setAnchorEl] = useState(null);
 
@@ -25,7 +31,7 @@ function TemplatesDropdown() {
   const closeMenu = () => setAnchorEl(null);
   const handlePickDomain = (domain, filename) => {
     closeMenu();
-    downloadDomainTemplate(domain, filename);
+    downloadDomainTemplate(domain, filename, marketCode);
   };
   // "CRM Go-Live" scope explicitly, not downloadMasterTemplate's own "full"
   // default — this entry promises the Go-Live pack, not the full master set.
@@ -58,5 +64,10 @@ function TemplatesDropdown() {
     </>
   );
 }
+
+TemplatesDropdown.propTypes = {
+  marketCode: PropTypes.string,
+};
+TemplatesDropdown.defaultProps = { marketCode: null };
 
 export default TemplatesDropdown;
