@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { jwtDecode } from "jwt-decode";
 import { Alert, Card, CardContent, Divider } from "@mui/material";
 
@@ -8,9 +8,10 @@ import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 
 import { canUseSpreadsheetUpload, canSeeAllImportJobs } from "utils/permissions";
-import { inspectWorkbook, commitWorkbook } from "api/csvImport";
+import { inspectWorkbook, commitWorkbook, getMyUploadMarkets } from "api/csvImport";
 
 import FileDropzone from "./components/FileDropzone";
+import MarketStep from "./components/MarketStep";
 import ReviewScreen from "./components/ReviewScreen";
 import SavePanel from "./components/SavePanel";
 import ProgressModal from "./components/ProgressModal";
@@ -50,7 +51,31 @@ function SpreadsheetUpload() {
   const [error,             setError]           = useState(null);
   const [historyKey,        setHistoryKey]      = useState(0);
 
+  // MDU-014 (Lead decision 2026-09-26) — one market per upload, set once in
+  // Step 1: marketsInfo.mode is "fixed" (one accessible market, no choice
+  // needed) or "choose" (several/none — a required dropdown). marketCode
+  // only matters in "choose" mode; the market picker locks once a file has
+  // been reviewed, matching "set once".
+  const [marketsInfo,       setMarketsInfo]     = useState(null);
+  const [marketsLoading,    setMarketsLoading]  = useState(true);
+  const [marketCode,        setMarketCode]      = useState("");
+
   const historyRef = useRef(null);
+
+  useEffect(() => {
+    getMyUploadMarkets()
+      .then((data) => {
+        setMarketsInfo(data);
+        if (data?.mode === "fixed" && data.market) setMarketCode(data.market.code);
+      })
+      .catch(() => setMarketsInfo(null))
+      .finally(() => setMarketsLoading(false));
+  }, []);
+
+  const effectiveMarket =
+    marketsInfo?.mode === "fixed"
+      ? marketsInfo.market
+      : marketsInfo?.markets?.find((m) => m.code === marketCode) || null;
 
   const handleActionChange = (domain, action) => {
     setPerSheetActions((prev) => ({ ...prev, [domain]: action }));
@@ -61,7 +86,7 @@ function SpreadsheetUpload() {
     setInspecting(true);
     setInspectResult(null);
     try {
-      const data = await inspectWorkbook(f);
+      const data = await inspectWorkbook(f, marketCode);
       setInspectResult(data);
       setPerSheetActions({}); // fresh file -> per-sheet actions default back to "upsert"
     } catch (err) {
@@ -72,6 +97,17 @@ function SpreadsheetUpload() {
   };
 
   const handleFileAccepted = (f) => {
+    // MDU-014: market is set once, before the file — a multi/no-market user
+    // must pick one first (mirrors the backend's own resolve_upload_market
+    // requirement, so this is UX guidance, not the real enforcement).
+    if (marketsInfo?.mode === "choose" && !marketCode) {
+      setError("Select a market above before uploading a file.");
+      return;
+    }
+    if (marketsInfo?.mode === "blocked") {
+      setError(marketsInfo.message || "Your account has no assigned market — ask an administrator.");
+      return;
+    }
     setFile(f);
     setCommitResult(null);
     if (f) runInspect(f);
@@ -87,6 +123,7 @@ function SpreadsheetUpload() {
         saveMode,
         approverId: saveMode === "all_with_warnings" ? approverId : undefined,
         attachment,
+        marketCode,
       });
       setCommitResult(data);
       setSourceWasXlsx(file.name.toLowerCase().endsWith(".xlsx"));
@@ -115,6 +152,7 @@ function SpreadsheetUpload() {
     setSourceWasXlsx(false);
     setError(null);
     setScreen(SCREEN.REVIEW);
+    // marketCode intentionally preserved — "upload another" to the same market
   };
 
   const handleViewHistory = () => {
@@ -148,11 +186,22 @@ function SpreadsheetUpload() {
             {screen !== SCREEN.FINISHED && (
               <>
                 <MDBox mb={2}>
-                  <TemplatesDropdown />
+                  <TemplatesDropdown marketCode={effectiveMarket?.code} />
                 </MDBox>
 
+                <MarketStep
+                  loading={marketsLoading}
+                  mode={marketsInfo?.mode}
+                  fixedMarket={marketsInfo?.mode === "fixed" ? marketsInfo.market : null}
+                  markets={marketsInfo?.markets || []}
+                  marketCode={marketCode}
+                  onMarketCodeChange={setMarketCode}
+                  locked={Boolean(inspectResult)}
+                  blockedMessage={marketsInfo?.mode === "blocked" ? marketsInfo.message : ""}
+                />
+
                 <MDTypography variant="h6" mb={1}>
-                  1. Upload file
+                  2. Upload file
                 </MDTypography>
                 <FileDropzone file={file} onChange={handleFileAccepted} />
 
@@ -176,6 +225,7 @@ function SpreadsheetUpload() {
                       onActionChange={handleActionChange}
                       attachment={attachment}
                       onAttachmentChange={setAttachment}
+                      market={effectiveMarket}
                     />
                     <SavePanel
                       saveMode={saveMode}
@@ -184,6 +234,7 @@ function SpreadsheetUpload() {
                       onApproverIdChange={setApproverId}
                       onSave={handleSave}
                       saving={screen === SCREEN.SAVING}
+                      marketCode={effectiveMarket?.code}
                     />
                   </>
                 )}

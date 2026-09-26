@@ -11,11 +11,22 @@ function extractFilenameFromResponse(response, fallback) {
   return match ? match[1] : fallback;
 }
 
+// MDU-014 (Lead decision 2026-09-26) — one market per upload. Tells the
+// Upload screen's Step 1 whether to show a fixed label (mode: "fixed", one
+// accessible market) or a required dropdown (mode: "choose").
+export async function getMyUploadMarkets() {
+  const { data } = await apiClient.get("/csv-import/my-markets/");
+  return data;
+}
+
 // Unit 51 Stage F — read-only preview: validates every row, never commits,
-// never creates an ImportJob (csv_import Stage C.2).
-export async function inspectWorkbook(file) {
+// never creates an ImportJob (csv_import Stage C.2). marketCode (MDU-014) is
+// only actually required server-side for a multi/no-market user — harmless
+// to always send when known.
+export async function inspectWorkbook(file, marketCode) {
   const form = new FormData();
   form.append("file", file);
+  if (marketCode) form.append("market_code", marketCode);
   const { data } = await apiClient.post("/csv-import/inspect/", form, {
     headers: { "Content-Type": "multipart/form-data" },
   });
@@ -24,13 +35,15 @@ export async function inspectWorkbook(file) {
 
 // Unit 51 Stage F — commits a workbook. perSheetActions is a plain object
 // {domain: "upsert"|"create"|"skip-existing"|"skip"}, reshaped here into the
-// backend's {domain: {action: ...}} contract (csv_import Stage D).
+// backend's {domain: {action: ...}} contract (csv_import Stage D). marketCode
+// (MDU-014) must be the SAME one sent to inspectWorkbook for this file.
 export async function commitWorkbook(
   file,
-  { perSheetActions, saveMode = "commit", approverId, attachment } = {}
+  { perSheetActions, saveMode = "commit", approverId, attachment, marketCode } = {}
 ) {
   const form = new FormData();
   form.append("file", file);
+  if (marketCode) form.append("market_code", marketCode);
   if (perSheetActions && Object.keys(perSheetActions).length) {
     const shaped = {};
     Object.entries(perSheetActions).forEach(([domain, action]) => {
@@ -69,12 +82,14 @@ export async function listTemplates() {
   return data;
 }
 
-// Unit 51 Track A — downloads one domain's primary upload template. filename
-// comes from the listTemplates() entry the caller already has in hand
-// (matches the server's actual catalog filename, e.g. "25_CASHIER_INTAKE_Upload.xlsx").
-export async function downloadDomainTemplate(domain, filename) {
+// Unit 51 Track A — downloads one domain's primary upload template. `filename`
+// is only the CLIENT-SIDE fallback if the server's Content-Disposition is
+// somehow missing; the server itself now names it "{MARKET}_{Template}.xlsx"
+// (MDU-014, Lead decision 2026-09-26) when marketCode is known/resolvable.
+export async function downloadDomainTemplate(domain, filename, marketCode) {
   const res = await apiClient.get(`/csv-import/templates/${domain}/`, {
     responseType: "blob",
+    params: marketCode ? { market: marketCode } : undefined,
   });
   const url = window.URL.createObjectURL(res.data);
   const a = document.createElement("a");

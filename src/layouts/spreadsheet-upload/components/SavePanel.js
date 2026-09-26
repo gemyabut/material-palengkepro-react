@@ -10,7 +10,9 @@ const SAVE_MODES = [
   { value: "all_with_warnings", label: "Save with warnings — commit despite rejects (requires approver)" },
 ];
 
-function SavePanel({ saveMode, onSaveModeChange, approverId, onApproverIdChange, onSave, saving }) {
+function SavePanel({
+  saveMode, onSaveModeChange, approverId, onApproverIdChange, onSave, saving, marketCode,
+}) {
   const needsApprover = saveMode === "all_with_warnings";
   const disabled = saving || (needsApprover && !approverId.trim());
 
@@ -18,7 +20,7 @@ function SavePanel({ saveMode, onSaveModeChange, approverId, onApproverIdChange,
     <Card sx={{ mt: 2 }}>
       <CardContent>
         <MDTypography variant="h6" mb={1}>
-          2. Save options
+          3. Save options
         </MDTypography>
         <FormControl>
           <RadioGroup value={saveMode} onChange={(e) => onSaveModeChange(e.target.value)}>
@@ -50,7 +52,7 @@ function SavePanel({ saveMode, onSaveModeChange, approverId, onApproverIdChange,
             onClick={onSave}
             disabled={disabled}
           >
-            {saving ? "Saving..." : "Save"}
+            {saving ? "Saving..." : marketCode ? `Save to ${marketCode}` : "Save"}
           </Button>
         </MDBox>
       </CardContent>
@@ -65,7 +67,8 @@ SavePanel.propTypes = {
   onApproverIdChange: PropTypes.func.isRequired,
   onSave: PropTypes.func.isRequired,
   saving: PropTypes.bool,
+  marketCode: PropTypes.string,
 };
-SavePanel.defaultProps = { saving: false };
+SavePanel.defaultProps = { saving: false, marketCode: null };
 
 export default SavePanel;

@@ -167,7 +167,9 @@ SheetCard.propTypes = {
 };
 SheetCard.defaultProps = { attachment: null };
 
-function ReviewScreen({ inspectResult, perSheetActions, onActionChange, attachment, onAttachmentChange }) {
+function ReviewScreen({
+  inspectResult, perSheetActions, onActionChange, attachment, onAttachmentChange, market,
+}) {
   if (!inspectResult) return null;
 
   const sheets = inspectResult.sheets || [];
@@ -175,6 +177,11 @@ function ReviewScreen({ inspectResult, perSheetActions, onActionChange, attachme
 
   return (
     <MDBox mt={3}>
+      {market && (
+        <Alert severity="info" icon={false} sx={{ mb: 1, fontWeight: "bold" }}>
+          Uploading to {market.name} ({market.code})
+        </Alert>
+      )}
       <Alert severity="info" sx={{ mb: 2 }}>
         <strong>Validation only — nothing saved yet.</strong> Review each sheet below, choose an
         action per sheet, then configure how to save.
@@ -206,7 +213,8 @@ ReviewScreen.propTypes = {
   onActionChange: PropTypes.func.isRequired,
   attachment: PropTypes.object, // eslint-disable-line react/forbid-prop-types
   onAttachmentChange: PropTypes.func.isRequired,
+  market: PropTypes.shape({ code: PropTypes.string, name: PropTypes.string }),
 };
-ReviewScreen.defaultProps = { inspectResult: null, attachment: null };
+ReviewScreen.defaultProps = { inspectResult: null, attachment: null, market: null };
 
 export default ReviewScreen;
