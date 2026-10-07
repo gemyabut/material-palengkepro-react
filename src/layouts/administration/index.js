@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import { jwtDecode } from "jwt-decode";
 import {
@@ -24,7 +24,7 @@ import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 
 import { canOnboard, canManageStaff, canUseSpreadsheetUpload } from "utils/permissions";
-import { onboardCompany, createStaff } from "./api/administration";
+import { onboardCompany, createStaff, getStaffRoles } from "./api/administration";
 import TemplatesSection from "./components/TemplatesSection";
 
 function getRole() {
@@ -35,20 +35,6 @@ function getRole() {
     return "";
   }
 }
-
-const STAFF_ROLES = [
-  "leasing_officer",
-  "collector",
-  "cashier",
-  "accounts_receivable",
-  "accounting_staff",
-  "market_manager",
-];
-
-// D3 (Lead decision 2026-09-25): executive/platform admin may additionally
-// hire a Finance Head or another Market Administrator — mirrors backend
-// billing/onboarding.py EXTENDED_STAFF_ROLES / staff_roles_addable_by().
-const EXTENDED_STAFF_ROLES = [...STAFF_ROLES, "finance_head", "market_administrator"];
 
 // MDU-022 (Lead decision 2026-10-06): the person creating the account sets its
 // temporary password — nothing is generated, emailed or shown back. The account
@@ -205,15 +191,30 @@ function OnboardCard() {
 
 // Add staff (Owner/market admin → POST /billing/staff/)
 function StaffCard({ role }) {
-  const canAddExtendedRoles = ["executive", "system_administrator"].includes(role);
-  const roleOptions = canAddExtendedRoles ? EXTENDED_STAFF_ROLES : STAFF_ROLES;
+  // MDU-024: the dropdown shows what the backend says this creator may add
+  // (billing/staff_roles.py) — no second copy of the role list here.
+  const [roleOptions, setRoleOptions] = useState([]);
   const [form, setForm] = useState({
-    full_name: "", role: "collector", email: "", mobile: "", temporary_password: "",
+    full_name: "", role: "", email: "", mobile: "", temporary_password: "",
   });
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
+
+  useEffect(() => {
+    let active = true;
+    getStaffRoles()
+      .then((roles) => {
+        if (!active) return;
+        setRoleOptions(roles);
+        setForm((f) => ({ ...f, role: f.role || roles[0] || "" }));
+      })
+      .catch(() => active && setError("Could not load the list of roles."));
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const submit = async () => {
     setBusy(true);
@@ -259,7 +260,7 @@ function StaffCard({ role }) {
           />
           <Button
             variant="contained"
-            disabled={busy || !form.full_name || !form.temporary_password}
+            disabled={busy || !form.full_name || !form.role || !form.temporary_password}
             onClick={submit}
           >
             Create staff

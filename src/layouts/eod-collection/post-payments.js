@@ -109,7 +109,7 @@ export default function PostPaymentsPage() {
                     <TableCell>Tenant</TableCell>
                     <TableCell>Stall</TableCell>
                     <TableCell>Charge</TableCell>
-                    <TableCell align="right">Amount</TableCell>
+                    <TableCell align="right">Total amount</TableCell>
                     <TableCell>Receipt#</TableCell>
                     <TableCell>Status</TableCell>
                     <TableCell>Action</TableCell>

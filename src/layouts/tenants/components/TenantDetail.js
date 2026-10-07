@@ -982,7 +982,7 @@ export default function TenantDetail({ tenant, user, onEdit, onRequestUpdate, sh
                 <Table size="small">
                   <TableHead>
                     <TableRow>
-                      {["Date", "Amount", "Method", "Receipt #", "Stall"].map((h) => (
+                      {["Date", "Total amount", "Method", "Receipt #", "Stall"].map((h) => (
                         <TableCell key={h} sx={{ fontWeight: "bold", whiteSpace: "nowrap" }}>
                           {h}
                         </TableCell>
