@@ -18,6 +18,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "context/AuthContext";
 import { debugLog } from "layouts/stalls/utils/debug";
+import { landingPathForRole, TEMP_PASSWORD_PATH } from "utils/landingPath";
 
 const API_URL =
   process.env.REACT_APP_API_URL ||
@@ -65,15 +66,19 @@ function SignIn() {
       setUserProfile(profileRes.data);
       debugLog("[SignIn] Profile loaded:", profileRes.data);
 
-      // Role-based landing page (UAT patch 2026-07-04)
+      // MDU-022: a staff account still on the temporary password its creator
+      // set must change it first — the server refuses everything else.
       const userRole = profileRes.data.role;
-      if (userRole === "system_administrator") {
-        navigate("/octal-console");   // Octal platform admin — SaaS ops view
-      } else if (userRole === "tenant") {
-        navigate("/tenant/login");    // Tenant portal
-      } else {
-        navigate("/dashboard");       // Default: market operator dashboard
+      if (
+        userRole !== "tenant" &&
+        (authRes.data.must_change_password || profileRes.data.must_change_password)
+      ) {
+        navigate(TEMP_PASSWORD_PATH, { replace: true });
+        return;
       }
+
+      // Role-based landing page (UAT patch 2026-07-04)
+      navigate(landingPathForRole(userRole));
     } catch (err) {
       const detail = err.response?.data?.detail || "Login failed. Please try again.";
       debugLog("[SignIn] Login failed:", err);
@@ -99,15 +104,15 @@ function SignIn() {
           <form onSubmit={handleSubmit}>
             <TextField
               name="username"
-              label="Username, Email, or Mobile"
-              placeholder="e.g. juan123 or 0917..."
+              label="Username, Email, Mobile, or Staff ID"
+              placeholder="e.g. juan123, 0917... or COL-0001"
               fullWidth
               margin="normal"
               value={credentials.username}
               onChange={handleChange}
               required
               autoComplete="username"
-              helperText="Enter your username, email address, or mobile number"
+              helperText="Enter your username, email address, mobile number, or staff ID"
               disabled={loading}
             />
             <TextField

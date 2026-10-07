@@ -1,4 +1,5 @@
 import { useState } from "react";
+import PropTypes from "prop-types";
 import { jwtDecode } from "jwt-decode";
 import {
   Card,
@@ -12,7 +13,10 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  InputAdornment,
+  IconButton,
 } from "@mui/material";
+import { Visibility, VisibilityOff } from "@mui/icons-material";
 
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
@@ -46,6 +50,45 @@ const STAFF_ROLES = [
 // billing/onboarding.py EXTENDED_STAFF_ROLES / staff_roles_addable_by().
 const EXTENDED_STAFF_ROLES = [...STAFF_ROLES, "finance_head", "market_administrator"];
 
+// MDU-022 (Lead decision 2026-10-06): the person creating the account sets its
+// temporary password — nothing is generated, emailed or shown back. The account
+// holder must change it at first login.
+function TempPasswordField({ label, value, onChange }) {
+  const [show, setShow] = useState(false);
+  return (
+    <TextField
+      size="small"
+      required
+      label={label}
+      type={show ? "text" : "password"}
+      value={value}
+      onChange={onChange}
+      autoComplete="new-password"
+      helperText="You set it and hand it over in person. They must change it at first login."
+      InputProps={{
+        endAdornment: (
+          <InputAdornment position="end">
+            <IconButton
+              size="small"
+              edge="end"
+              aria-label={show ? "Hide password" : "Show password"}
+              onClick={() => setShow((v) => !v)}
+            >
+              {show ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+            </IconButton>
+          </InputAdornment>
+        ),
+      }}
+    />
+  );
+}
+
+TempPasswordField.propTypes = {
+  label: PropTypes.string.isRequired,
+  value: PropTypes.string.isRequired,
+  onChange: PropTypes.func.isRequired,
+};
+
 function ResultBox({ result }) {
   if (!result) return null;
   const cred = result.admin || result; // onboard nests under .admin; staff is flat
@@ -53,12 +96,7 @@ function ResultBox({ result }) {
     <Alert severity="success" sx={{ mt: 2 }}>
       Created <strong>{cred.username}</strong> ({cred.user_id_number})
       {result.market ? ` · market ${result.market.code || result.market}` : ""}
-      {cred.temp_password ? (
-        <>
-          {" "}
-          · temp password: <strong>{cred.temp_password}</strong> (change on first login)
-        </>
-      ) : null}
+      {" "}· they sign in with the temporary password you set and must change it at first login.
     </Alert>
   );
 }
@@ -89,7 +127,7 @@ function defaultCompanyCode(name) {
 function OnboardCard() {
   const [form, setForm] = useState({
     code: "", name: "", market_name: "", company_code: "",
-    admin_email: "", admin_mobile: "", admin_name: "", plan: "community",
+    admin_email: "", admin_mobile: "", admin_name: "", admin_password: "", plan: "community",
   });
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState(null);
@@ -102,6 +140,7 @@ function OnboardCard() {
     setResult(null);
     try {
       setResult(await onboardCompany(form));
+      setForm((f) => ({ ...f, admin_password: "" }));
     } catch (e) {
       setError(e?.response?.data?.error || e.message || "Onboarding failed.");
     } finally {
@@ -141,6 +180,11 @@ function OnboardCard() {
           <TextField size="small" label="Owner email" value={form.admin_email} onChange={set("admin_email")} />
           <TextField size="small" label="Owner mobile" value={form.admin_mobile} onChange={set("admin_mobile")} />
           <TextField size="small" label="Owner name" value={form.admin_name} onChange={set("admin_name")} />
+          <TempPasswordField
+            label="Owner temporary password"
+            value={form.admin_password}
+            onChange={set("admin_password")}
+          />
           <TextField select size="small" label="Plan" value={form.plan} onChange={set("plan")}>
             {TIER_OPTIONS.map((t) => (
               <MenuItem key={t} value={t}>
@@ -148,7 +192,7 @@ function OnboardCard() {
               </MenuItem>
             ))}
           </TextField>
-          <Button variant="contained" color="success" disabled={busy || !form.code || !form.name} onClick={submit}>
+          <Button variant="contained" color="success" disabled={busy || !form.code || !form.name || !form.admin_password} onClick={submit}>
             Onboard
           </Button>
         </Stack>
@@ -163,7 +207,9 @@ function OnboardCard() {
 function StaffCard({ role }) {
   const canAddExtendedRoles = ["executive", "system_administrator"].includes(role);
   const roleOptions = canAddExtendedRoles ? EXTENDED_STAFF_ROLES : STAFF_ROLES;
-  const [form, setForm] = useState({ full_name: "", role: "collector", email: "", mobile: "" });
+  const [form, setForm] = useState({
+    full_name: "", role: "collector", email: "", mobile: "", temporary_password: "",
+  });
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
@@ -175,6 +221,7 @@ function StaffCard({ role }) {
     setResult(null);
     try {
       setResult(await createStaff(form));
+      setForm((f) => ({ ...f, temporary_password: "" }));
     } catch (e) {
       setError(e?.response?.data?.error || e.message || "Create staff failed.");
     } finally {
@@ -205,7 +252,16 @@ function StaffCard({ role }) {
           </FormControl>
           <TextField size="small" label="Email" value={form.email} onChange={set("email")} />
           <TextField size="small" label="Mobile" value={form.mobile} onChange={set("mobile")} />
-          <Button variant="contained" disabled={busy || !form.full_name} onClick={submit}>
+          <TempPasswordField
+            label="Temporary password"
+            value={form.temporary_password}
+            onChange={set("temporary_password")}
+          />
+          <Button
+            variant="contained"
+            disabled={busy || !form.full_name || !form.temporary_password}
+            onClick={submit}
+          >
             Create staff
           </Button>
         </Stack>
