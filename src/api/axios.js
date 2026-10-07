@@ -1,6 +1,7 @@
 // src/api/axios.js
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
+import { TEMP_PASSWORD_PATH, TEMP_PASSWORD_MESSAGE } from "utils/landingPath";
 
 // API base URL
 const API_URL =
@@ -79,6 +80,8 @@ instance.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+// MDU-022: the backend refuses every call except change-password while a staff
+// account is still on its temporary password.
 // --- 3. RESPONSE INTERCEPTOR ---
 let isRefreshing = false;
 let failedQueue = [];
@@ -98,6 +101,15 @@ instance.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+
+    if (
+      error.response?.status === 403 &&
+      error.response?.data?.detail === TEMP_PASSWORD_MESSAGE &&
+      window.location.pathname !== TEMP_PASSWORD_PATH
+    ) {
+      window.location.href = TEMP_PASSWORD_PATH;
+      return Promise.reject(error);
+    }
 
     if (
       error.response?.status === 401 &&

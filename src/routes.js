@@ -66,6 +66,7 @@ import Support from "layouts/support";
 import About from "layouts/about";
 import SignIn from "layouts/authentication/sign-in";
 import SignUp from "layouts/authentication/sign-up";
+import ChangeTemporaryPassword from "layouts/authentication/change-temporary-password";
 import ForgotPassword from "layouts/authentication/forgot-password";
 import PasswordResetConfirm from "layouts/authentication/password-reset-confirm";
 import ChargeTypeListPage from "layouts/settings/charge-types";
@@ -616,6 +617,14 @@ const routes = [
     key: "sign-in",
     route: "/authentication/sign-in",
     component: <SignIn />,
+  },
+  // MDU-022: forced screen for a staff account still on its temporary password
+  {
+    type: "route",
+    name: "Change Temporary Password",
+    key: "change-temporary-password",
+    route: "/authentication/change-temporary-password",
+    component: <ChangeTemporaryPassword />,
   },
   {
     type: "route",
