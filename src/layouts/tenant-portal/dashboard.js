@@ -163,7 +163,7 @@ export default function TenantDashboard() {
                     <Typography fontWeight={600}>{data.last_payment.date}</Typography>
                   </Box>
                   <Box textAlign="right">
-                    <Typography variant="body2" color="text.secondary">Amount</Typography>
+                    <Typography variant="body2" color="text.secondary">Total amount</Typography>
                     <Typography fontWeight={600} color="success.main">{peso(data.last_payment.amount)}</Typography>
                   </Box>
                 </Stack>

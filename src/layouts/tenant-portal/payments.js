@@ -100,7 +100,7 @@ export default function TenantPayments() {
                 <Table size="small">
                   <TableHead sx={{ bgcolor: "#1a237e" }}>
                     <TableRow>
-                      {["Date", "Receipt", "Amount", "Type", "Applied To", "Status", ""].map((h) => (
+                      {["Date", "Receipt", "Total amount", "Type", "Applied To", "Status", ""].map((h) => (
                         <TableCell key={h} sx={{ color: "white", fontWeight: 700, whiteSpace: "nowrap" }}>{h}</TableCell>
                       ))}
                     </TableRow>
