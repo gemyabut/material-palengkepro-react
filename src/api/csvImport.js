@@ -103,9 +103,10 @@ export async function downloadDomainTemplate(domain, filename, marketCode) {
 
 // Backend Phase 5 — staff roster export. marketCode is the Market.code (e.g.
 // "ECM"), not a numeric id; the endpoint requires it as a query param.
-export async function downloadStaffRosterExport(marketCode) {
+export async function downloadStaffRosterExport(marketCode, { role = "", isActive = "all" } = {}) {
   const res = await apiClient.get("/csv-import/staff/roster/export/", {
-    params: { market: marketCode },
+    // MDU-023: optional role filter; "all" includes inactive staff (the file has a status column)
+    params: { market: marketCode, ...(role ? { role } : {}), is_active: isActive },
     responseType: "blob",
   });
   const url = window.URL.createObjectURL(res.data);

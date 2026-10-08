@@ -93,6 +93,12 @@ export const canManageSubscription = (r) => has(r, [...MARKET_ADMIN, "finance_he
 export const canViewMarketUsers = (r) =>
   has(r, ["executive", "finance_head", "market_administrator", "system_administrator"]);
 
+// MDU-023: Export Roster + the row actions (view/edit/reset password/deactivate)
+// are for the Owner, Market Administrator and platform admin only; the SERVER
+// decides per row (rank, own market) and says why in can_manage / manage_block_reason.
+export const canManageMarketUsers = (r) =>
+  has(r, ["executive", "market_administrator", "system_administrator"]);
+
 // Onboarding & staff provisioning (IAM-2).
 export const canOnboard = (r) => has(r, ["system_administrator"]); // platform-admin onboards companies
 export const canManagePricing = (r) => has(r, ["system_administrator"]); // platform-admin edits PriceBook rates
