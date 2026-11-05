@@ -467,7 +467,6 @@ export default function MarketUsersPage() {
   const [notice, setNotice] = useState(null);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
-  const [rosterRole, setRosterRole] = useState("");
   const [exporting, setExporting] = useState(false);
   const [dialog, setDialog] = useState(null); // { what, user }
 
@@ -495,6 +494,21 @@ export default function MarketUsersPage() {
 
   const canManage = canManageMarketUsers(role);
 
+  // Rows the screen is showing (Role filter + search); Export Roster sends these ids.
+  const q = search.trim().toLowerCase();
+  const visible = rows.filter((u) => {
+    if (roleFilter && u.role !== roleFilter) return false;
+    if (!q) return true;
+    return (
+      (u.user_id_number || "").toLowerCase().includes(q) ||
+      (u.username || "").toLowerCase().includes(q) ||
+      (u.first_name || "").toLowerCase().includes(q) ||
+      (u.last_name || "").toLowerCase().includes(q) ||
+      (u.email || "").toLowerCase().includes(q) ||
+      (u.role || "").toLowerCase().includes(q)
+    );
+  });
+
   const handleExportRoster = async () => {
     // Own market for Owner / Market Administrator; a platform admin has none, so use the list's market.
     const marketId =
@@ -507,7 +521,11 @@ export default function MarketUsersPage() {
     setError(null);
     try {
       const market = await getMarket(marketId);
-      await downloadStaffRosterExport(market.code, { role: rosterRole });
+      // MDU-021 B: export follows the screen. With the Role filter or search set,
+      // send ids=<rows shown> (an empty string when none match, so the server
+      // returns just the header); with neither, no ids at all = whole roster.
+      const ids = roleFilter || q ? visible.map((u) => u.id).join(",") : undefined;
+      await downloadStaffRosterExport(market.code, { ids });
     } catch (e) {
       setError(errText(e, "Failed to export staff roster."));
     } finally {
@@ -527,19 +545,6 @@ export default function MarketUsersPage() {
 
   if (!canViewMarketUsers(role)) return <Navigate to="/dashboard" replace />;
 
-  const q = search.trim().toLowerCase();
-  const visible = rows.filter((u) => {
-    if (roleFilter && u.role !== roleFilter) return false;
-    if (!q) return true;
-    return (
-      (u.user_id_number || "").toLowerCase().includes(q) ||
-      (u.username || "").toLowerCase().includes(q) ||
-      (u.first_name || "").toLowerCase().includes(q) ||
-      (u.last_name || "").toLowerCase().includes(q) ||
-      (u.email || "").toLowerCase().includes(q) ||
-      (u.role || "").toLowerCase().includes(q)
-    );
-  });
   const colCount = canManage ? 11 : 10;
 
   return (
@@ -582,21 +587,6 @@ export default function MarketUsersPage() {
             />
             {canManage && (
               <>
-                <TextField
-                  select
-                  size="small"
-                  label="Roster role"
-                  value={rosterRole}
-                  onChange={(e) => setRosterRole(e.target.value)}
-                  sx={{ width: 150 }}
-                >
-                  <MenuItem value="">All roles</MenuItem>
-                  {roleOptions.map((r) => (
-                    <MenuItem key={r} value={r}>
-                      {ROLE_LABELS[r] || r}
-                    </MenuItem>
-                  ))}
-                </TextField>
                 <Button
                   size="small"
                   variant="outlined"
