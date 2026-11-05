@@ -43,6 +43,9 @@ import {
   deactivateMarketUser,
   reactivateMarketUser,
   checkMarketUserDeactivation,
+  lockMarketUser,
+  unlockMarketUser,
+  getMarketUserHistory,
 } from "api/marketUsers";
 import { getMarket } from "api/markets";
 import { downloadStaffRosterExport } from "api/csvImport";
@@ -83,6 +86,16 @@ const errText = (e, fallback) => {
 
 const fmtDate = (v) => (v ? new Date(v).toLocaleString("en-PH") : "—");
 
+// Inactive whenever inactive; Locked only on an active account that can't sign in.
+const statusLabel = (u) => {
+  if (!u.is_active) return "Inactive";
+  return u.sign_in_locked ? "Locked" : "Active";
+};
+const statusColor = (u) => {
+  if (!u.is_active) return "default";
+  return u.sign_in_locked ? "warning" : "success";
+};
+
 function Field({ label, children }) {
   return (
     <Grid item xs={6}>
@@ -98,10 +111,15 @@ function Field({ label, children }) {
 function DetailsDialog({ userId, onClose }) {
   const [d, setD] = useState(null);
   const [err, setErr] = useState(null);
+  const [history, setHistory] = useState(null); // null = loading
+  const [historyErr, setHistoryErr] = useState(null);
   useEffect(() => {
     getMarketUser(userId)
       .then(setD)
       .catch((e) => setErr(errText(e, "Could not load details.")));
+    getMarketUserHistory(userId)
+      .then(setHistory)
+      .catch((e) => setHistoryErr(errText(e, "Could not load history.")));
   }, [userId]);
   return (
     <Dialog open onClose={onClose} fullWidth maxWidth="sm">
@@ -116,12 +134,53 @@ function DetailsDialog({ userId, onClose }) {
             <Field label="Username">{d.username}</Field>
             <Field label="Role">{ROLE_LABELS[d.role] || d.role}</Field>
             <Field label="Market">{d.market?.name}</Field>
-            <Field label="Status">{d.status}</Field>
+            <Field label="Status">{statusLabel(d)}</Field>
             <Field label="Password status">{d.password_status}</Field>
             <Field label="Email">{d.email}</Field>
             <Field label="Mobile">{d.mobile_number}</Field>
             <Field label="Last login">{d.last_login ? fmtDate(d.last_login) : "Never"}</Field>
             <Field label="Created">{fmtDate(d.created)}</Field>
+            <Grid item xs={12}>
+              <MDTypography variant="button" fontWeight="bold">
+                History
+              </MDTypography>
+              <MDTypography variant="caption" color="secondary" display="block">
+                Latest 50 events, newest first.
+              </MDTypography>
+              {historyErr && (
+                <Alert severity="error" sx={{ mt: 1 }}>
+                  {historyErr}
+                </Alert>
+              )}
+              {!history && !historyErr && <CircularProgress size={20} sx={{ display: "block" }} />}
+              {history && history.length === 0 && (
+                <MDTypography variant="body2" display="block">
+                  No changes recorded yet.
+                </MDTypography>
+              )}
+              {history && history.length > 0 && (
+                <Table size="small" aria-label="History">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Date</TableCell>
+                      <TableCell>Who (role at the time)</TableCell>
+                      <TableCell>What</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {history.map((h, i) => (
+                      <TableRow key={`${h.timestamp}-${i}`}>
+                        <TableCell>{fmtDate(h.timestamp)}</TableCell>
+                        <TableCell>
+                          {h.actor_username} · {ROLE_LABELS[h.actor_role] || h.actor_role}
+                        </TableCell>
+                        <TableCell>{h.message}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </Grid>
           </Grid>
         )}
       </DialogContent>
@@ -393,6 +452,57 @@ function ToggleDialog({ user, onClose, onDone }) {
   );
 }
 
+// Lock / Unlock (active accounts only). Lock blocks authentication and continued access; it
+// does not change account activity or operational records.
+function LockDialog({ user, onClose, onDone }) {
+  const unlocking = Boolean(user.sign_in_locked);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState(null);
+  const confirm = async () => {
+    setBusy(true);
+    setErr(null);
+    try {
+      await (unlocking ? unlockMarketUser(user.id) : lockMarketUser(user.id));
+      onDone(unlocking ? "Account unlocked." : "Account locked.");
+    } catch (e) {
+      setErr(errText(e, "Could not complete that."));
+      setBusy(false);
+    }
+  };
+  return (
+    <Dialog open onClose={busy ? undefined : onClose} fullWidth maxWidth="sm">
+      <DialogTitle>
+        {unlocking ? "Unlock" : "Lock"} {user.user_id_number || user.username}?
+      </DialogTitle>
+      <DialogContent>
+        <MDTypography variant="body2">
+          {unlocking
+            ? "They can sign in again. This doesn't reactivate the account or clear a temporary password."
+            : "They can't sign in, and any session they have open stops working. Lock blocks authentication and continued access; it does not change account activity or operational records. Others can still hand over their day sheets, reassign their receipt books and finish their open intakes and batches."}
+        </MDTypography>
+        {err && (
+          <Alert severity="error" sx={{ mt: 2 }}>
+            {err}
+          </Alert>
+        )}
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose} disabled={busy}>
+          Cancel
+        </Button>
+        <Button
+          variant="contained"
+          color={unlocking ? "success" : "error"}
+          onClick={confirm}
+          disabled={busy}
+        >
+          {unlocking ? "Unlock" : "Lock"}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+
 Field.propTypes = { label: PropTypes.string.isRequired, children: PropTypes.node };
 DetailsDialog.propTypes = {
   userId: PropTypes.number.isRequired,
@@ -407,6 +517,7 @@ const userShape = PropTypes.shape({
   email: PropTypes.string,
   mobile_number: PropTypes.string,
   is_active: PropTypes.bool,
+  sign_in_locked: PropTypes.bool,
   can_manage: PropTypes.bool,
   manage_block_reason: PropTypes.string,
 });
@@ -418,6 +529,7 @@ const dialogProps = {
 EditDialog.propTypes = dialogProps;
 ResetDialog.propTypes = dialogProps;
 ToggleDialog.propTypes = dialogProps;
+LockDialog.propTypes = dialogProps;
 ItemList.propTypes = {
   items: PropTypes.arrayOf(PropTypes.string).isRequired,
   more: PropTypes.number,
@@ -450,6 +562,7 @@ function RowActions({ user, onPick }) {
         </MenuItem>
         {item("edit", "Edit")}
         {item("reset", "Reset password")}
+        {user.is_active && item("lock", user.sign_in_locked ? "Unlock" : "Lock")}
         {item("toggle", user.is_active ? "Deactivate" : "Reactivate")}
       </Menu>
     </>
@@ -685,11 +798,7 @@ export default function MarketUsersPage() {
                       <TableCell>{u.email || "—"}</TableCell>
                       <TableCell>{u.mobile_number || "—"}</TableCell>
                       <TableCell>
-                        <Chip
-                          label={u.is_active ? "Active" : "Inactive"}
-                          size="small"
-                          color={u.is_active ? "success" : "default"}
-                        />
+                        <Chip label={statusLabel(u)} size="small" color={statusColor(u)} />
                       </TableCell>
                       <TableCell>
                         <Chip
@@ -727,6 +836,9 @@ export default function MarketUsersPage() {
       )}
       {dialog?.what === "reset" && (
         <ResetDialog user={dialog.user} onClose={() => setDialog(null)} onDone={done} />
+      )}
+      {dialog?.what === "lock" && (
+        <LockDialog user={dialog.user} onClose={() => setDialog(null)} onDone={done} />
       )}
       {dialog?.what === "toggle" && (
         <ToggleDialog user={dialog.user} onClose={() => setDialog(null)} onDone={done} />

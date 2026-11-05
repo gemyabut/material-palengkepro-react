@@ -26,3 +26,15 @@ export const reactivateMarketUser = (id) =>
 /** What the Deactivate dialog shows first: { blockers: [...], review: { payments, deductions, *_more } }. */
 export const checkMarketUserDeactivation = (id) =>
   apiClient.get(`/users/market-users/${id}/deactivation-check/`).then((r) => r.data);
+
+// MDU-023: Lock blocks authentication and continued access; it does not change account
+// activity or operational records. Active accounts only.
+export const lockMarketUser = (id) =>
+  apiClient.post(`/users/market-users/${id}/lock/`).then((r) => r.data);
+
+export const unlockMarketUser = (id) =>
+  apiClient.post(`/users/market-users/${id}/unlock/`).then((r) => r.data);
+
+/** Newest first, at most 50: [{ timestamp, actor_username, actor_role, message }]. */
+export const getMarketUserHistory = (id) =>
+  apiClient.get(`/users/market-users/${id}/history/`).then((r) => r.data.results);
