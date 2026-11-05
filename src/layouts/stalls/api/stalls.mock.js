@@ -150,7 +150,9 @@ export const fetchStallsSummary = () =>
  * Export
  */
 export const exportExcel = () =>
-  new Promise((resolve) => setTimeout(() => resolve("Fake Excel Data"), 600));
+  new Promise((resolve) =>
+    setTimeout(() => resolve({ blob: "Fake Excel Data", filename: "stalls.xlsx" }), 600)
+  );
 
 /**
  * Advanced/Optional

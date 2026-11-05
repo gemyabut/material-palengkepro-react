@@ -56,6 +56,7 @@ export default function useTenants({ initialPageSize = 20, initialOrdering = "fu
     search,
     ordering,
     incompleteContact,
+    filters,
     setPage,
     setRowsPerPage,
     setSearch,

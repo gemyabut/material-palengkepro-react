@@ -105,7 +105,8 @@ export default function useStalls(initialFilters = {}) {
   // Export actions (returns blob, you handle download in component)
   const exportXLSX = async () => {
     try {
-      return await exportExcel();
+      // Same filters the list is showing (page/page_size deliberately omitted).
+      return await exportExcel(filters);
     } catch (err) {
       debugLog("[useStalls] Export XLSX error:", err);
       throw err;

@@ -53,6 +53,7 @@ export default function MasterTenantList() {
     search,
     ordering,
     incompleteContact,
+    filters,
     setPage,
     setRowsPerPage,
     setSearch,
@@ -140,16 +141,18 @@ export default function MasterTenantList() {
       .finally(() => setActionLoading(false));
   };
 
-  // Top-toolbar export — full market-scoped list, not selection-based.
-  // Lead's scope call: master export is a page-level action, not a
-  // bulk-select action (that's what BulkActionBar's row-selection was for).
+  // Top-toolbar export — MDU-019: follows the screen. Sends the list's
+  // current filters (search, incomplete_contact, ...; no page/page_size) and,
+  // when rows are ticked, ids=<ticked rows> (backend narrows to those).
   const handleExportAll = async () => {
     try {
-      const blob = await exportTenantsXLSX();
+      const params = { ...filters };
+      if (selectedIds.length) params.ids = selectedIds.join(",");
+      const { blob, filename } = await exportTenantsXLSX(params);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "tenants.xlsx";
+      a.download = filename;
       a.click();
       window.URL.revokeObjectURL(url);
       setSnackbar({ open: true, message: "Export started", severity: "info" });
