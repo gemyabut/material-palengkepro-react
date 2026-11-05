@@ -144,6 +144,9 @@ function DetailsDialog({ userId, onClose }) {
               <MDTypography variant="button" fontWeight="bold">
                 History
               </MDTypography>
+              <MDTypography variant="caption" color="secondary" display="block">
+                Latest 50 events, newest first.
+              </MDTypography>
               {historyErr && (
                 <Alert severity="error" sx={{ mt: 1 }}>
                   {historyErr}
@@ -160,7 +163,7 @@ function DetailsDialog({ userId, onClose }) {
                   <TableHead>
                     <TableRow>
                       <TableCell>Date</TableCell>
-                      <TableCell>Who</TableCell>
+                      <TableCell>Who (role at the time)</TableCell>
                       <TableCell>What</TableCell>
                     </TableRow>
                   </TableHead>
