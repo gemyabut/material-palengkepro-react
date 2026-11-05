@@ -55,7 +55,9 @@ export async function exportTenantsCSV(params = {}) {
 // change — see BUG-70/71 for why it's not deleted outright.
 export async function exportTenantsXLSX(params = {}) {
   const res = await apiClient.get("/tenants/export/excel/", { params, responseType: "blob" });
-  return res.data; // Blob
+  // MDU-019 — keep the server's file name (tenants_{MARKET}_{YYYYMMDD}.xlsx).
+  const match = (res.headers?.["content-disposition"] || "").match(/filename="([^"]+)"/);
+  return { blob: res.data, filename: match ? match[1] : "tenants.xlsx" };
 }
 export async function importTenantsCSV(file) {
   const form = new FormData();

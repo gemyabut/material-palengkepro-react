@@ -27,8 +27,14 @@ export const fetchStallsSummary = async () => (await axios.get("/stalls/summary/
 /**
  * Export
  */
-export const exportExcel = async () =>
-  (await axios.get("/stalls/export/excel/", { responseType: "blob" })).data;
+// MDU-018 — export follows the screen: same query params the list sends
+// (search, status, include_inactive, ...), no page/page_size. The server's
+// file name (stalls_{MARKET}_{YYYYMMDD}.xlsx) is returned with the blob.
+export const exportExcel = async (params = {}) => {
+  const res = await axios.get("/stalls/export/excel/", { params, responseType: "blob" });
+  const match = (res.headers?.["content-disposition"] || "").match(/filename="([^"]+)"/);
+  return { blob: res.data, filename: match ? match[1] : "stalls.xlsx" };
+};
 
 /**
  * Advanced/Optional

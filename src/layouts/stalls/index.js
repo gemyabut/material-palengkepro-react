@@ -139,11 +139,11 @@ export default function StallsPage() {
     // "Excel export started." toast fired regardless of whether anything
     // downloaded. Now mirrors the Tenant/Lease download pattern.
     try {
-      const blob = await exportXLSX();
+      const { blob, filename } = await exportXLSX();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "stalls.xlsx";
+      a.download = filename;
       a.click();
       window.URL.revokeObjectURL(url);
       setSnackbar({ open: true, message: "Excel export started.", severity: "info" });
