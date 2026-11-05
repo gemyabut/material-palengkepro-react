@@ -34,7 +34,7 @@ const FAQ = [
   },
   {
     q: "I forgot my password. What do I do?",
-    a: "Click 'Forgot Password' on the sign-in page and enter your email. A reset link will be sent.",
+    a: "Ask your Market Administrator to reset your password. They'll give you a temporary password, and you'll choose your own when you sign in. Market Administrators and Finance Heads: ask your Owner. Owners: contact Octal.",
   },
 ];
 
