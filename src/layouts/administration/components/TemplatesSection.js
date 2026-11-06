@@ -2,17 +2,21 @@ import { useEffect, useState } from "react";
 import { Button, Card, CardContent, Table, TableBody, TableCell, TableHead, TableRow } from "@mui/material";
 import MDTypography from "components/MDTypography";
 import { listTemplates, downloadDomainTemplate } from "api/csvImport";
+import useUploadDomains from "hooks/useUploadDomains";
 
 // Unit 51 Stage F — full-page browser for the per-domain upload templates
-// (Unit 51 Track A backend). Gated on canUseSpreadsheetUpload in
+// (Unit 51 Track A backend). Shows only the templates for domains the server
+// lets this user upload (useUploadDomains); gated in
 // administration/index.js, not canOnboard/canManageStaff — those gate
 // unrelated company-onboarding / staff-provisioning concerns, and the
 // backend's own template endpoints are IsAuthenticated-only (blank
 // templates carry no real data), so this section follows "who actually
 // uploads workbooks", not "who administers the platform/market".
 function TemplatesSection() {
-  const [templates, setTemplates] = useState([]);
+  const [allTemplates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { domains: uploadDomains } = useUploadDomains();
+  const templates = allTemplates.filter((t) => uploadDomains.includes(t.domain));
 
   useEffect(() => {
     listTemplates()

@@ -18,7 +18,12 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "context/AuthContext";
 import { debugLog } from "layouts/stalls/utils/debug";
-import { landingPathForRole, TEMP_PASSWORD_PATH } from "utils/landingPath";
+import {
+  landingPathForRole,
+  hasWebAccess,
+  NO_WEB_ACCESS_MESSAGE,
+  TEMP_PASSWORD_PATH,
+} from "utils/landingPath";
 
 const API_URL =
   process.env.REACT_APP_API_URL ||
@@ -63,8 +68,18 @@ function SignIn() {
         headers: { Authorization: `Bearer ${access}` },
       });
 
-      setUserProfile(profileRes.data);
       debugLog("[SignIn] Profile loaded:", profileRes.data);
+
+      // A role with no web screens: say so here, and don't keep the sign-in.
+      if (!hasWebAccess(profileRes.data.role, profileRes.data.is_staff)) {
+        ["access_token", "refresh_token"].forEach((k) => {
+          localStorage.removeItem(k);
+          sessionStorage.removeItem(k);
+        });
+        setErrorMessage(NO_WEB_ACCESS_MESSAGE);
+        return;
+      }
+      setUserProfile(profileRes.data);
 
       // MDU-022: a staff account still on the temporary password its creator
       // set must change it first — the server refuses everything else.

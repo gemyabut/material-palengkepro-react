@@ -19,6 +19,14 @@ export async function getMyUploadMarkets() {
   return data;
 }
 
+// Tier 1 role alignment — the upload domains the server accepts from the
+// signed-in user (DOMAIN_ALLOWED_ROLES). Rejects on error; useUploadDomains
+// turns that into an empty list.
+export async function getMyUploadDomains() {
+  const { data } = await apiClient.get("/csv-import/my-domains/");
+  return Array.isArray(data?.domains) ? data.domains : [];
+}
+
 // Unit 51 Stage F — read-only preview: validates every row, never commits,
 // never creates an ImportJob (csv_import Stage C.2). marketCode (MDU-014) is
 // only actually required server-side for a multi/no-market user — harmless

@@ -110,7 +110,9 @@ const routes = [
     route: "/dashboard",
     component: <Dashboard />,
     sidenavGroup: null,
-    allowedRoles: OPERATIONAL,  // Octal lands on /octal-console instead (per role-based redirect)
+    // Octal lands on /octal-console instead (per role-based redirect). Collector and Accounting
+    // Staff are left out: the dashboard API refuses both (dashboard/permissions.py).
+    allowedRoles: OPERATIONAL.filter((r) => r !== ROLE.COL && r !== ROLE.ACC),
   },
   {
     type: "collapse",
@@ -121,7 +123,8 @@ const routes = [
     component: <CashPositionDashboard />,
     sidenavGroup: null,
     // BUG #15: leasing_officer removed; BUG #18: accounts_receivable removed (D15)
-    allowedRoles: [ROLE.EXEC, ROLE.FIN, ROLE.MKT, ROLE.ADM, ROLE.AP, ROLE.CSH],
+    // Tier 1 (2026-11-07): Accounting Staff + Collector (the server shows a collector only their own pocket).
+    allowedRoles: [ROLE.EXEC, ROLE.FIN, ROLE.MKT, ROLE.ADM, ROLE.AP, ROLE.ACC, ROLE.CSH, ROLE.COL],
   },
   {
     type: "collapse",
@@ -131,11 +134,9 @@ const routes = [
     route: "/spreadsheet-upload",
     component: <SpreadsheetUpload />,
     sidenavGroup: null,
-    // Per patch matrix: ✓ for EXEC, FIN, MKT, ADM, LEA, AR, CSH.
-    // Unit 51 Stage F: AP added — SPREADSHEET_DOMAIN_ROLES now has an
-    // "expense" entry AP can upload to; excluding AP here would hide the
-    // sidenav link from the only role that entry is really for.
-    allowedRoles: [ROLE.EXEC, ROLE.FIN, ROLE.MKT, ROLE.ADM, ROLE.LEA, ROLE.AR, ROLE.CSH, ROLE.AP],
+    // Every role the server gives at least one upload domain (csv_import DOMAIN_ALLOWED_ROLES);
+    // which domains each sees comes from the server (GET /csv-import/my-domains/).
+    allowedRoles: [ROLE.EXEC, ROLE.FIN, ROLE.MKT, ROLE.ADM, ROLE.LEA, ROLE.AR, ROLE.ACC, ROLE.CSH, ROLE.AP, ROLE.COL],
   },
   // Unit 27 F3: Upload Center retired — consolidated onto Spreadsheet Upload.
 
@@ -186,8 +187,8 @@ const routes = [
     route: "/Leases",
     component: <Leases />,
     sidenavGroup: "CRM",
-    // Per patch matrix: TOP_TIER + ADM + LEA (edit); AR (view-only) — CSH + AP excluded
-    allowedRoles: [ROLE.EXEC, ROLE.FIN, ROLE.MKT, ROLE.ADM, ROLE.LEA, ROLE.AR],
+    // TOP_TIER + ADM + LEA. AR removed (2026-11-07): the Leases page shows A/R "Access denied".
+    allowedRoles: [ROLE.EXEC, ROLE.FIN, ROLE.MKT, ROLE.ADM, ROLE.LEA],
   },
 
   // =========================================================================
@@ -302,7 +303,8 @@ const routes = [
     route: "/bank-reconciliation",
     component: <BankReconciliationPage />,
     sidenavGroup: "Treasury",
-    allowedRoles: [ROLE.EXEC, ROLE.FIN, ROLE.MKT, ROLE.ADM, ROLE.LEA, ROLE.AR],
+    // Leasing Officer removed (2026-11-07): the report API refuses it. Accounting Staff added.
+    allowedRoles: [ROLE.EXEC, ROLE.FIN, ROLE.MKT, ROLE.ADM, ROLE.AR, ROLE.ACC],
   },
 
   // =========================================================================
@@ -317,7 +319,8 @@ const routes = [
     component: <DepositBatchListPage />,
     sidenavGroup: "Treasury",
     // Per patch matrix "Treasury · Bank Deposits": TOP_TIER + AR (👁) + CSH (✏)
-    allowedRoles: [ROLE.EXEC, ROLE.FIN, ROLE.MKT, ROLE.AR, ROLE.CSH],
+    // Accounting Staff added (2026-11-07): view + confirm.
+    allowedRoles: [ROLE.EXEC, ROLE.FIN, ROLE.MKT, ROLE.AR, ROLE.ACC, ROLE.CSH],
   },
   {
     type: "route",
@@ -349,7 +352,9 @@ const routes = [
     component: <EodCashCountPage />,
     sidenavGroup: "Treasury",
     // Per patch matrix "Treasury · Cashier Intake": TOP_TIER + AR (👁) + CSH (✏)
-    allowedRoles: [ROLE.EXEC, ROLE.FIN, ROLE.MKT, ROLE.AR, ROLE.CSH],
+    // Accounting Staff added (2026-11-07): view + approve. Collector is NOT added: the intake list
+    // returns every collector's intakes (not own-only).
+    allowedRoles: [ROLE.EXEC, ROLE.FIN, ROLE.MKT, ROLE.AR, ROLE.ACC, ROLE.CSH],
   },
   {
     type: "route",
@@ -427,7 +432,7 @@ const routes = [
     route: "/settings/charge-types",
     component: <ChargeTypeListPage />,
     sidenavGroup: "Master Data",
-    allowedRoles: [ROLE.EXEC, ROLE.FIN, ROLE.MKT, ROLE.AR],
+    allowedRoles: [ROLE.EXEC, ROLE.FIN, ROLE.MKT], // AR removed (2026-11-07): the page is top-tier only
   },
   {
     type: "route",
@@ -480,7 +485,8 @@ const routes = [
     route: "/reports",
     component: <Reports />,
     sidenavGroup: "Reports",
-    allowedRoles: [ROLE.EXEC, ROLE.FIN, ROLE.MKT, ROLE.ADM, ROLE.LEA, ROLE.AR],
+    // Leasing removed (the page sends it away); Accounting Staff added (2026-11-07).
+    allowedRoles: [ROLE.EXEC, ROLE.FIN, ROLE.MKT, ROLE.ADM, ROLE.AR, ROLE.ACC],
   },
 
   // =========================================================================

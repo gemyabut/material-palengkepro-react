@@ -4,6 +4,7 @@ import { Button, Menu, MenuItem, Divider } from "@mui/material";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import DownloadIcon from "@mui/icons-material/Download";
 import { listTemplates, downloadDomainTemplate, downloadMasterTemplate } from "api/csvImport";
+import useUploadDomains from "hooks/useUploadDomains";
 
 // Unit 51 Stage F — "Need a template?" access point. Lives above FileDropzone
 // (not inside ReviewScreen, which only renders after a file has already been
@@ -17,7 +18,10 @@ import { listTemplates, downloadDomainTemplate, downloadMasterTemplate } from "a
 // "{MARKET}_{Template}.xlsx" instead of the old numbered catalog filename —
 // passed straight through to downloadDomainTemplate and downloadMasterTemplate.
 function TemplatesDropdown({ marketCode }) {
-  const [templates, setTemplates] = useState([]);
+  const [allTemplates, setTemplates] = useState([]);
+  const { domains: uploadDomains } = useUploadDomains();
+  // Only templates for domains the server lets this user upload.
+  const templates = allTemplates.filter((t) => uploadDomains.includes(t.domain));
   const [anchorEl, setAnchorEl] = useState(null);
 
   useEffect(() => {
@@ -27,6 +31,8 @@ function TemplatesDropdown({ marketCode }) {
   }, []);
 
   if (templates.length === 0) return null;
+  // The CRM Go-Live pack is Tenants + Stalls + Leases.
+  const showMaster = ["tenant", "stall", "lease"].every((d) => uploadDomains.includes(d));
 
   const openMenu = (e) => setAnchorEl(e.currentTarget);
   const closeMenu = () => setAnchorEl(null);
@@ -56,8 +62,10 @@ function TemplatesDropdown({ marketCode }) {
         Need a template?
       </Button>
       <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={closeMenu}>
-        <MenuItem onClick={handlePickMaster}>Master template (CRM Go-Live)</MenuItem>
-        <Divider />
+        {showMaster && (
+          <MenuItem onClick={handlePickMaster}>Master template (CRM Go-Live)</MenuItem>
+        )}
+        {showMaster && <Divider />}
         {templates.map(({ domain, filename, title }) => (
           <MenuItem key={domain} onClick={() => handlePickDomain(domain, filename)}>
             {title}
