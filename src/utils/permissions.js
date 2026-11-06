@@ -37,7 +37,7 @@ export const canViewPayments = (r) =>
   ]);
 
 // Unit 27 F3: Upload Center retired — canUpload/uploadableDomains removed.
-// The Spreadsheet Upload UI uses canUseSpreadsheetUpload/spreadsheetUploadDomains below.
+// The Spreadsheet Upload UI reads its domains from the server (hooks/useUploadDomains).
 
 // ---- Domain WRITE / actions ----
 export const canEditTenant = (r) => has(r, [...MARKET_ADMIN, "leasing_officer"]);
@@ -142,40 +142,13 @@ export const canViewBankRec = canViewRemittanceRec; // backwards-compat alias
 export const canOverrideDestination = (r) => canViewReports(r);
 
 /**
- * Spreadsheet Upload page RBAC (Unit 13, DEC-055).
- * Per-domain stewardship mirrors doc 21 §5 but extended to all 10 csv_import domains.
- * receipt_book is restricted to market_administrator + finance_head only (no admin_staff).
+ * Spreadsheet Upload: which domains a user may upload is decided by the SERVER
+ * (GET /csv-import/my-domains/, DOMAIN_ALLOWED_ROLES) and read through
+ * hooks/useUploadDomains — there is no role table here to drift out of step.
  */
-// Unit 27 F2: `executive` is top-tier oversight and can perform any upload.
-// Added everywhere so canUseSpreadsheetUpload(executive) → true.
-const SPREADSHEET_DOMAIN_ROLES = {
-  tenant: ["executive", ...MARKET_ADMIN, "finance_head", "leasing_officer", "accounts_receivable"],
-  stall: ["executive", ...MARKET_ADMIN, "finance_head", "leasing_officer", "accounts_receivable"],
-  lease: ["executive", ...MARKET_ADMIN, "finance_head", "leasing_officer", "accounts_receivable"],
-  payment: ["executive", ...MARKET_ADMIN, "finance_head", "accounts_receivable", "accounting_staff", "cashier"],
-  collection_summary: ["executive", ...MARKET_ADMIN, "finance_head", "accounts_receivable", "accounting_staff"],
-  receipt_issue: ["executive", ...MARKET_ADMIN, "finance_head", "accounts_receivable", "accounting_staff"],
-  receipt_book: ["executive", "market_administrator", "finance_head"],
-  deposit_slip: ["executive", ...MARKET_ADMIN, "finance_head", "accounting_staff"],
-  cashier_intake: ["executive", ...MARKET_ADMIN, "finance_head", "accounting_staff"],
-  remittance_batch: ["executive", ...MARKET_ADMIN, "finance_head", "accounting_staff"],
-  opening_balance: ["executive", "finance_head", "market_administrator"],
-  // Unit 51 Stage F — mirrors backend DOMAIN_ALLOWED_ROLES['expense'] exactly
-  // (csv_import/permissions.py) — admin_staff via MARKET_ADMIN, plus accounts_payable.
-  expense: ["executive", ...MARKET_ADMIN, "finance_head", "accounts_payable"],
-};
 
-export const SPREADSHEET_UPLOAD_DOMAINS = Object.keys(SPREADSHEET_DOMAIN_ROLES);
-
-export const canUploadSpreadsheetDomain = (r, domain) =>
-  has(r, SPREADSHEET_DOMAIN_ROLES[domain] || []);
-
-export const spreadsheetUploadDomains = (r) =>
-  SPREADSHEET_UPLOAD_DOMAINS.filter((d) => canUploadSpreadsheetDomain(r, d));
-
-export const canUseSpreadsheetUpload = (r) => spreadsheetUploadDomains(r).length > 0;
-
-// D4: top-tier sees all import jobs; others see own (requires actor field on ImportJob).
+// D4: top-tier sees all import jobs; others see own. The server now enforces
+// this for a collector (own jobs only); other non-top-tier roles are unchanged.
 export const canSeeAllImportJobs = (r) =>
   has(r, ["market_administrator", "finance_head", "executive"]);
 
@@ -283,8 +256,8 @@ export const isOperationalUser = (r) =>
     "accounts_receivable", "accounts_payable", "cashier",
   ]);
 
-// Mobile-only / portal-only — not web operator roles
-export const isMobileOnly = (r) => has(r, ["collector", "tenant"]);
+// Portal-only — not a web operator role
+export const isMobileOnly = (r) => has(r, ["tenant"]); // collectors use the web app in Tier 1
 
 // Module access helpers (mirrors Sidenav allowedRoles per patch spec)
 export const canAccessAdminModule = (r, isStaff) => isStaff || isTopTier(r);
@@ -301,7 +274,7 @@ export const canSignMonthlyClose = (r) =>
  */
 export const canVerifyCashCount = (r) => has(r, ["cashier"]);
 export const canFlagPayment = (r) => has(r, ["accounts_receivable"]);
-export const canApproveIntake = (r) => has(r, ["accounts_receivable"]);
+export const canApproveIntake = (r) => has(r, ["accounts_receivable", "accounting_staff"]); // server: IsCashierIntakeApprover
 export const canCorrectFlaggedPayment = (r) => has(r, ["accounts_receivable"]);
 
 /**
@@ -310,4 +283,5 @@ export const canCorrectFlaggedPayment = (r) => has(r, ["accounts_receivable"]);
  * (executive) sees whichever the row's state calls for. Staff bypass sees both.
  */
 export const canAcceptPayments = (r, isStaff) => isStaff || has(r, ["cashier", "executive"]);
-export const canPostPayments = (r, isStaff) => isStaff || has(r, ["accounts_receivable", "executive"]);
+export const canPostPayments = (r, isStaff) =>
+  isStaff || has(r, ["accounts_receivable", "accounting_staff", "executive"]);

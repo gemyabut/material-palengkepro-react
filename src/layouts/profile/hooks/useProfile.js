@@ -3,6 +3,7 @@
 // All existing callers receive the same shape — capabilities object is additive.
 
 import { useAuth } from "context/AuthContext";
+import useUploadDomains from "hooks/useUploadDomains";
 import { debugLog } from "../../stalls/utils/debug";
 import {
   isTopTier,
@@ -24,7 +25,6 @@ import {
   canCreateDeduction,
   canApproveDeduction,
   canViewDailyVerification,
-  spreadsheetUploadDomains,
 } from "../../../utils/permissions";
 
 export default function useProfile() {
@@ -33,6 +33,8 @@ export default function useProfile() {
 
   const role = context.userProfile?.role || null;
   const staff = context.userProfile?.is_staff || false;
+
+  const { domains: uploadDomains } = useUploadDomains();
 
   const capabilities = {
     // Tier classification
@@ -64,9 +66,9 @@ export default function useProfile() {
     canApproveDeduction: staff || canApproveDeduction(role),
     canViewDailyVerification: staff || canViewDailyVerification(role),
 
-    // Spreadsheet Upload domain filter — uses legacy domain keys (Unit 13).
-    // NOTE: key reconciliation with O6 backend DOMAIN_ALLOWED_ROLES is a follow-up patch.
-    allowedUploadDomains: staff ? [] : spreadsheetUploadDomains(role),
+    // Spreadsheet Upload domains: served by the server (GET /csv-import/my-domains/),
+    // which already applies the platform-admin bypass.
+    allowedUploadDomains: uploadDomains,
   };
 
   return { ...context, capabilities };

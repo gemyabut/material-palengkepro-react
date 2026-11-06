@@ -7,7 +7,8 @@ import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 
-import { canUseSpreadsheetUpload, canSeeAllImportJobs } from "utils/permissions";
+import { canSeeAllImportJobs } from "utils/permissions";
+import useUploadDomains from "hooks/useUploadDomains";
 import { inspectWorkbook, commitWorkbook, getMyUploadMarkets } from "api/csvImport";
 
 import FileDropzone from "./components/FileDropzone";
@@ -35,7 +36,8 @@ const SCREEN = { REVIEW: "REVIEW", SAVING: "SAVING", FINISHED: "FINISHED" };
 
 function SpreadsheetUpload() {
   const role    = getRole();
-  const allowed = canUseSpreadsheetUpload(role);
+  const { domains: uploadDomains, loading: domainsLoading } = useUploadDomains();
+  const allowed = uploadDomains.length > 0; // the server decides; none if it can't be read
   const seeAll  = canSeeAllImportJobs(role);
 
   const [screen,           setScreen]           = useState(SCREEN.REVIEW);
@@ -158,6 +160,8 @@ function SpreadsheetUpload() {
   const handleViewHistory = () => {
     historyRef.current?.scrollIntoView({ behavior: "smooth" });
   };
+
+  if (domainsLoading) return null;
 
   if (!allowed) {
     return (
