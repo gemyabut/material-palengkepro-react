@@ -151,15 +151,15 @@ const routes = [
     route: "/tenants",
     component: <Tenants />,
     sidenavGroup: "CRM",
-    // Per patch matrix: TOP_TIER + ADM + LEA (edit); AR + CSH (view-only but shown)
-    allowedRoles: [ROLE.EXEC, ROLE.FIN, ROLE.MKT, ROLE.ADM, ROLE.LEA, ROLE.AR, ROLE.CSH],
+    // Per patch matrix: TOP_TIER + ADM + LEA (edit); AR + CSH + COL (view-only but shown)
+    allowedRoles: [ROLE.EXEC, ROLE.FIN, ROLE.MKT, ROLE.ADM, ROLE.LEA, ROLE.AR, ROLE.CSH, ROLE.COL],
   },
   {
     type: "route",
     key: "tenant-detail",
     route: "/tenants/:id",
     component: <TenantDetailPage />,
-    allowedRoles: [ROLE.EXEC, ROLE.FIN, ROLE.MKT, ROLE.ADM, ROLE.LEA, ROLE.AR, ROLE.CSH],
+    allowedRoles: [ROLE.EXEC, ROLE.FIN, ROLE.MKT, ROLE.ADM, ROLE.LEA, ROLE.AR, ROLE.CSH, ROLE.COL],
   },
   {
     type: "collapse",
@@ -169,15 +169,15 @@ const routes = [
     route: "/stalls",
     component: <Stalls />,
     sidenavGroup: "CRM",
-    // Per patch matrix: TOP_TIER (✏) + ADM (✏) + LEA (👁) — AR + CSH excluded
-    allowedRoles: [ROLE.EXEC, ROLE.FIN, ROLE.MKT, ROLE.ADM, ROLE.LEA],
+    // Per patch matrix: TOP_TIER (✏) + ADM (✏) + LEA (👁) + COL (👁, Lead 2026-11-09) — AR + CSH excluded
+    allowedRoles: [ROLE.EXEC, ROLE.FIN, ROLE.MKT, ROLE.ADM, ROLE.LEA, ROLE.COL],
   },
   {
     type: "route",
     key: "stall-detail",
     route: "/stalls/:id",
     component: <StallDetailPage />,
-    allowedRoles: [ROLE.EXEC, ROLE.FIN, ROLE.MKT, ROLE.ADM, ROLE.LEA],
+    allowedRoles: [ROLE.EXEC, ROLE.FIN, ROLE.MKT, ROLE.ADM, ROLE.LEA, ROLE.COL],
   },
   {
     type: "collapse",
@@ -187,8 +187,8 @@ const routes = [
     route: "/Leases",
     component: <Leases />,
     sidenavGroup: "CRM",
-    // TOP_TIER + ADM + LEA. AR removed (2026-11-07): the Leases page shows A/R "Access denied".
-    allowedRoles: [ROLE.EXEC, ROLE.FIN, ROLE.MKT, ROLE.ADM, ROLE.LEA],
+    // TOP_TIER + ADM + LEA (edit); AR + COL read-only (Lead 2026-11-09).
+    allowedRoles: [ROLE.EXEC, ROLE.FIN, ROLE.MKT, ROLE.ADM, ROLE.LEA, ROLE.AR, ROLE.COL],
   },
 
   // =========================================================================

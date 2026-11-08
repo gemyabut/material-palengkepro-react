@@ -17,7 +17,7 @@ import AdminEditLease from "./components/admin/AdminEditLease";
 import AdminLeaseDetail from "./components/admin/AdminLeaseDetail";
 import LeaseSummaryWidget from "./components/common/LeaseSummaryWidget";
 import { debugLog } from "../stalls/utils/debug";
-import { isAdmin, isCollector, isTenant } from "./utils/roleUtils";
+import { isAdmin, isAccountsReceivable, isCollector, isTenant } from "./utils/roleUtils";
 import { LEASE_TYPE_CHOICES, LEASE_STATUS_CHOICES } from "./data/choices";
 
 const DEFAULT_LIMIT = 20;
@@ -74,20 +74,19 @@ function LeasesPage() {
     limit: DEFAULT_LIMIT,
   });
 
-  // Role-based scoping (tenant/collector) — same reactivity fix as
-  // search/status. Runs once userProfile is available; harmless no-op for
-  // roles where neither branch applies.
+  // Role-based scoping (tenant) — same reactivity fix as search/status. Runs
+  // once userProfile is available; harmless no-op for other roles. Collectors
+  // are not filtered here: the server ignored the old collector filter and
+  // shows a collector their whole market's leases (read-only).
   useEffect(() => {
     if (isTenant(userRole) && userProfile?.tenant?.id) {
       updateFilters({ tenant: userProfile.tenant.id });
-    } else if (isCollector(userRole) && userProfile?.id) {
-      updateFilters({ collector: userProfile.id });
     }
     // Depend on the primitive ids, not the userProfile object reference —
     // avoids re-firing (and resetting the user's page back to 1) on every
     // render where the profile context hands back a new object identity
     // for the same underlying values.
-  }, [userRole, userProfile?.tenant?.id, userProfile?.id, updateFilters]);
+  }, [userRole, userProfile?.tenant?.id, updateFilters]);
 
   // Lease summary widget logic (must run before any early return to satisfy rules-of-hooks)
   const leaseSummaryData = useMemo(() => {
@@ -190,17 +189,9 @@ function LeasesPage() {
         />
       );
     }
-    if (isTenant(userRole)) {
-      return (
-        <LeasesTable
-          leases={leasesWithLabels}
-          loading={loading}
-          onView={tableActions.onView}
-          userProfile={userProfile}
-        />
-      );
-    }
-    if (isCollector(userRole)) {
+    // Tenant, Collector and A/R: read-only table (View only — no Add, Edit
+    // or Deactivate).
+    if (isTenant(userRole) || isCollector(userRole) || isAccountsReceivable(userRole)) {
       return (
         <LeasesTable
           leases={leasesWithLabels}
@@ -255,7 +246,7 @@ function LeasesPage() {
               Add Lease
             </Button>
           )}
-          <Button onClick={exportXLS}>Export XLS</Button>
+          {!isCollector(userRole) && <Button onClick={exportXLS}>Export XLS</Button>}
           <Button onClick={refresh}>Refresh</Button>
         </Stack>
 

@@ -220,7 +220,9 @@ export default function StallsPage() {
               Add Stall
             </Button>
           )}
-          <Button variant="outlined" onClick={handleExportXLSX}>Excel</Button>
+          {role !== "collector" && (
+            <Button variant="outlined" onClick={handleExportXLSX}>Excel</Button>
+          )}
         </Stack>
 
         {/* Page size */}
