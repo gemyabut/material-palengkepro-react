@@ -23,7 +23,8 @@ import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 
-import { canOnboard, canManageStaff, canUseSpreadsheetUpload } from "utils/permissions";
+import { canOnboard, canManageStaff } from "utils/permissions";
+import useUploadDomains from "hooks/useUploadDomains";
 import { onboardCompany, createStaff, getStaffRoles } from "./api/administration";
 import TemplatesSection from "./components/TemplatesSection";
 
@@ -277,7 +278,8 @@ export default function Administration() {
   const role = getRole();
   const showOnboard = canOnboard(role);
   const showStaff = canManageStaff(role);
-  const showTemplates = canUseSpreadsheetUpload(role);
+  const { domains: uploadDomains } = useUploadDomains();
+  const showTemplates = uploadDomains.length > 0;
 
   return (
     <DashboardLayout>
