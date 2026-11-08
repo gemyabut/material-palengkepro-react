@@ -11,7 +11,6 @@ import { Card, Snackbar, Alert } from "@mui/material";
 // Role-based views
 import MasterTenantList from "./pages/MasterTenantList";
 import OfficerTenantList from "./pages/OfficerTenantList";
-import CollectorTenantList from "./pages/CollectorTenantList";
 import CashierTenantList from "./pages/CashierTenantList";
 import TenantSelfPortal from "./pages/TenantSelfPortal";
 import TenantSummaryBand from "./components/TenantSummaryBand";
@@ -38,11 +37,11 @@ export default function Tenants() {
       case "finance_head":
       case "executive":
       case "accounts_receivable":
+      case "collector":
+        // Collector: the same list, read-only (no edit / bulk / export).
         return <MasterTenantList showSnackbar={showSnackbar} />;
       case "leasing_officer":
         return <OfficerTenantList showSnackbar={showSnackbar} />;
-      case "collector":
-        return <CollectorTenantList showSnackbar={showSnackbar} />;
       case "cashier":
         return <CashierTenantList showSnackbar={showSnackbar} />;
       case "tenant":

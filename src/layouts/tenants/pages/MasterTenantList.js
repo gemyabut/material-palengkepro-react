@@ -35,7 +35,7 @@ import {
 } from "../api/tenants";
 
 import { useAuth } from "context/AuthContext";
-import { canBulk } from "../../leases/utils/roleUtils";
+import { canBulk, isCollector } from "../../leases/utils/roleUtils";
 import { debugLog } from "../../stalls/utils/debug";
 import useTenants from "../hooks/useTenants";
 
@@ -77,6 +77,9 @@ export default function MasterTenantList() {
   const [editTenant, setEditTenant] = useState(null);
 
   const allowBulk = canBulk(user);
+  // Collectors get a read-only lookup of their market (Lead 2026-11-09): no
+  // Export — the server refuses it for them.
+  const allowExport = !isCollector(user);
 
   // Reset selection whenever a new page of tenants loads — matches the
   // pre-consolidation fetchTenants().then(() => setSelectedIds([])).
@@ -200,11 +203,13 @@ export default function MasterTenantList() {
     <MDBox px={3} py={3}>
       <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
         <MDTypography variant="h4" gutterBottom>
-          All Tenants
+          {allowExport ? "All Tenants" : "Tenants (view only)"}
         </MDTypography>
-        <Button variant="outlined" onClick={handleExportAll}>
-          Export XLSX
-        </Button>
+        {allowExport && (
+          <Button variant="outlined" onClick={handleExportAll}>
+            Export XLSX
+          </Button>
+        )}
       </Stack>
 
       <BulkActionBar

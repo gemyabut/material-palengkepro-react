@@ -867,14 +867,16 @@ export default function TenantDetail({ tenant, user, onEdit, onRequestUpdate, sh
                   label={`${section.charge_type_label} ${fmt(section.balance)}`}
                 />
               ))}
-              <Button
-                size="small"
-                variant="outlined"
-                color="info"
-                onClick={() => navigate(`/soa?tenant_id=${tenant.id}`)}
-              >
-                View Full SOA
-              </Button>
+              {user?.role !== "collector" && (
+                <Button
+                  size="small"
+                  variant="outlined"
+                  color="info"
+                  onClick={() => navigate(`/soa?tenant_id=${tenant.id}`)}
+                >
+                  View Full SOA
+                </Button>
+              )}
             </Stack>
           )}
 
@@ -955,7 +957,7 @@ export default function TenantDetail({ tenant, user, onEdit, onRequestUpdate, sh
                       })}
                     </TableBody>
                   </Table>
-                  {invoices.length === 10 && (
+                  {invoices.length === 10 && user?.role !== "collector" && (
                     <Box mt={1} textAlign="right">
                       <Button
                         size="small"

@@ -39,6 +39,11 @@ export const isCollector = (input) => {
   return COLLECTOR_ROLES.includes(role);
 };
 
+export const isAccountsReceivable = (input) => {
+  const role = getRoleString(input);
+  return role === "accounts_receivable";
+};
+
 export const isGuest = (input) => {
   const role = getRoleString(input);
   return GUEST_ROLES.includes(role);

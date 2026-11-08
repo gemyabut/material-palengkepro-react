@@ -1,6 +1,7 @@
 // src/layouts/stalls/components/StallDetail.js — F9
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "context/AuthContext";
 import PropTypes from "prop-types";
 import {
   Alert,
@@ -112,6 +113,7 @@ Section.propTypes = {
 // ── Main component ────────────────────────────────────────────────────────────
 export default function StallDetail({ stall, onEdit, showEdit = true }) {
   const navigate = useNavigate();
+  const { userProfile } = useAuth();
   const [leases, setLeases] = useState([]);
   const [rights, setRights] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -270,14 +272,16 @@ export default function StallDetail({ stall, onEdit, showEdit = true }) {
                   >
                     View Tenant Profile
                   </Button>
-                  <Button
-                    size="small"
-                    variant="outlined"
-                    color="info"
-                    onClick={() => navigate(`/soa?tenant_id=${activeLease.tenant.id}`)}
-                  >
-                    View Full SOA
-                  </Button>
+                  {userProfile?.role !== "collector" && (
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      color="info"
+                      onClick={() => navigate(`/soa?tenant_id=${activeLease.tenant.id}`)}
+                    >
+                      View Full SOA
+                    </Button>
+                  )}
                 </Stack>
               </Grid>
             )}
