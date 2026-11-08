@@ -42,7 +42,10 @@ function toApiParams({
   search,
 }) {
   const params = { page, page_size };
+  // MDU-026/027: the server hides Terminated/Expired unless asked. A chosen
+  // status is sent as-is; "All" asks for every status.
   if (status) params.status = status;
+  else params.include_terminated = "true";
   if (tenant) params.tenant = tenant;
   if (stall) params.stall = stall;
   if (lease_type) params.lease_type = lease_type;
@@ -154,7 +157,14 @@ export function useLeases({ filter = {}, page = 1, limit = 10, autoLoad = true, 
   const exportXLS = useCallback(async () => {
     debugLog("[useLeases] exportXLS called");
     try {
-      const blob = await exportLeasesXLSX();
+      // Export follows the screen: same status / include_terminated /
+      // search / tenant / stall filters as the table, but not the paging.
+      const {
+        page: _page,
+        page_size: _pageSize,
+        ...exportParams
+      } = toApiParams(currentFilter || {});
+      const blob = await exportLeasesXLSX(exportParams);
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
@@ -164,7 +174,7 @@ export function useLeases({ filter = {}, page = 1, limit = 10, autoLoad = true, 
     } catch (e) {
       debugLog("[useLeases] exportXLS error", e);
     }
-  }, []);
+  }, [currentFilter]);
 
   // Direct lease setter (for admin UI, etc.)
   const setLease = useCallback((updater) => {
